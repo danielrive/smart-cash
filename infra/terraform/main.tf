@@ -10,6 +10,9 @@ module "networking" {
   private_subnets    = ["10.100.0.0/22", "10.100.64.0/22", "10.100.128.0/22"]
   db_subnets         = ["10.100.4.0/22", "10.100.68.0/22", "10.100.132.0/22"]
   public_subnets     = ["10.100.32.0/22", "10.100.96.0/22", "10.100.160.0/22"]
+  enable_nat_gw      = false
+  create_nat_gw      = false
+  single_nat_gw      = false
 }
 
 ### KMS Key to encrypt kubernetes resources
@@ -33,7 +36,7 @@ module "eks_cluster" {
   region                       = var.region
   project_name                 = var.project_name
   cluster_version              = "1.27"
-  subnet_ids                   = module.networking.main.private_subnets
+  subnet_ids                   = module.networking.main.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? ["t3.medium"] : ["t3.medium"]
   AMI_for_worker_nodes         = "AL2_x86_64"

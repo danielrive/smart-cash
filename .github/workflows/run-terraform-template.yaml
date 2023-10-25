@@ -32,6 +32,7 @@ env:
   PROJECT_NAME: ${{ inputs.PROJECT_NAME }}
   TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION }}
   AWS_IAM_ROLE_GH: 'GitHubAction-AssumeRoleWithAction'
+  WORKING_DIRECTORY: '/infra/terraform'
 
 jobs:
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:  
       - name: checkout-repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -57,7 +58,7 @@ jobs:
     needs: set-up-terraform-backend
     steps:
       - name: checkout-repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -77,7 +78,7 @@ jobs:
     needs: terraform-plan
     steps:
       - name: checkout-repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

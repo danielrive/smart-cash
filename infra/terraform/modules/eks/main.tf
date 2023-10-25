@@ -224,23 +224,3 @@ resource "aws_eks_addon" "vpc-cni" {
   addon_name        = "vpc-cni"
   resolve_conflicts = "OVERWRITE"
 }
-
-/*
-
-########################################
-# NGINX INGRESS and NLB
-#########################################
-
-resource "null_resource" "vpc_cni_plugin_for_iam" {
-  provisioner "local-exec" {
-    command = <<EOF
-      
-    EOF
-  }
-  depends_on = [
-    aws_eks_cluster.kube_cluster,
-    aws_eks_node_group.worker-node-group
-  ]
-
-}
-*/

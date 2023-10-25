@@ -23,7 +23,6 @@ defaults:
 jobs:
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   terraform-deploy:
-    if: ${{ github.ref == 'refs/heads/develop' || github.base_ref == 'develop' }} 
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
     with: 
       AWS_REGION: 'us-west-2'
