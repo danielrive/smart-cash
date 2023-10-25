@@ -1,0 +1,34 @@
+name: Terraform infra workflow DEVELOP
+run-name: terraform-deploy-DEVELOP
+
+on: 
+  push:
+    branches:
+      - develop
+    paths:
+      - "infra/**"
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./infra/terraform
+
+jobs:
+  ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
+  terraform-deploy:
+    if: ${{ github.ref == 'refs/heads/develop' || github.base_ref == 'develop' }} 
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}

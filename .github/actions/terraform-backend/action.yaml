@@ -1,0 +1,10 @@
+name: 'Terraform backend set-up'
+description: 'set-up terraform plan'
+runs:
+  using: "composite"
+  steps:
+    - name: Config tf backend
+      id: tf-backend
+      run: ./terraform-backend.sh
+      shell: bash
+      working-directory: .github/workflows

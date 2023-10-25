@@ -1,0 +1,91 @@
+### GH Workflow TEMPLATE to deploy terraform in different environments
+name: terraform deploy template
+on:
+  workflow_call:
+    inputs:
+      AWS_REGION:
+        description: 'aws region where the resources will be deployed'
+        required: true
+        type: string
+      ENVIRONMENT:
+        description: 'Environment Name'
+        required: true
+        type: string
+      PROJECT_NAME:
+        description: 'Project name, this name will be used to assign aws tags to the resources'
+        required: true
+        type: string
+      TERRAFORM_VERSION:
+        description: 'The terraform version to use, this is downloaded during the installation in the GH runner'
+        required: false
+        type: string
+        default: '1.4.6'
+    secrets: 
+      AWS_ACCOUNT_NUMBER:
+        description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
+        required: true
+
+### Define General env variables
+env:
+  ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+  AWS_REGION: ${{ inputs.AWS_REGION }}
+  PROJECT_NAME: ${{ inputs.PROJECT_NAME }}
+  TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION }}
+  AWS_IAM_ROLE_GH: 'GitHubAction-AssumeRoleWithAction'
+
+jobs:
+## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
+  set-up-terraform-backend:
+    runs-on: ubuntu-latest
+    steps:  
+      - name: checkout-repo
+        uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: config tf backend
+        id: tf-backend
+        run: ./terraform-backend.sh
+        working-directory: .github/jobs/
+
+## Execute the terraform Plan, this is a call to a composite action.
+  terraform-plan:
+    runs-on: ubuntu-latest
+    needs: set-up-terraform-backend
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: terraform plan
+        id: terraform-plan
+        uses: ./.github/actions/terraform-plan
+        with:
+          WORKING_DIRECTORY: '/infra/terraform'
+
+## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
+  terraform-apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: terraform apply
+        id: tf-apply
+        uses: ./.github/actions/terraform-apply
+        with:
+          WORKING_DIRECTORY: '/infra/terraform'

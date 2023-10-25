@@ -1,0 +1,71 @@
+name: DESTROY INFRASTRUCTURE
+run-name: DESTROY-INFRASTRUCTURE
+
+on: 
+  push:
+    branches:
+      - delete-infra
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./infra/terraform
+
+env:
+  ENVIRONMENT: "develop"
+  AWS_REGION: "us-west-2"
+  PROJECT_NAME: "smart-cash"
+  TERRAFORM_VERSION: '1.4.6'
+  GH_FLUX_REPO_NAME: 'smart-cash-gitops-flux'
+  BRANCH_NAME: 'develop'
+  WORKING_DIRECTORY: './infra/terraform'
+
+jobs:
+  destroy-process:
+   runs-on: ubuntu-latest
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v3
+       with:
+          fetch-depth: 0
+          ref: ${{ env.BRANCH_NAME }}
+     - name: Terraform install
+       id: 'install-terraform'
+       uses: hashicorp/setup-terraform@v2
+       with: 
+         terraform_version: '${{ env.TERRAFORM_VERSION }}'
+     - name: configure aws credentials
+       uses: aws-actions/configure-aws-credentials@v2
+       with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-AssumeRoleWithAction'
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+     - name: Run terraform init
+       id: 'tf-init'
+       run: |
+              BUCKET_NAME="dr-${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
+              DYNAMODB_TABLE="dr-${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
+              terraform init \
+              -backend-config=bucket="$BUCKET_NAME" \
+              -backend-config=region='${{ env.AWS_REGION }}' \
+              -backend-config=key='state' \
+              -backend-config=dynamodb_table="$DYNAMODB_TABLE"
+       shell: bash
+       working-directory: '${{ env.WORKING_DIRECTORY }}'
+     - name: Run terraform destroy
+       id: terraform-destroy
+       run: | 
+            terraform destroy \
+            -auto-approve \
+            -var 'region=${{ env.AWS_REGION }}' \
+            -var 'environment=${{ env.ENVIRONMENT }}' \
+            -var 'project_name=${{ env.PROJECT_NAME }}' 
+       shell: bash
+       working-directory:  '${{ env.WORKING_DIRECTORY }}'
+       env:
+          GITHUB_TOKEN: '${{ secrets.PAT_FLUX_REPO }}'

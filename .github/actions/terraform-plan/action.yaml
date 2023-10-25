@@ -1,0 +1,55 @@
+name: 'Terraform Plan'
+description: 'Running Terraform plan'
+
+inputs:
+  WORKING_DIRECTORY:
+    description: 'directory where the tf code is'
+    required: false
+    default: '/infra/terraform'
+
+runs:
+  using: "composite"
+  steps:
+      - name: Terraform install
+        id: 'install-terraform'
+        uses: hashicorp/setup-terraform@v2
+        with: 
+         terraform_version: '${{ env.TERRAFORM_VERSION }}'
+      - name: Validate terraform version
+        id: validate-tf-version
+        run: terraform version
+        shell: bash
+      - name: Run terraform init
+        id: 'tf-init'
+        run: |
+              BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
+              DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
+              terraform init \
+              -backend-config=bucket="$BUCKET_NAME" \
+              -backend-config=region='${{ env.AWS_REGION }}' \
+              -backend-config=key='state' \
+              -backend-config=dynamodb_table="$DYNAMODB_TABLE"
+        shell: bash
+        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      - name: Run terraform validate
+        id: 'tf-validate'
+        run: terraform validate
+        shell: bash
+        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      - name: Run terraform plan
+        id: terraform-plan
+        run: | 
+            terraform plan \
+            -input=false \
+            -var 'region=${{ env.AWS_REGION }}' \
+            -var 'environment=${{ env.ENVIRONMENT }}' \
+            -var 'project_name=${{ env.PROJECT_NAME }}' \
+            -out ${{ github.run_id }}.tfplan
+        shell: bash
+        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tf-plan
+          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}.tfplan'
