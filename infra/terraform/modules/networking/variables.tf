@@ -61,6 +61,6 @@ variable "region" {
 }
 
 variable "enable_auto_public_ip" {
-  type = bool
+  type    = bool
   default = false
 }
