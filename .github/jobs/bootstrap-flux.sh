@@ -24,8 +24,7 @@ if [ -z "$flux_installed" ]; then
     --repository=$FLUX_REPO_NAME \
     --path="clusters/$ENVIRONMENT" \
     --personal \
-    --branch main \
-    --token-auth 
+    --branch main 
 else
   echo "flux is installed"
 fi
