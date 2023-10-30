@@ -23,8 +23,8 @@ env:
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
   WORKING_DIRECTORY: './infra/terraform'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-  CLUSTER_NAME: "smart-cash-${{ inputs.ENVIRONMENT }}"
-  GH_USER_NAME: ${{ inputs.GH_USER_NAME }}
+  CLUSTER_NAME: "smart-cash-${{ env.ENVIRONMENT }}"
+
 
 jobs:
   destroy-process:
@@ -44,7 +44,7 @@ jobs:
      - name: configure aws credentials
        uses: aws-actions/configure-aws-credentials@v2
        with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
      - name: Run terraform init
