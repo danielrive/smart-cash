@@ -22,7 +22,7 @@ if [ -z "$flux_installed" ]; then
     --owner=$GH_USER_NAME \
     --repository=$FLUX_REPO_NAME \
     --path="clusters/$ENVIRONMENT" \
-    --branch=main \ 
+    --branch=main \
     --version=v2.1.2 \
     --personal
 else
