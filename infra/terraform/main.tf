@@ -13,6 +13,7 @@ module "networking" {
   enable_nat_gw      = false
   create_nat_gw      = false
   single_nat_gw      = false
+  enable_auto_public_ip = true
 }
 
 ### KMS Key to encrypt kubernetes resources

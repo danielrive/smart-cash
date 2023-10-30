@@ -24,6 +24,9 @@ on:
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
         required: true
+      GH_TOKEN_FLUX:
+        description: 'GH token created for GitOps repository, this token will be used for Flux'
+        required: true
 
 ### Define General env variables
 env:
@@ -90,3 +93,15 @@ jobs:
         uses: ./.github/actions/terraform-apply
         with:
           WORKING_DIRECTORY: '/infra/terraform'
+  
+  # flux-bootstrap:
+  #   runs-on: ubuntu-latest
+  #   needs: terraform-apply  
+  #   steps:
+  #     - name: bootstrap flux
+  #       id: bootstrap-flux
+  #       run: ./bootstrap-flux.sh
+  #       working-directory: .github/jobs/
+  #       env: 
+  #         GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
+
