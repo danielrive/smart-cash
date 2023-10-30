@@ -20,10 +20,6 @@ on:
         required: false
         type: string
         default: '1.4.6'
-      CLUSTER_NAME:
-        description: 'eks cluster name, following name conventions'
-        required: true
-        type: string
       GH_USER_NAME:
         description: 'GH username to use to push to github repo'
         required: false
