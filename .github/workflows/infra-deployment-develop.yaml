@@ -29,7 +29,7 @@ jobs:
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
-      GH_USER_NAME: "flux-smartcash"
+      GH_USER_NAME: "danielrive"
       FLUX_REPO_NAME: "smart-cash-gitops-flux"
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
