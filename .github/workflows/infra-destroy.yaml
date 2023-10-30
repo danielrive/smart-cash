@@ -23,7 +23,6 @@ env:
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
   WORKING_DIRECTORY: './infra/terraform'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-  CLUSTER_NAME: "smart-cash-${{ env.ENVIRONMENT }}"
 
 
 jobs:
