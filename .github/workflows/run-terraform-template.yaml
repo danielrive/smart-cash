@@ -114,6 +114,6 @@ jobs:
       - name: bootstrap flux
         id: bootstrap-flux
         run: ./bootstrap-flux.sh
-        working-directory: .github/jobs
+        working-directory: .github/jobs/
         env: 
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
