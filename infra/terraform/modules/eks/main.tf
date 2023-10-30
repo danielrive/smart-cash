@@ -192,6 +192,9 @@ resource "null_resource" "iam-role-cluster-access" {
     aws_eks_node_group.worker-node-group
   ]
 
+  triggers = {
+    version = var.userRoleARN
+  }
 }
 
 
