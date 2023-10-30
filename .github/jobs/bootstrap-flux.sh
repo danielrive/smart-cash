@@ -19,13 +19,13 @@ if [ -z "$flux_installed" ]; then
   curl -s https://fluxcd.io/install.sh | sudo bash
 
   echo "run flux bootstrap"
-  flux bootstrap github \ # manifest for flucd configs will be stored in GitHub repo
-    --owner=$GH_USER_NAME \  # Define the user name to use in GitHub
-    --repository=$FLUX_REPO_NAME \ # The Github repository name where the flux manifest will be stored
-    --path="clusters/$ENVIRONMENT" \ # The path where the flux manifest will be stored
-    --personal  # the owner is assumed to be a GitHub user not an organization
-    --branch main # Branch name 
-    --token-auth  # To use the PAT previously created, if this is no specified Flux creates ssh keys
+  flux bootstrap github \
+    --owner=$GH_USER_NAME \
+    --repository=$FLUX_REPO_NAME \
+    --path="clusters/$ENVIRONMENT" \
+    --personal \
+    --branch main \
+    --token-auth 
 else
   echo "flux is installed"
 fi
