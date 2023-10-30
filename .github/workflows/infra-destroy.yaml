@@ -20,9 +20,11 @@ env:
   AWS_REGION: "us-west-2"
   PROJECT_NAME: "smart-cash"
   TERRAFORM_VERSION: '1.4.6'
-  GH_FLUX_REPO_NAME: 'smart-cash-gitops-flux'
-  BRANCH_NAME: 'develop'
+  FLUX_REPO_NAME: 'smart-cash-gitops-flux'
   WORKING_DIRECTORY: './infra/terraform'
+  AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+  CLUSTER_NAME: "smart-cash-${{ inputs.ENVIRONMENT }}"
+  GH_USER_NAME: ${{ inputs.GH_USER_NAME }}
 
 jobs:
   destroy-process:
@@ -33,7 +35,7 @@ jobs:
        uses: actions/checkout@v3
        with:
           fetch-depth: 0
-          ref: ${{ env.BRANCH_NAME }}
+          ref: ${{ env.ENVIRONMENT }}
      - name: Terraform install
        id: 'install-terraform'
        uses: hashicorp/setup-terraform@v2
@@ -42,14 +44,14 @@ jobs:
      - name: configure aws credentials
        uses: aws-actions/configure-aws-credentials@v2
        with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-smart-cash'
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
      - name: Run terraform init
        id: 'tf-init'
        run: |
-              BUCKET_NAME="dr-${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
-              DYNAMODB_TABLE="dr-${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
+              BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
+              DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
@@ -67,5 +69,3 @@ jobs:
             -var 'project_name=${{ env.PROJECT_NAME }}' 
        shell: bash
        working-directory:  '${{ env.WORKING_DIRECTORY }}'
-       env:
-          GITHUB_TOKEN: '${{ secrets.PAT_FLUX_REPO }}'

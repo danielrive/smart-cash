@@ -23,7 +23,6 @@ if [ -z "$flux_installed" ]; then
     --repository=$FLUX_REPO_NAME \
     --path="clusters/$ENVIRONMENT" \
     --branch=main \
-    --version=v2.1.2 \
     --personal
 else
   echo "flux is installed"
