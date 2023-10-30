@@ -20,13 +20,27 @@ on:
         required: false
         type: string
         default: '1.4.6'
+      CLUSTER_NAME:
+        description: 'eks cluster name, following name conventions'
+        required: true
+        type: string
+      GH_USER_NAME:
+        description: 'GH username to use to push to github repo'
+        required: false
+        type: string
+        default: 'flux-smart-cash'
+      FLUX_REPO_NAME:
+        description: 'Github repo name where the manifest will be stored'
+        required: false
+        type: string
+        default: 'smart-cash-gitops-flux'
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
         required: true
-      # GH_TOKEN_FLUX:
-      #   description: 'GH token created for GitOps repository, this token will be used for Flux'
-      #   required: true
+      GH_TOKEN_FLUX:
+         description: 'GH token created for GitOps repository, this token will be used for Flux'
+         required: true
 
 ### Define General env variables
 env:
@@ -36,6 +50,9 @@ env:
   TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION }}
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
   WORKING_DIRECTORY: '/infra/terraform'
+  CLUSTER_NAME: "smart-cash-${{ inputs.ENVIRONMENT }}"
+  GH_USER_NAME: ${{ inputs.GH_USER_NAME }}
+  FLUX_REPO_NAME: ${{ inputs.FLUX_REPO_NAME }}
 
 jobs:
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
@@ -104,4 +121,3 @@ jobs:
         working-directory: .github/jobs
         env: 
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
-
