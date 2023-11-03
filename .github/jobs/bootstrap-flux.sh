@@ -21,7 +21,7 @@ if [ -z "$flux_installed" ]; then
   flux bootstrap github \
     --owner=$GH_USER_NAME \
     --repository=$FLUX_REPO_NAME \
-    --path="clusters/$ENVIRONMENT" \
+    --path="clusters/$CLUSTER_NAME/core" \
     --branch=main \
     --personal
 else
