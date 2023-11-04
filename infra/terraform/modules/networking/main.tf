@@ -16,6 +16,7 @@ module "vpc" {
   tags                                   = var.tags
   enable_dns_hostnames                   = true
   enable_dns_support                     = true
+  map_public_ip_on_launch                = var.enable_auto_public_ip
 }
 
 

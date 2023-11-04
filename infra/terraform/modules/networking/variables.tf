@@ -59,3 +59,8 @@ variable "tags" {
 variable "region" {
   type = string
 }
+
+variable "enable_auto_public_ip" {
+  type    = bool
+  default = false
+}
