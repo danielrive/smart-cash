@@ -7,7 +7,7 @@
 ### Users Table
 
 resource "aws_dynamodb_table" "user_table" {
-  name         = "users-service"
+  name         = "user-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "userId"
   range_key    = "email"
@@ -111,7 +111,7 @@ resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
 
 module "ecr_registry_user_service" {
   source       = "./modules/ecr"
-  name         = "users-service"
+  name         = "user-service"
   project_name = var.project_name
   environment  = var.environment
 }
