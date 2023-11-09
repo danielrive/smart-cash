@@ -18,8 +18,6 @@ defaults:
   run:
     shell: bash
     
-
-
 jobs:
   validate-service-updated:
    runs-on: ubuntu-latest
@@ -39,14 +37,13 @@ jobs:
        working-directory: .github/jobs
 
   microservice-build:
-    if: ${{ github.ref == 'refs/heads/develop' || github.base_ref == 'develop' }} 
     needs: validate-service-updated
     strategy: 
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/microservice-deploy-template.yaml@feat/user-service
     with: 
-      AWS_REGION: ${{ vars.AWS_REGION_DEVELOP }}
+      AWS_REGION: us-west-2
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
       SERVICE_NAME: ${{ matrix.folders }}
