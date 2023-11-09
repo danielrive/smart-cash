@@ -11,3 +11,27 @@ resource "aws_ecr_repository" "this" {
     encryption_type = "AES256"
   }
 }
+
+resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
+  repository = aws_ecr_repository.foo.name
+
+  policy = <<EOF
+{
+    "rules": [
+        {
+            "rulePriority": 1,
+            "description": "Expire images without tag",
+            "selection": {
+                "tagStatus": "untagged",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 2
+            },
+            "action": {
+                "type": "expire"
+            }
+        }
+    ]
+}
+EOF
+}
