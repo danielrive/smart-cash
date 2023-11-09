@@ -7,7 +7,7 @@
 ### Users Table
 
 resource "aws_dynamodb_table" "user_table" {
-  name         = "users-${var.environment}"
+  name         = "users-service"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "userId"
   range_key    = "email"
