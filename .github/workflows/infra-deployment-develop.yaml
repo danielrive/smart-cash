@@ -6,8 +6,8 @@ on:
     branches:
       - develop
       - feat/*
-    #paths:
-    #  - "infra/**"
+    paths:
+      - "infra/**"
   pull_request:
     branches:
       - develop
