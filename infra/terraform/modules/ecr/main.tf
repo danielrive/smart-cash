@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "this" {
 }
 
 resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
-  repository = aws_ecr_repository.foo.name
+  repository = aws_ecr_repository.this.name
 
   policy = <<EOF
 {
