@@ -1,0 +1,52 @@
+name: Microservice deploy DEVELOP
+run-name: Microservice-deploy-DEVELOP
+
+on: 
+  push:
+    branches:
+      - develop
+      - feat/*
+    paths-ignore:
+      - '.github/**'
+      - 'infra/**'
+  
+permissions:
+  id-token: write 
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+    
+jobs:
+  validate-service-updated:
+   runs-on: ubuntu-latest
+   outputs:
+      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v3
+       with:
+          fetch-depth: 0
+     - name: Get modified services
+       id: get_folders_changed
+       run: |
+          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+          echo "getting file"
+       working-directory: .github/jobs
+
+  microservice-build:
+    needs: validate-service-updated
+    strategy: 
+      matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
+      fail-fast: false
+    uses: danielrive/smart-cash/.github/workflows/microservice-deploy-template.yaml@feat/user-service
+    with: 
+      AWS_REGION: us-west-2
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      SERVICE_NAME: ${{ matrix.folders }}
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+  

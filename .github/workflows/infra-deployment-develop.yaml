@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - develop
+      - feat/*
     paths:
       - "infra/**"
   pull_request:
