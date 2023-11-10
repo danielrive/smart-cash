@@ -41,7 +41,7 @@ jobs:
     strategy: 
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/microservice-deploy-template.yaml@feat/user-service
+    uses: danielrive/smart-cash/.github/workflows/microservice-deploy-template.yaml@develop
     with: 
       AWS_REGION: us-west-2
       ENVIRONMENT: 'develop'
