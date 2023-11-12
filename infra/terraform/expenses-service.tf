@@ -15,6 +15,18 @@ resource "aws_dynamodb_table" "expenses_table" {
     name = "expenseId"
     type = "S"
   }
+
+  global_secondary_index {
+    name               = "by_userid_and_category"
+    hash_key           = "category"
+    projection_type    = "ALL"
+  }
+
+  global_secondary_index {
+    name               = "by_userid"
+    hash_key           = "userId"
+    projection_type    = "ALL"
+  }
   
 }
 

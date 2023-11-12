@@ -18,13 +18,27 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) GetUser(c *gin.Context) {
-	userID := c.Param("id")
-	user, err := h.userService.GetUser(userID)
-	if err != nil {
+
+	uri := c.Request.URL.Query()
+
+	if _, isMapContainsKey := uri["id"]; isMapContainsKey {
+		user, err := h.userService.FindUserByEmail(uri["id"][0])
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	} else if _, isMapContainsKey := uri["email"]; isMapContainsKey {
+		user, err := h.userService.FindUserByUsername(uri["emain"][0])
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	} else {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	c.JSON(http.StatusOK, user)
 }
 
 // Handler for creating new user
@@ -42,29 +56,4 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, "ok")
-}
-
-func (h *UserHandler) FindUser(c *gin.Context) {
-	//user := models.User{}
-	uri := c.Request.URL.Query()
-
-	if _, isMapContainsKey := uri["email"]; isMapContainsKey {
-		user, err := h.userService.FindUserByEmail(uri["email"][0])
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-			return
-		}
-		c.JSON(http.StatusOK, user)
-	} else if _, isMapContainsKey := uri["username"]; isMapContainsKey {
-		user, err := h.userService.FindUserByUsername(uri["username"][0])
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-			return
-		}
-		c.JSON(http.StatusOK, user)
-	} else {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
 }

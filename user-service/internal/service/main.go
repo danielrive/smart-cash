@@ -14,15 +14,26 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository) *UserS
 	return &UserService{userRepository: userRepository}
 }
 
-func (us *UserService) GetUser(userId string) (models.User, error) {
-	// get user by id
-	user, err := us.userRepository.GetUser(userId)
+func (us *UserService) GetUserById(userId string) (models.User, error) {
+
+	user, err := us.userRepository.GetUserById(userId)
 
 	if err != nil {
 		return models.User{}, err
 	}
 
 	return user, nil
+}
+
+func (us *UserService) GetUserByEmail(email string) (models.User, error) {
+	// Find user
+	user, err := us.userRepository.FindUserByEmail(email)
+
+	if err != nil {
+		return models.User{}, err
+	}
+
+	return user, err
 }
 
 func (us *UserService) CreateUser(u models.User) error {
@@ -35,26 +46,4 @@ func (us *UserService) CreateUser(u models.User) error {
 	}
 
 	return nil
-}
-
-func (us *UserService) FindUserByEmail(email string) (models.User, error) {
-	// Find user
-	user, err := us.userRepository.FindUserByEmail(email)
-
-	if err != nil {
-		return models.User{}, err
-	}
-
-	return user, err
-}
-
-func (us *UserService) FindUserByUsername(username string) (models.User, error) {
-	// Find user
-	user, err := us.userRepository.FindUserByUsername(username)
-
-	if err != nil {
-		return models.User{}, err
-	}
-
-	return user, err
 }

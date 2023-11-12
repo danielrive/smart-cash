@@ -34,7 +34,7 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string) *Dyn
 
 // function to get user info by ID
 
-func (c *DynamoDBUsersRepository) GetUser(id string) (models.User, error) {
+func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
 	//getUser(userId string, table string, c *dynamodb.Client) User {
 	// call Getitem func
 	output := models.User{}
@@ -61,29 +61,8 @@ func (c *DynamoDBUsersRepository) GetUser(id string) (models.User, error) {
 	return output, nil
 }
 
-func (c *DynamoDBUsersRepository) CreateUser(u models.User) error {
-	fmt.Println("repository createUser")
-	item, err := attributevalue.MarshalMap(u)
-	if err != nil {
-		log.Printf("unable to marshal user, %v", err)
-		return err
-	}
-	input := &dynamodb.PutItemInput{
-		TableName:           aws.String(c.tableUsers),
-		Item:                item,
-		ConditionExpression: aws.String("attribute_not_exists(email)"),
-	}
-	// call dynamodb put item
-	_, err = c.client.PutItem(context.TODO(), input)
-
-	if err != nil {
-		log.Printf("error in DynamoDB put item, %v", err)
-		return err
-	}
-	return nil
-}
-
-func (c *DynamoDBUsersRepository) FindUserByEmail(email string) (models.User, error) {
+// function to get user by email
+func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, error) {
 	output := models.User{}
 
 	// create keycondition dynamodb expression for the query
@@ -122,40 +101,24 @@ func (c *DynamoDBUsersRepository) FindUserByEmail(email string) (models.User, er
 
 }
 
-func (c *DynamoDBUsersRepository) FindUserByUsername(username string) (models.User, error) {
-	output := models.User{}
-	// create keycondition dynamodb expression for the query
-	keyCondition := expression.Key("username").Equal(expression.Value(username))
-
-	// create expression builder for the keyCondition
-	builder := expression.NewBuilder().WithKeyCondition(keyCondition)
-	expr, err := builder.Build()
-	// Create the input for the dynamodb query
-	queryInput := &dynamodb.QueryInput{
-		TableName:                 aws.String(c.tableUsers),
-		IndexName:                 aws.String("by_username"),
-		KeyConditionExpression:    expr.KeyCondition(),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-	}
-	// Execute the query
-
-	response, err := c.client.Query(context.TODO(), queryInput)
-	fmt.Println("BY USERNAME response from repository")
-	fmt.Println(response)
+func (c *DynamoDBUsersRepository) CreateUser(u models.User) error {
+	fmt.Println("repository createUser")
+	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
-		log.Printf("unable to query, %v", err)
-		return models.User{}, err
+		log.Printf("unable to marshal user, %v", err)
+		return err
 	}
-	if len(response.Items) == 0 {
-		return models.User{}, ErrUserNotFound
+	input := &dynamodb.PutItemInput{
+		TableName:           aws.String(c.tableUsers),
+		Item:                item,
+		ConditionExpression: aws.String("attribute_not_exists(email)"),
 	}
-	//unmarshall dynamodb output
-	err2 := attributevalue.UnmarshalMap(response.Items[0], &output)
-	if err2 != nil {
-		log.Print("failed to unmarshal Items, %w", err2)
-		return output, ErrUnespectedError
-	}
-	return output, nil
+	// call dynamodb put item
+	_, err = c.client.PutItem(context.TODO(), input)
 
+	if err != nil {
+		log.Printf("error in DynamoDB put item, %v", err)
+		return err
+	}
+	return nil
 }

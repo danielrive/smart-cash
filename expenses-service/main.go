@@ -46,7 +46,9 @@ func main() {
 	// Init user handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
-	router.POST("/expenses/createExpense", expensesHandler.CreateExpense)
+	router.POST("/createExpense", expensesHandler.CreateExpense)
+
+	router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
 
 	router.Run(":8282")
 

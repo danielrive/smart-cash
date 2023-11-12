@@ -9,4 +9,7 @@ type Expense struct {
 	Paid        bool   `json:"paid" dynamodbav:"paid"`
 	Name        string `json:"name" dynamodbav:"name"`
 	Amount      int32  `json:"amount" dynamodbav:"amount"`
+	Date        string `json:"date" dynamodbav:"date"`         // sort key
+	Category    string `json:"category" dynamodbav:"category"` // secondary index
+	UserId      string `json:"userId" dynamodbav:"userId"`
 }

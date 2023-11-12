@@ -46,13 +46,13 @@ func main() {
 	// Init user handler
 	userHandler := handler.NewUserHandler(userService)
 
-	// GET Method
-	router.GET("/user/:id", userHandler.GetUser)
+	// GET api/v1[?userID=0&email(optinal)]
+	router.GET("/", userHandler.GetUser)
 
-	router.GET("/user/findUser", userHandler.FindUser)
+	// GET api/v1/[controller]/user[?userID=0]
+	router.POST("/createUser", userHandler.CreateUser)
 
-	router.POST("/user/createUser", userHandler.CreateUser)
-
+	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
 
 	// Find User by email, userId and username
