@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"expenses-service/internal/models"
@@ -39,11 +38,11 @@ func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	total := h.expensesService.CalculateTotalPerCategory(uri["id"][0], uri["category"][0])
-	// if err != nil {
-	// 	c.JSON(http.StatusNotFound, gin.H{"error": "unknow"})
-	// 	return
-	// }
-	fmt.Println("************************///////////////*************")
-	fmt.Println(total)
+	totalExpenses, err := h.expensesService.CalculateTotalPerCategory(uri["id"][0], uri["category"][0])
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "unknow"})
+		return
+	}
+	c.JSON(http.StatusOK, totalExpenses)
 }

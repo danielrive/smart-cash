@@ -13,7 +13,8 @@ import (
 )
 
 // Define error types
-var ErrExpenseNotFound = errors.New("ERROR : expense not found")
+var ErrExpenseNotFound = errors.New("ERROR : expenses not found")
+var ErrExpenseNotCreated = errors.New("ERROR : expense not created")
 var ErrUnespectedError = errors.New("unespected error")
 
 // Define DynamoDB repository struct
@@ -40,7 +41,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
 		log.Println("unable to marshal expense item", err)
-		return models.Expense{}, err
+		return models.Expense{}, ErrUnespectedError
 	}
 
 	// Create a new expense item
@@ -50,7 +51,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	})
 	if err != nil {
 		log.Println("unable to put expense item", err)
-		return models.Expense{}, err
+		return models.Expense{}, ErrExpenseNotCreated
 	}
 
 	return models.Expense{}, nil
@@ -84,7 +85,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 
 	if err != nil {
 		log.Printf("unable to query, %v", err)
-		return []models.Expense{}, err
+		return []models.Expense{}, ErrUnespectedError
 	}
 
 	if len(response.Items) == 0 {
