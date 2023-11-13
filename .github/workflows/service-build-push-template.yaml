@@ -24,6 +24,7 @@ env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.${{ inputs.AWS_REGION }}.amazonaws.com
   ECR_REPOSITORY: ${{ inputs.SERVICE_NAME }}-${{ inputs.PROJECT_NAME }}
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+  GH_USERNAME: danielrive 
 
 jobs:
   docker-build:
@@ -87,21 +88,26 @@ jobs:
         id: install-yq
         run: |
           wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /tmp/yq && chmod +x /tmp/yq
-          echo "------## testing"
           yq --version
+      - name: commit-push-dev-env
+        run: |
+          git config user.name "danielrive"
+          git config user.email "your.email@example.com"
       - name: update-tag-in-kustomization
         id: test
         env: 
           IMAGE_TAG: needs.docker-build.outputs.IMAGE_TAG
         run: |
-            echo " ###-------- before update"
-            cat kustomization.yaml
-            yq eval '.images[0].newTag = "$IMAGE_TAG"' -i kustomization.yaml
-            echo "********###-------- after update"
-            cat kustomization.yaml
-        working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'    
-
-
+            yq eval '.images[0].newTag = $IMAGE_TAG' -i kustomization.yaml
+        working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
+      - name: Commit and push changes
+        env: 
+          IMAGE_TAG: needs.docker-build.outputs.IMAGE_TAG
+        run: |
+          git add .
+          git commit -m "updating for ${{ inputs.SERVICE_NAME }}  to $IMAGE_TAG "
+          git push origin main
+        working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'
   
 
  
