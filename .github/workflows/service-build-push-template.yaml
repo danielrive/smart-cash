@@ -96,8 +96,12 @@ jobs:
       - name: update-tag-in-kustomization
         id: test
         env: 
-          IMAGE_TAG: needs.docker-build.outputs.IMAGE_TAG
+          IMAGE_TAG2: needs.docker-build.outputs.IMAGE_TAG
         run: |
+            IMAGE_TAG="${{ needs.docker-build.outputs.IMAGE_TAG }}"
+            echo $IMAGE_TAG2
+            echo "-----1111"
+            echo $IMAGE_TAG
             yq eval '.images[0].newTag = $IMAGE_TAG' -i kustomization.yaml
         working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
       - name: Commit and push changes

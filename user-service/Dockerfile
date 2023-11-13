@@ -28,3 +28,5 @@ EXPOSE 8181
 CMD ["/bin/user_service"]
 
 
+
+
