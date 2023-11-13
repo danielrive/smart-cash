@@ -57,7 +57,7 @@ jobs:
 
              SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
            
-             echo "IMAGE_TAG="${{ inputs.ENVIRONMENT }}-SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
+             echo "IMAGE_TAG=${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
        
         # run: | 
         #     COMMIT_ID=${{ github.sha}}
