@@ -96,7 +96,7 @@ jobs:
         run: |
             echo " ###-------- before update"
             cat kustomization.yaml
-            yq eval '.images.newTag = $IMAGE_TAG' -i kustomization.yaml
+            yq eval '.images[0].newTag = "$IMAGE_TAG"' -i kustomization.yaml
             echo "********###-------- after update"
             cat kustomization.yaml
         working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'    
