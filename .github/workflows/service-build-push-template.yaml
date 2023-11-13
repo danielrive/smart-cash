@@ -91,7 +91,7 @@ jobs:
           yq --version
       - name: commit-push-dev-env
         run: |
-          git config user.name "danielrive"
+          git config user.name "gh-action-smartcash"
           git config user.email "your.email@example.com"
       - name: update-tag-in-kustomization
         id: test
