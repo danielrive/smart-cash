@@ -80,7 +80,7 @@ jobs:
         id: checkout-gitops-repo
         uses: actions/checkout@v4
         with:
-            repository: github.com/danielrive/smart-cash-gitops-flux
+            repository: danielrive/smart-cash-gitops-flux
             token: ${{ secrets.GH_TOKEN_FLUXCD }}
       - name: install-yq
         id: install-yq
