@@ -30,7 +30,7 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     outputs:
-      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+      IMAGE_TAG: ${{ steps.build-and-push.outputs.IMAGE_TAG }}
     steps:
       - name: checkout-repo
         id: checkout
