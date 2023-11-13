@@ -97,7 +97,7 @@ jobs:
         id: test
         run: |
             IMAGE_TAG="${{ needs.docker-build.outputs.IMAGE_TAG }}"
-            yq eval '.images[0].newTag = env(IMAGE_TAG)' -i kustomization.yaml
+            yq eval ".images[0].newTag = \"$IMAGE_TAG\"" -i kustomization.yaml
         working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
       - name: Commit and push changes
         env: 
