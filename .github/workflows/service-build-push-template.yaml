@@ -18,7 +18,8 @@ on:
     secrets:
       AWS_ACCOUNT_NUMBER:
         required: true
-
+      GH_TOKEN_FLUX:
+        required: true
 env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.${{ inputs.AWS_REGION }}.amazonaws.com
   ECR_REPOSITORY: ${{ inputs.SERVICE_NAME }}-${{ inputs.PROJECT_NAME }}
@@ -81,7 +82,7 @@ jobs:
         uses: actions/checkout@v4
         with:
             repository: danielrive/smart-cash-gitops-flux
-            token: ${{ secrets.GH_TOKEN_FLUXCD }}
+            token: ${{ secrets.GH_TOKEN_FLUX }}
       - name: install-yq
         id: install-yq
         run: |

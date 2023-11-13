@@ -49,3 +49,4 @@ jobs:
       SERVICE_NAME: ${{ matrix.folders }}
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
