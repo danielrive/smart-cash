@@ -15,6 +15,14 @@ resource "aws_dynamodb_table" "expenses_table" {
     name = "expenseId"
     type = "S"
   }
+  attribute {
+    name = "category"
+    type = "S"
+  }
+    attribute {
+    name = "userId"
+    type = "S"
+  }
 
   global_secondary_index {
     name               = "by_userid_and_category"
