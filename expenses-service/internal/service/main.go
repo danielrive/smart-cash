@@ -6,6 +6,12 @@ import (
 	"log"
 )
 
+type totalExpensesPerCategory struct {
+	Category string  `json:"category"`
+	UserId   string  `json:"userId"`
+	Total    float32 `json:"total"`
+}
+
 // Define service interface
 
 type ExpensesService struct {
@@ -30,21 +36,28 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 }
 
 // Calculate total expenes per category
-func (exps *ExpensesService) CalculateTotalPerCategory(userId string, category string) int32 {
-	var total int32 = 0
+func (exps *ExpensesService) CalculateTotalPerCategory(userId string, category string) (totalExpensesPerCategory, error) {
+	var total float32 = 0.0
 
 	expenses, err := exps.expensesRepository.GetExpensesByUserIdAndCategory(userId, category)
 
 	if err != nil {
 		log.Print("error", err)
-		return -1
+		return totalExpensesPerCategory{}, err
 	}
 
 	// for loop to calculate total
 	for _, expense := range expenses {
-		total = total + expense.Amount
+		total = total + float32(expense.Amount)
 	}
 
-	return total
+	// create json response for totalExpensesPerCategory
+	totalExpensesPerCategory := totalExpensesPerCategory{
+		Category: category,
+		UserId:   userId,
+		Total:    total,
+	}
+
+	return totalExpensesPerCategory, nil
 
 }

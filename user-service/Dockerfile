@@ -26,3 +26,4 @@ EXPOSE 8181
 
 # Set the command to run the application when the container starts.
 CMD ["/bin/user_service"]
+
