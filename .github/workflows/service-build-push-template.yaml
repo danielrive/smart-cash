@@ -1,5 +1,10 @@
 name: build-app
 
+#### WARNING !!!
+###### For this project Pull Request will NOT be created in the GitOps repo, new tag created for the images are pushed directly to main
+#####  this to avoid to many steps just for a non-prod project, if you want to re-use this code for a production env, avoid direct push to main 
+#### in the GitOps repo
+
 on:
   workflow_call:
     inputs:
@@ -41,38 +46,31 @@ jobs:
       - name: Set up Docker Buildx
         id: set-up-buildx
         uses: docker/setup-buildx-action@v2
-      # - name: configure aws credentials
-      #   id: aws-creds-config
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
-      #     role-session-name: GitHub_to_AWS_via_FederatedOIDC
-      #     aws-region: ${{ inputs.AWS_REGION }}
-      # - name: Login AWS ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v2
+      - name: configure aws credentials
+        id: aws-creds-config
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ inputs.AWS_REGION }}
+      - name: Login AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
       - name: Build containter
         id: build-and-push
         working-directory: './${{ inputs.SERVICE_NAME }}'
         run: | 
-             COMMIT_ID=${{ github.sha}}
+            COMMIT_ID=${{ github.sha}}
 
-             SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
-           
-             echo "IMAGE_TAG=${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
-       
-        # run: | 
-        #     COMMIT_ID=${{ github.sha}}
-
-        #     SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
+            SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
             
-        #     echo "${{ github.ref }}"
+            echo "${{ github.ref }}"
 
-        #     docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
 
-        #     echo "Tag the image with the commit ID"
+            echo "Tag the image with the commit ID"
             
-        #     echo "IMAGE_TAG="${{ inputs.ENVIRONMENT }}-SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
+            echo "IMAGE_TAG=${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
 
   service-push-gitops:
     needs: docker-build
@@ -92,7 +90,7 @@ jobs:
       - name: commit-push-dev-env
         run: |
           git config user.name "gh-action-smartcash"
-          git config user.email "your.email@example.com"
+          git config user.email "non-replyl@example.com"
       - name: update-tag-in-kustomization
         id: test
         run: |
@@ -101,12 +99,13 @@ jobs:
         working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
       - name: Commit and push changes
         env: 
-          IMAGE_TAG: needs.docker-build.outputs.IMAGE_TAG
+          IMAGE_TAG: ${{ needs.docker-build.outputs.IMAGE_TAG }}
         run: |
-          git add .
-          git commit -m "updating for ${{ inputs.SERVICE_NAME }}  to $IMAGE_TAG "
-          git push origin main
+            git add .
+            git commit -m "updating for ${{ inputs.SERVICE_NAME }}  to $IMAGE_TAG "
+            git push origin main
         working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'
+
   
 
  
