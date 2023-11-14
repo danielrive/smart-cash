@@ -16,4 +16,3 @@ The tech stack used in this repo is:
 5. Github actions  pipeline
 6. Terraform for IaC
 7. FluxCD for GitOps
-
