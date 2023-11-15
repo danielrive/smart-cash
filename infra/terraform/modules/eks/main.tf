@@ -256,7 +256,7 @@ resource "null_resource" "ebs-csi-sa" {
 
 # install add-on
 
-resource "null_resource" "ebs-csi-sa" {
+resource "null_resource" "ebs-csi-add-on" {
   provisioner "local-exec" {
     command = <<EOF
       curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
