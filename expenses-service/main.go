@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -38,12 +39,16 @@ func main() {
 	// create a router with gin
 	router := gin.Default()
 
-	// // Initialize user repository
+	// Creating route to monitoring app
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable)
-	// Initialize user service
+
+	// Initialize expenses service
 	expensesService := service.NewExpensesService(expensesRepo)
 
-	// Init user handler
+	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
 	router.POST("/createExpense", expensesHandler.CreateExpense)

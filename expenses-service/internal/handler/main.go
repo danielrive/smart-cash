@@ -17,18 +17,18 @@ func NewExpensesHandler(expensesService *service.ExpensesService) *ExpensesHandl
 	return &ExpensesHandler{expensesService: expensesService}
 }
 
-// Handler for creating new user
+// Handler for creating new expenses
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	expense := models.Expense{}
-	// bind the JSON data to the user struct
+	// bind the JSON data to the expenses struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// create the user
+	// create the expenses
 	if err := h.expensesService.CreateExpense(expense); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not created"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err})
 		return
 	}
 	c.JSON(http.StatusOK, "ok")
@@ -39,9 +39,8 @@ func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
 	uri := c.Request.URL.Query()
 
 	totalExpenses, err := h.expensesService.CalculateTotalPerCategory(uri["id"][0], uri["category"][0])
-
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "unknow"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, totalExpenses)
