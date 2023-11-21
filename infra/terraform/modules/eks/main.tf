@@ -194,6 +194,7 @@ resource "null_resource" "iam-role-cluster-access" {
 
   triggers = {
     version = var.userRoleARN
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
   }
 }
 
@@ -251,6 +252,9 @@ resource "null_resource" "ebs-csi-sa" {
     aws_eks_cluster.kube_cluster,
     aws_eks_node_group.worker-node-group
   ]
+   triggers = {
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  }
 }
 
 
@@ -269,6 +273,9 @@ resource "null_resource" "ebs-csi-add-on" {
     aws_eks_node_group.worker-node-group,
     null_resource.ebs-csi-sa
   ]
+  triggers = {
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  }
 }
 
 
