@@ -56,5 +56,4 @@ func main() {
 	router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
 
 	router.Run(":8282")
-
 }
