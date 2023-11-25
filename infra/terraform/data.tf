@@ -38,3 +38,30 @@ data "aws_iam_policy_document" "kms_key_policy_encrypt_logs" {
     }
   }
 }
+
+
+####################################
+#########  cert-manager Issuer policy
+
+data "aws_iam_policy_document" "cert-manager-issuer" {
+  statement {
+    sid = "Allow Get Change"
+    actions   = ["route53:GetChange"]
+    resources = ["arn:aws:route53:::change/*"]
+    effect = "Allow"
+  }
+  statement {
+    sid = "Allow List Resources"
+    actions   = ["route53:ChangeResourceRecordSets","route53:ListResourceRecordSets",]
+    resources = ["arn:aws:route53:::hostedzone/*"]
+    effect = "Allow"
+  }
+  statement {
+    sid = "Allow List Resources"
+    actions   = ["route53:ListHostedZonesByName",]
+    resources = ["*"]
+    effect = "Allow"
+  }
+}
+
+

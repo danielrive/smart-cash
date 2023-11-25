@@ -50,3 +50,44 @@ module "eks_cluster" {
   userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
   account_number               = data.aws_caller_identity.id_account.id
 }
+
+########################################
+# IAM Role for CertManager Issuer DNS01 challenge
+#########################################
+
+resource "aws_iam_role" "cert-manager-iam-role" {
+  name = "cert-manager-${var.region}"
+
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+      },
+      "Condition": {
+        "StringEquals": {
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-cert-manager-issuer"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+}
+
+resource "aws_iam_policy" "cert-manager-iam-role-policy" {
+  name        = "policy-cert-manager-iam-role"
+  policy      = data.aws_iam_policy_document.cert-manager-issuer.json
+}
+
+resource "aws_iam_role_policy_attachment" "cert-manager-role" {
+  policy_arn = aws_iam_policy.cert-manager-iam-role-policy.arn
+  role       = aws_iam_role.eks-iam-role.name
+}
