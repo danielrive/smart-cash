@@ -72,7 +72,7 @@ resource "aws_iam_role" "cert-manager-iam-role" {
       },
       "Condition": {
         "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:cert-manager:sa-cert-manager-issuer"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:cert-manager:cert-manager"
         }
       }
     }
