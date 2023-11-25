@@ -89,5 +89,5 @@ resource "aws_iam_policy" "cert-manager-iam-role-policy" {
 
 resource "aws_iam_role_policy_attachment" "cert-manager-role" {
   policy_arn = aws_iam_policy.cert-manager-iam-role-policy.arn
-  role       = aws_iam_role.cert-manager-iam-role-policy.name
+  role       = aws_iam_role.cert-manager-iam-role.name
 }
