@@ -15,7 +15,7 @@ import (
 // Define error types
 var ErrExpenseNotFound = errors.New("ERROR : expenses not found")
 var ErrExpenseNotCreated = errors.New("ERROR : expense not created")
-var ErrUnespectedError = errors.New("unespected error")
+var ErrInternalError = errors.New("ERROR: internal error")
 
 // Define DynamoDB repository struct
 
@@ -41,7 +41,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
 		log.Println("unable to marshal expense item", err)
-		return models.Expense{}, ErrUnespectedError
+		return models.Expense{}, ErrInternalError
 	}
 
 	// Create a new expense item
@@ -78,6 +78,12 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 		ExpressionAttributeNames:  expres.Names(),
 		ExpressionAttributeValues: expres.Values(),
 	}
+	// validate if there is error in building the expression for dynamo
+	if err != nil {
+		log.Printf("unable to build dynamo expression, %v", err)
+		return []models.Expense{}, ErrInternalError
+	}
+
 
 	// Execute the query
 
@@ -85,7 +91,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 
 	if err != nil {
 		log.Printf("unable to query, %v", err)
-		return []models.Expense{}, ErrUnespectedError
+		return []models.Expense{}, ErrInternalError
 	}
 
 	if len(response.Items) == 0 {
@@ -97,7 +103,8 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 	err2 := attributevalue.UnmarshalListOfMaps(response.Items, &output)
 	if err2 != nil {
 		log.Print("failed to unmarshal Items, %w", err2)
-		return output, ErrUnespectedError
+
+		return output, ErrInternalError
 	}
 	return output, nil
 }
@@ -140,7 +147,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 // 	err2 := attributevalue.UnmarshalMap(response.Items[0], &output)
 // 	if err2 != nil {
 // 		log.Print("failed to unmarshal Items, %w", err2)
-// 		return output, ErrUnespectedError
+// 		return output, ErrInternalError
 // 	}
 // 	return output, nil
 // }

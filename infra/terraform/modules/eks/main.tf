@@ -194,6 +194,7 @@ resource "null_resource" "iam-role-cluster-access" {
 
   triggers = {
     version = var.userRoleARN
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
   }
 }
 
@@ -225,5 +226,57 @@ resource "null_resource" "vpc_cni_plugin_for_iam" {
 resource "aws_eks_addon" "vpc-cni" {
   cluster_name      = aws_eks_cluster.kube_cluster.name
   addon_name        = "vpc-cni"
-  resolve_conflicts = "OVERWRITE"
 }
+
+########################################
+# EBS-CSI Driver
+#########################################
+
+## Get aws managed policy
+
+data "aws_iam_policy" "ebspolicy" {
+  name = "AmazonEBSCSIDriverPolicy"
+}
+
+# create service account 
+resource "null_resource" "ebs-csi-sa" {
+  provisioner "local-exec" {
+    command = <<EOF
+      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+      /tmp/eksctl version
+      /tmp/eksctl utils associate-iam-oidc-provider --cluster=${aws_eks_cluster.kube_cluster.name} --region ${var.region}
+      /tmp/eksctl create iamserviceaccount --cluster ${aws_eks_cluster.kube_cluster.name} --name ebs-csi-controller-sa --role-name AmazonEKS_EBS_CSI_DriverRole --namespace kube-system --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts --region ${var.region}
+    EOF
+  }
+  depends_on = [
+    aws_eks_cluster.kube_cluster,
+    aws_eks_node_group.worker-node-group
+  ]
+   triggers = {
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  }
+}
+
+
+# install add-on
+
+resource "null_resource" "ebs-csi-add-on" {
+  provisioner "local-exec" {
+    command = <<EOF
+      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+      /tmp/eksctl version
+      /tmp/eksctl create addon --name aws-ebs-csi-driver --cluster ${aws_eks_cluster.kube_cluster.name} --service-account-role-arn arn:aws:iam::${var.account_number}:role/AmazonEKS_EBS_CSI_DriverRole --force --region ${var.region}
+    EOF
+  }
+  depends_on = [
+    aws_eks_cluster.kube_cluster,
+    aws_eks_node_group.worker-node-group,
+    null_resource.ebs-csi-sa
+  ]
+  triggers = {
+    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  }
+}
+
+
+
