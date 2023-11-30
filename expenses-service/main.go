@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-
 	"expenses-service/internal/repositories"
 	"expenses-service/internal/service"
 
@@ -127,4 +126,5 @@ func main() {
 	router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
 
 	router.Run(":8282")
+
 }

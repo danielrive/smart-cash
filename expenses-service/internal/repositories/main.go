@@ -84,6 +84,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 		return []models.Expense{}, ErrInternalError
 	}
 
+
 	// Execute the query
 
 	response, err := r.client.Query(context.TODO(), queryInput)
@@ -102,6 +103,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 	err2 := attributevalue.UnmarshalListOfMaps(response.Items, &output)
 	if err2 != nil {
 		log.Print("failed to unmarshal Items, %w", err2)
+
 		return output, ErrInternalError
 	}
 	return output, nil

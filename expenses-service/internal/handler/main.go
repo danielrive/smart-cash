@@ -39,6 +39,7 @@ func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
 	uri := c.Request.URL.Query()
 
 	totalExpenses, err := h.expensesService.CalculateTotalPerCategory(uri["id"][0], uri["category"][0])
+  
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
