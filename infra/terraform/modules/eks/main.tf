@@ -191,10 +191,6 @@ resource "null_resource" "iam-role-cluster-access" {
     aws_eks_cluster.kube_cluster,
     aws_eks_node_group.worker-node-group
   ]
-
-  triggers = {
-    version = var.userRoleARN
-  }
 }
 
 
