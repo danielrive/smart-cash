@@ -16,13 +16,6 @@ resource "aws_dynamodb_table" "expenses_table" {
     name = "expenseId"
     type = "S"
   }
-<<<<<<< HEAD
-  attribute {
-    name = "category"
-    type = "S"
-  }
-    attribute {
-=======
 
   attribute {
     name = "date"
@@ -35,24 +28,11 @@ resource "aws_dynamodb_table" "expenses_table" {
   }
 
   attribute {
->>>>>>> 2826218 (update k8 version to 1.29)
     name = "userId"
     type = "S"
   }
 
   global_secondary_index {
-<<<<<<< HEAD
-    name               = "by_userid_and_category"
-    hash_key           = "category"
-    projection_type    = "ALL"
-  }
-
-  global_secondary_index {
-    name               = "by_userid"
-    hash_key           = "userId"
-    projection_type    = "ALL"
-  }
-=======
     name               = "by_userId"
     hash_key           = "userId"
     projection_type    = "INCLUDE"
@@ -68,7 +48,6 @@ resource "aws_dynamodb_table" "expenses_table" {
   tags = {
     Name = "expenses_${var.environment}"
   }
->>>>>>> 2826218 (update k8 version to 1.29)
   
 }
 
