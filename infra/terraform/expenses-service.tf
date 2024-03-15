@@ -10,21 +10,38 @@ resource "aws_dynamodb_table" "expenses_table" {
   name         = "expenses-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "expenseId"
+  range_key    = "date"
 
   attribute {
     name = "expenseId"
     type = "S"
   }
+<<<<<<< HEAD
   attribute {
     name = "category"
     type = "S"
   }
     attribute {
+=======
+
+  attribute {
+    name = "date"
+    type = "S"
+  }
+
+  attribute {
+    name = "tag"
+    type = "S"
+  }
+
+  attribute {
+>>>>>>> 2826218 (update k8 version to 1.29)
     name = "userId"
     type = "S"
   }
 
   global_secondary_index {
+<<<<<<< HEAD
     name               = "by_userid_and_category"
     hash_key           = "category"
     projection_type    = "ALL"
@@ -35,6 +52,23 @@ resource "aws_dynamodb_table" "expenses_table" {
     hash_key           = "userId"
     projection_type    = "ALL"
   }
+=======
+    name               = "by_userId"
+    hash_key           = "userId"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["expenseId","currency","date","amount"]
+  }
+
+  global_secondary_index {
+    name               = "by_tag"
+    hash_key           = "userId"
+    range_key           = "tag"
+    projection_type    = "ALL"
+  }
+  tags = {
+    Name = "expenses_${var.environment}"
+  }
+>>>>>>> 2826218 (update k8 version to 1.29)
   
 }
 

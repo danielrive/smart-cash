@@ -2,7 +2,7 @@
 package models
 
 type User struct {
-	UserId            int32  `json:"userId" dynamodbav:"userId"` // primary key
+	UserId            string `json:"userId" dynamodbav:"userId"` // primary key
 	FirstsName        string `json:"firstsName" dynamodbav:"firstsName"`
 	LastName          string `json:"lastName" dynamodbav:"lastName"`
 	Email             string `json:"email" dynamodbav:"email"` // global secondary index

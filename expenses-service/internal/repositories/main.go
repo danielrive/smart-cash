@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 // Define error types
@@ -57,6 +58,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	return models.Expense{}, nil
 }
 
+<<<<<<< HEAD
 // Function to Get expenses by userId and category
 
 func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId string, category string) ([]models.Expense, error) {
@@ -144,3 +146,124 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId strin
 // 	}
 // 	return output, nil
 // }
+=======
+// Function to get a expense by id
+
+func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, error) {
+	// Get expense item by id
+	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String(r.expensesTable),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		log.Println("unable to get expense", err)
+		return models.Expense{}, err
+	}
+	if len(item.Item) == 0 {
+		log.Printf("user not found")
+		return models.Expense{}, ErrExpenseNotFound
+	}
+
+	// Unmarshal the expense item
+	var expense models.Expense
+	err = attributevalue.UnmarshalMap(item.Item, &expense)
+	if err != nil {
+		log.Println("unable to unmarshal expense item", err)
+		return models.Expense{}, err
+	}
+
+	return expense, nil
+}
+
+// Function to delete a expense by id
+
+func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
+	// Delete expense item by id
+	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+		TableName: aws.String(r.expensesTable),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		log.Println("unable to delete expense", err)
+		return err
+	}
+
+	return nil
+}
+
+// Function get expense by userID
+func (r *DynamoDBExpensesRepository) GetExpenseByUserId(userId string) ([]models.Expense, error) {
+	// create keycondition for userId
+	keyCondition := expression.Key("userId").Equal(expression.Value(userId))
+
+	// create expression for userId
+	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
+	if err != nil {
+		log.Println("unable to build expression", err)
+		return nil, err
+	}
+
+	// Get expense items by userID
+	items, err := r.client.Query(context.TODO(), &dynamodb.QueryInput{
+		TableName:                 aws.String(r.expensesTable),
+		IndexName:                 aws.String("by_userID"),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+
+	if err != nil {
+		log.Println("unable to get expenses", err)
+		return nil, err
+	}
+
+	// Unmarshal the expense items
+	var expenses []models.Expense
+	err = attributevalue.UnmarshalListOfMaps(items.Items, &expenses)
+	if err != nil {
+		log.Println("unable to unmarshal expense items", err)
+		return nil, err
+	}
+
+	return expenses, nil
+}
+
+// funtion to get expenses filtered by tag and userID as a global secondary indexes
+func (r *DynamoDBExpensesRepository) GetExpensesByTag(tag string, userId string) ([]models.Expense, error) {
+	// create keycondition for tag and userId
+	keyCondition := expression.Key("tag").Equal(expression.Value(tag)).And(expression.Key("userId").Equal(expression.Value(userId)))
+
+	// create expression for tag and userId
+	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
+	if err != nil {
+		log.Println("unable to build expression", err)
+		return nil, err
+	}
+
+	// Get expense items by tag and userId
+	items, err := r.client.Query(context.TODO(), &dynamodb.QueryInput{
+		TableName:                 aws.String(r.expensesTable),
+		IndexName:                 aws.String("by_tag"),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+
+	if err != nil {
+		log.Println("unable to get expenses", err)
+		return nil, err
+	}
+
+	// Unmarshal the expense items
+	var expenses []models.Expense
+	err = attributevalue.UnmarshalListOfMaps(items.Items, &expenses)
+	if err != nil {
+		log.Println("unable to unmarshal expense items", err)
+		return nil, err
+	}
+	return expenses, nil
+}
+>>>>>>> 2826218 (update k8 version to 1.29)

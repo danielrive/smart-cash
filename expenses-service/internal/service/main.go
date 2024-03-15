@@ -35,6 +35,7 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 	return nil
 }
 
+<<<<<<< HEAD
 // Calculate total expenes per category
 func (exps *ExpensesService) CalculateTotalPerCategory(userId string, category string) (totalExpensesPerCategory, error) {
 	var total float32 = 0.0
@@ -61,3 +62,36 @@ func (exps *ExpensesService) CalculateTotalPerCategory(userId string, category s
 	return totalExpensesPerCategory, nil
 
 }
+=======
+// Function to get expenses by tag
+
+func (exps *ExpensesService) GetExpensesByTag(tag string, userId string) ([]models.Expense, error) {
+
+	expenses, err := exps.expensesRepository.GetExpensesByTag(tag, userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return expenses, nil
+}
+
+
+// Function to calculate the cost of expenses by tag
+
+func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (float64, error) {
+	
+	expenses, err := exps.expensesRepository.GetExpensesByTag(tag, userId)
+
+	if err != nil {
+		return 0, err
+	}
+
+	var cost float64
+	for _, expense := range expenses {
+		cost += expense.amount
+	}
+
+	return cost, nil
+}
+>>>>>>> 2826218 (update k8 version to 1.29)

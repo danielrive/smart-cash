@@ -26,12 +26,27 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// create the user
+	// create the expense
 	if err := h.expensesService.CreateExpense(expense); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not created"})
 		return
 	}
 	c.JSON(http.StatusOK, "ok")
+
+}
+
+// Handler to get expenses by tag
+
+func (h *ExpensesHandler) GetExpensesByTag(c *gin.Context) {
+	tag := c.Query("tag")
+	userId := c.Query("userId")
+
+	expenses, err := h.expensesService.GetExpensesByTag(tag, userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Expenses not found"})
+		return
+	}
+	c.JSON(http.StatusOK, expenses)
 }
 
 func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {

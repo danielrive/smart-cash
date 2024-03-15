@@ -38,17 +38,20 @@ func main() {
 	// create a router with gin
 	router := gin.Default()
 
-	// // Initialize user repository
+	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable)
-	// Initialize user service
+	// Initialize expenses service
 	expensesService := service.NewExpensesService(expensesRepo)
 
-	// Init user handler
+	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
 	router.POST("/createExpense", expensesHandler.CreateExpense)
 
 	router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
+
+	// define router for get expenses by tag
+	router.GET("/expenses/getExpensesByTag", expensesHandler.GetExpensesByTag)
 
 	router.Run(":8282")
 
