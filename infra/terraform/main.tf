@@ -36,7 +36,7 @@ module "eks_cluster" {
   environment                  = var.environment
   region                       = var.region
   project_name                 = var.project_name
-  cluster_version              = "1.27"
+  cluster_version              = "1.29"
   subnet_ids                   = module.networking.main.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? ["t3.medium"] : ["t3.medium"]
