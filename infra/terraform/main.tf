@@ -89,7 +89,7 @@ resource "github_repository_file" "common_kustomize" {
 
 resource "github_repository_file" "sources" {
   depends_on          = [module.eks_cluster]
-  for_each            = fileset(local.path_flux_sources, "*.yaml")
+  for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/${each.key}"
@@ -109,7 +109,7 @@ resource "github_repository_file" "sources" {
 
 resource "github_repository_file" "common_resources" {
   depends_on          = [module.eks_cluster]
-  for_each            = fileset(local.path_flux_sources, "*.yaml")
+  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "$common/${each.key}"
