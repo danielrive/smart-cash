@@ -1,3 +1,11 @@
+locals {
+  brach_gitops_repo = "main"
+  path_tf_repo_flux_kustomization = "../kubernetes/kustomizations"
+  path_tf_repo_flux_sources = "../kubernetes/flux-sources"
+  path_tf_repo_flux_common = "../kubernetes/common"
+  cluster_name = "${var.project_name}-${var.environment}"
+}
+
 #### Netwotking Creation
 
 module "networking" {
@@ -33,8 +41,10 @@ module "kms_key_eks" {
 
 module "eks_cluster" {
   source                       = "./modules/eks"
+  depends_on                   = [module.kms_key_eks,module.networking]
   environment                  = var.environment
   region                       = var.region
+  cluster_name                 = local.cluster_name
   project_name                 = var.project_name
   cluster_version              = "1.29"
   subnet_ids                   = module.networking.main.public_subnets
@@ -49,3 +59,88 @@ module "eks_cluster" {
   kms_arn                      = module.kms_key_eks.kms_arn
   userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
 }
+
+
+###############################################
+#######    GitOps Configuration 
+###############################################
+
+###########################
+##### Common kustomization
+
+resource "github_repository_file" "common_kustomize" {
+  depends_on          = [module.eks_cluster]
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/common-kustomize.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_flux_kustomization}/common-kustomize.yaml",
+    {
+      PROJECT_NAME             = var.project_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+###########################
+##### HELM Sources 
+
+resource "github_repository_file" "sources" {
+  depends_on          = [module.eks_cluster]
+  for_each            = fileset(local.path_flux_sources, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_sources}/${each.key}",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Common resources
+
+resource "github_repository_file" "common_resources" {
+  depends_on          = [module.eks_cluster]
+  for_each            = fileset(local.path_flux_sources, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "$common/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_common}/${each.key}",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+

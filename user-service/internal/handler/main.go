@@ -57,3 +57,10 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "ok")
 }
+
+/// Health check
+
+func (h *UserHandler) HealthCheck(c *gin.Context) {
+
+	c.JSON(http.StatusOK, "ok")
+}
