@@ -84,6 +84,8 @@ resource "github_repository_file" "common_kustomize" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
+/*
 ###########################
 ##### HELM Sources 
 
@@ -144,3 +146,4 @@ resource "github_repository_file" "common_resources" {
 ###########################
 #####
 
+*/
