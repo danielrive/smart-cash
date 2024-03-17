@@ -18,5 +18,5 @@ output "cluster_security_group_id" {
 
 output "created_at" {
   description = "Cluster created_at"
-  value       = aws_eks_cluster.kube_cluster.vpc_config[0].created_at
+  value       = aws_eks_cluster.kube_cluster.created_at
 }
