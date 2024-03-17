@@ -52,8 +52,8 @@ resource "aws_dynamodb_table" "expenses_table" {
 }
 
 
-########################
-###### IAM Role
+##############################
+###### IAM Role K8 SA
 
 resource "aws_iam_role" "expenses-service-role" {
   name = "role-expenses-service-${var.environment}"
@@ -123,3 +123,51 @@ module "ecr_registry_expenses_service" {
   project_name = var.project_name
   environment  = var.environment
 }
+
+
+###########################
+##### K8 Manifests 
+
+###########################
+##### General resources
+
+resource "github_repository_file" "common_resources" {
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
+  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "common/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_common}/${each.key}",
+    {
+      ## Common variables for manifests
+      AWS_REGION = var.region
+      ENVIRONMENT = var.environment
+      ## Variables cert manager
+      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ## Variables for Grafana
+      ## Variables for ingress
+      
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####

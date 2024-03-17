@@ -115,3 +115,34 @@ module "ecr_registry_user_service" {
   project_name = var.project_name
   environment  = var.environment
 }
+
+
+###########################
+##### K8 Manifests 
+
+###########################
+##### Base manifests
+
+resource "github_repository_file" "base-manifests" {
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
+  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "user-service/base/${each.key}"
+  content = templatefile(
+    "../kubernetes/microservices-templates/${each.key}",
+    {
+
+      SERVICE_NAME = "user-service"
+      SERVICE_PORT = 8181
+      ECR_REPO = module.ecr_registry_user_service.repo_url
+      SERVICE_PORT_HEALTH_CHECKS = "/health"
+
+      
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
