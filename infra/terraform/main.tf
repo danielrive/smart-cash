@@ -105,7 +105,7 @@ resource "github_repository_file" "common_kustomize" {
   overwrite_on_create = true
 }
 
-/*
+
 ###########################
 ##### HELM Sources 
 
@@ -125,7 +125,7 @@ resource "github_repository_file" "sources" {
   overwrite_on_create = true
 }
 
-
+/*
 ###########################
 ##### Common resources
 
@@ -134,7 +134,7 @@ resource "github_repository_file" "common_resources" {
   for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "$common/${each.key}"
+  file                = "common/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_common}/${each.key}",
     {}
@@ -145,25 +145,23 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-
-
-###########################
-#####
-
-
-###########################
-#####
-
-
-###########################
-#####
-
-
-###########################
-#####
-
-
-###########################
-#####
-
 */
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
+
+
+###########################
+#####
