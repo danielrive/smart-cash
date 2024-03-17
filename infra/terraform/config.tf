@@ -12,6 +12,15 @@ terraform {
   }
 }
 
+provider "flux" {
+  kubernetes = {
+    config_path = "~/.kube/config"
+  }
+  git = {
+    url = "https://github.com/danielrive/smart-cash-gitops-flux"
+  }
+}
+
 provider "aws" {
   region = var.region
   default_tags {

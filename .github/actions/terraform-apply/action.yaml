@@ -6,6 +6,10 @@ inputs:
     description: 'directory where the tf code is'
     required: false
     default: '/infra/terraform'
+  GITHUB_TOKEN:
+    description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
+    required: true
+   
 
 runs:
   using: "composite"
@@ -44,3 +48,5 @@ runs:
            ${{ github.run_id }}.tfplan
       shell: bash
       working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}

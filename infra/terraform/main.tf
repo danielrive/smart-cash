@@ -1,8 +1,8 @@
 locals {
   brach_gitops_repo = "main"
-  path_tf_repo_flux_kustomization = "/infra/kubernetes/kustomizations"
-  path_tf_repo_flux_sources = "/infra/kubernetes/flux-sources"
-  path_tf_repo_flux_common = "/infra/kubernetes/common"
+  path_tf_repo_flux_kustomization = "../kubernetes/kustomizations"
+  path_tf_repo_flux_sources = "../kubernetes/flux-sources"
+  path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
 }
 
@@ -60,6 +60,32 @@ module "eks_cluster" {
   userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
 }
 
+###############################################
+#######    Flux Bootstrap 
+###############################################
+
+#### Get Kubeconfig
+
+resource "null_resource" "get-kube-config" {
+  depends_on          = [module.eks_cluster]
+  provisioner "local-exec" {
+    command = <<EOF
+      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+      /tmp/eksctl version
+      /tmp/eksctl utils write-kubeconfig --cluster ${local.eks_cluster_name} --region=${var.region} 
+    EOF
+  }
+}
+
+
+resource "flux_bootstrap_git" "this" {
+  depends_on          = [module.eks_cluster,null_resource.get-kube-config]
+  path = "clusters/my-cluster"
+  log_level = "info"
+  namespace = "flux-system"
+}
+
+
 
 ###############################################
 #######    GitOps Configuration 
@@ -69,7 +95,7 @@ module "eks_cluster" {
 ##### Common kustomization
 
 resource "github_repository_file" "common_kustomize" {
-  depends_on          = [module.eks_cluster]
+  depends_on          = [module.eks_cluster,flux_bootstrap_git.this]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/common-kustomize.yaml"
@@ -90,7 +116,7 @@ resource "github_repository_file" "common_kustomize" {
 ##### HELM Sources 
 
 resource "github_repository_file" "sources" {
-  depends_on          = [module.eks_cluster]
+  depends_on          = [module.eks_cluster,flux_bootstrap_git.this]
   for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -110,7 +136,7 @@ resource "github_repository_file" "sources" {
 ##### Common resources
 
 resource "github_repository_file" "common_resources" {
-  depends_on          = [module.eks_cluster]
+  depends_on          = [module.eks_cluster,flux_bootstrap_git.this]
   for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
