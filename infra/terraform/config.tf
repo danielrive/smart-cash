@@ -8,18 +8,6 @@ terraform {
       source  = "integrations/github"
       version = "~> 6.1.0"
     }
-    flux = {
-      source = "fluxcd/flux"
-    }
-  }
-}
-
-provider "flux" {
-  kubernetes = {
-    config_path = "~/.kube/config"
-  }
-  git = {
-    url = "https://github.com/danielrive/smart-cash-gitops-flux"
   }
 }
 
