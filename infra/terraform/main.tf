@@ -137,7 +137,16 @@ resource "github_repository_file" "common_resources" {
   file                = "common/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_common}/${each.key}",
-    {}
+    {
+      ## Common variables for manifests
+      AWS_REGION = var.region
+      ENVIRONMENT = var.environment
+      ## Variables cert manager
+      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ## Variables for Grafana
+      ## Variables for ingress
+      
+    }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
