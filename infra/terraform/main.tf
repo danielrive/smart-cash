@@ -4,6 +4,7 @@ locals {
   path_tf_repo_flux_sources = "../kubernetes/flux-sources"
   path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
+  gh_username = "danielrive"
 }
 
 #### Netwotking Creation
@@ -65,24 +66,17 @@ module "eks_cluster" {
 ###############################################
 
 #### Get Kubeconfig
-
+  # $1 = CLUSTER_NAME
+  # $2 = AWS_REGION
+  # $3 = GH_USER_NAME
+  # $4 = FLUX_REPO_NAME
 resource "null_resource" "get-kube-config" {
   depends_on          = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      /tmp/eksctl version
-      /tmp/eksctl utils write-kubeconfig --cluster ${local.cluster_name} --region=${var.region} 
+    ./scripts/bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name}
     EOF
   }
-}
-
-
-resource "flux_bootstrap_git" "this" {
-  depends_on          = [module.eks_cluster,null_resource.get-kube-config]
-  path = "clusters/my-cluster"
-  log_level = "info"
-  namespace = "flux-system"
 }
 
 
