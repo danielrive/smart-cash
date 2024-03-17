@@ -72,7 +72,7 @@ resource "null_resource" "get-kube-config" {
     command = <<EOF
       curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
       /tmp/eksctl version
-      /tmp/eksctl utils write-kubeconfig --cluster ${local.eks_cluster_name} --region=${var.region} 
+      /tmp/eksctl utils write-kubeconfig --cluster ${local.cluster_name} --region=${var.region} 
     EOF
   }
 }
