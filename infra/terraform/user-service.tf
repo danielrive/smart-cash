@@ -125,20 +125,17 @@ module "ecr_registry_user_service" {
 
 resource "github_repository_file" "base-manifests" {
   depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
-  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
+  for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "user-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-
       SERVICE_NAME = "user-service"
-      SERVICE_PORT = 8181
+      SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
-      SERVICE_PORT_HEALTH_CHECKS = "/health"
-
-      
+      SERVICE_PORT_HEALTH_CHECKS = "/health"     
     }
   )
   commit_message      = "Managed by Terraform"
