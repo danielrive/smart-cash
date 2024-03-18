@@ -27,7 +27,7 @@ func (us *UserService) GetUserById(userId string) (models.User, error) {
 
 func (us *UserService) GetUserByEmail(email string) (models.User, error) {
 	// Find user
-	user, err := us.userRepository.FindUserByEmail(email)
+	user, err := us.userRepository.GetUserByEmail(email)
 
 	if err != nil {
 		return models.User{}, err

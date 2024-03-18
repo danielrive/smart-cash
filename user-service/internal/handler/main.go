@@ -22,14 +22,14 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	uri := c.Request.URL.Query()
 
 	if _, isMapContainsKey := uri["id"]; isMapContainsKey {
-		user, err := h.userService.FindUserByEmail(uri["id"][0])
+		user, err := h.userService.GetUserByEmail(uri["id"][0])
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
 		c.JSON(http.StatusOK, user)
 	} else if _, isMapContainsKey := uri["email"]; isMapContainsKey {
-		user, err := h.userService.FindUserByUsername(uri["emain"][0])
+		user, err := h.userService.GetUserByEmail(uri["emain"][0]) /////// FIIX
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
