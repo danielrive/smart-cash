@@ -104,6 +104,7 @@ resource "github_repository_file" "kustomizations" {
     "${local.path_tf_repo_flux_kustomization}/${each.key}",
     {
       ENVIRONMENT = var.environment
+      CLUSTER_NAME = local.cluster_name
     }
   )
   commit_message      = "Managed by Terraform"

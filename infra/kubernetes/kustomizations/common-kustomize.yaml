@@ -8,5 +8,5 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./common"
+  path: "./clusters/${CLUSTER_NAME}/common"
   prune: true
