@@ -123,29 +123,6 @@ module "ecr_registry_user_service" {
 ##### K8 Manifests 
 
 ###########################
-##### Kustomization
-
-resource "github_repository_file" "user-svc-kustomization" {
-  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "user-service/base/${each.key}"
-  content = templatefile(
-    "../kubernetes/microservices-templates/${each.key}",
-    {
-      SERVICE_NAME = "user-service"
-      SERVICE_PORT = "8181"
-      ECR_REPO = module.ecr_registry_user_service.repo_url
-      SERVICE_PORT_HEALTH_CHECKS = "/health"     
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-###########################
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests" {
