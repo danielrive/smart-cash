@@ -117,7 +117,7 @@ module "ecr_registry_user_service" {
 }
 
 
-/*
+
 
 ###########################
 ##### K8 Manifests 
@@ -145,5 +145,3 @@ resource "github_repository_file" "base-manifests" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-*/

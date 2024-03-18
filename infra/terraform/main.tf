@@ -61,7 +61,7 @@ module "eks_cluster" {
   userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
 }
 
-/*
+
 ###############################################
 #######    Flux Bootstrap 
 ###############################################
@@ -160,4 +160,3 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-*/
