@@ -102,7 +102,9 @@ resource "github_repository_file" "kustomizations" {
   file                = "clusters/${local.cluster_name}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_kustomization}/${each.key}",
-    {}
+    {
+      ENVIRONMENT = var.environment
+    }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"

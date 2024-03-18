@@ -8,5 +8,5 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./user-service"
+  path: "./user-service/overlays/${ENVIRONMENT}"
   prune: true
