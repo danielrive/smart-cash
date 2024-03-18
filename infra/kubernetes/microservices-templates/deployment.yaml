@@ -24,6 +24,7 @@ spec:
         livenessProbe:
           httpGet:
             port: ${SERVICE_PORT_HEALTH_CHECKS}  
+            path: ${SERVICE_PATH_HEALTH_CHECKS}  
           initialDelaySeconds: 5
           periodSeconds: 10
         lifecycle:

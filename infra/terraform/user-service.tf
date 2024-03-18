@@ -137,7 +137,8 @@ resource "github_repository_file" "base-manifests" {
       SERVICE_NAME = "user-service"
       SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
-      SERVICE_PORT_HEALTH_CHECKS = "/health"     
+      SERVICE_PATH_HEALTH_CHECKS = "/health"     
+      SERVICE_PORT_HEALTH_CHECKS = "8181" 
     }
   )
   commit_message      = "Managed by Terraform"
