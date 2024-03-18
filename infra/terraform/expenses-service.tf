@@ -131,7 +131,7 @@ module "ecr_registry_expenses_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests" {
+resource "github_repository_file" "base-manifests-expenses-svc" {
   depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
