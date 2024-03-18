@@ -130,7 +130,7 @@ resource "github_repository_file" "base-manifests" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "user-service/base/${each.key}"
+  file                = "clusters/${local.cluster_name}/user-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
@@ -157,7 +157,7 @@ resource "github_repository_file" "overlays-user-svc" {
   for_each            = fileset("../kubernetes/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "user-service/overlays/${var.environment}/${each.key}"
+  file                = "clusters/${local.cluster_name}user-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {

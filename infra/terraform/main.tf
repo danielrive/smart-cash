@@ -141,7 +141,7 @@ resource "github_repository_file" "common_resources" {
   for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "common/${each.key}"
+  file                = "clusters/${local.cluster_name}/common/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_common}/${each.key}",
     {
