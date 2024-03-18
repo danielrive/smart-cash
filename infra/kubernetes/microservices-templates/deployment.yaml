@@ -22,7 +22,7 @@ spec:
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:
-          tcpSocket:
+          httpGet:
             port: ${SERVICE_PORT_HEALTH_CHECKS}  
           initialDelaySeconds: 5
           periodSeconds: 10
