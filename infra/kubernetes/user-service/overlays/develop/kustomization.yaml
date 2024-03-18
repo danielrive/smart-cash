@@ -1,5 +1,5 @@
 resources:
-  - ../../microservices-templates
+  - ../../../microservices-templates
 namespace: develop
 images:
   - name: user-image
