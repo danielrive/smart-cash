@@ -3,8 +3,8 @@ resources:
 namespace: develop
 images:
   - name: user-image
-    newName: 658299583140.dkr.ecr.us-west-2.amazonaws.com/user-service-smart-cash
-    newTag: develop-d6ce18
+    newName: ${ECR_REPO}
+    newTag: develop
 
 patches:
   - path: patch-service-account.yaml
