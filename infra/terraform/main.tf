@@ -92,18 +92,17 @@ resource "null_resource" "bootstrap-flux" {
 ###############################################
 
 ###########################
-##### Common kustomization
+##### Flux kustomizations
 
-resource "github_repository_file" "common_kustomize" {
+resource "github_repository_file" "kustomizations" {
   depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
+  for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/common-kustomize.yaml"
+  file                = "clusters/${local.cluster_name}/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_flux_kustomization}/common-kustomize.yaml",
-    {
-      PROJECT_NAME             = var.project_name
-    }
+    "${local.path_tf_repo_flux_kustomization}/${each.key}",
+    {}
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
