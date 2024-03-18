@@ -135,7 +135,7 @@ resource "github_repository_file" "base-manifests" {
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "user-service"
-      SERVICE_PORT = "8181"
+      SERVICE_PORT = "8182"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8181" 

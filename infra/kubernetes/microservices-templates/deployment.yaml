@@ -17,7 +17,7 @@ spec:
       serviceAccountName: sa-${SERVICE_NAME}
       containers:
       - name: ${SERVICE_NAME}-container
-        image: ${ECR_REPO}
+        image: service-image
         imagePullPolicy: Always
         ports:
         - containerPort: ${SERVICE_PORT}

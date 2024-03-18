@@ -2,7 +2,7 @@ resources:
   - ../../base
 namespace: develop
 images:
-  - name: user-image
+  - name: service-image
     newName: ${ECR_REPO}
     newTag: develop
 
