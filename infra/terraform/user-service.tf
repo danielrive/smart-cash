@@ -117,7 +117,7 @@ module "ecr_registry_user_service" {
 }
 
 
-
+/*
 
 ###########################
 ##### K8 Manifests 
@@ -171,3 +171,4 @@ resource "github_repository_file" "overlays-user-svc" {
   overwrite_on_create = true
 }
 
+*/

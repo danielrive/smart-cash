@@ -85,7 +85,7 @@ resource "null_resource" "bootstrap-flux" {
 
 }
 
-
+/*
 
 ###############################################
 #######    GitOps Configuration 
@@ -162,3 +162,4 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
+*/
