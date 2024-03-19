@@ -116,7 +116,6 @@ module "ecr_registry_user_service" {
   environment  = var.environment
 }
 
-/*
 ###########################
 ##### K8 Manifests 
 
@@ -168,5 +167,3 @@ resource "github_repository_file" "overlays-user-svc" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-*/
