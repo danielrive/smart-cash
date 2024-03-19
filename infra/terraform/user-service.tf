@@ -123,7 +123,7 @@ module "ecr_registry_user_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests" {
-  depends_on          = [module.eks_cluster,github_repository_file.bootstrap-flux]
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -150,7 +150,7 @@ resource "github_repository_file" "base-manifests" {
 ##### overlays
 
 resource "github_repository_file" "overlays-user-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.bootstrap-flux]
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("../kubernetes/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
