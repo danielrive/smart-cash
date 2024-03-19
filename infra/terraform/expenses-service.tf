@@ -137,7 +137,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/expenses-service/base/${each.key}"
+  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
@@ -164,7 +164,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
   for_each            = fileset("../kubernetes/expenses-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/expenses-service/overlays/${var.environment}/${each.key}"
+  file                = "clusters/${local.cluster_name}/manifests/expenses-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
     {
