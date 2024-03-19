@@ -85,21 +85,37 @@ resource "null_resource" "bootstrap-flux" {
 
 }
 
-/*
-
 ###############################################
 #######    GitOps Configuration 
 ###############################################
 
-###########################
-##### Flux kustomizations
+####################################
+#### Flux kustomizations bootstrap
+
+resource "github_repository_file" "kustomizations-bootstrap" {
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/bootstrap"
+  content = templatefile(
+    "../kubernetes/core-kustomization/core-kustomize.yaml",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+################################################
+##### Flux kustomizations core
 
 resource "github_repository_file" "kustomizations" {
   depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
   for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/${each.key}"
+  file                = "clusters/${local.cluster_name}/core/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_kustomization}/${each.key}",
     {
@@ -115,14 +131,14 @@ resource "github_repository_file" "kustomizations" {
 
 
 ###########################
-##### HELM Sources 
+##### Flux Sources 
 
 resource "github_repository_file" "sources" {
   depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
   for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/${each.key}"
+  file                = "clusters/${local.cluster_name}/core/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_sources}/${each.key}",
     {}
@@ -161,5 +177,3 @@ resource "github_repository_file" "common_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-*/

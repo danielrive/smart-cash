@@ -116,9 +116,7 @@ module "ecr_registry_user_service" {
   environment  = var.environment
 }
 
-
 /*
-
 ###########################
 ##### K8 Manifests 
 
