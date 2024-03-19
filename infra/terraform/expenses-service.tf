@@ -133,7 +133,7 @@ module "ecr_registry_expenses_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests-expenses-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.bootstrap-flux]
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -160,7 +160,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
 ##### overlays
 
 resource "github_repository_file" "overlays-expenses-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.bootstrap-flux]
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("../kubernetes/expenses-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
