@@ -99,7 +99,9 @@ resource "github_repository_file" "kustomizations-bootstrap" {
   file                = "clusters/${local.cluster_name}/bootstrap"
   content = templatefile(
     "../kubernetes/core-kustomization/core-kustomize.yaml",
-    {}
+    {
+      CLUSTER_NAME = local.cluster_name
+    }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
