@@ -141,7 +141,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "expenses-service"
-      SERVICE_PORT = "8182"
+      SERVICE_PORT = "8282"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282" 
