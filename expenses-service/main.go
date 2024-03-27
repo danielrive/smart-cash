@@ -46,12 +46,12 @@ func main() {
 	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
-	router.POST("/createExpense", expensesHandler.CreateExpense)
+	router.POST("/", expensesHandler.CreateExpense)
 
-	router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
+	//router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
 
 	// define router for get expenses by tag
-	router.GET("/expenses/getExpensesByTag", expensesHandler.GetExpensesByTag)
+	router.GET("/", expensesHandler.GetExpenses)
 
 	router.Run(":8282")
 

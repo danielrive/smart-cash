@@ -1,16 +1,13 @@
 package service
 
 import (
+	"expenses-service/internal/common"
 	"expenses-service/internal/models"
 	"expenses-service/internal/repositories"
-	"log"
+	"fmt"
+	"net/http"
+	"net/url"
 )
-
-type totalExpensesPerCategory struct {
-	Category string  `json:"category"`
-	UserId   string  `json:"userId"`
-	Total    float32 `json:"total"`
-}
 
 // Define service interface
 
@@ -35,39 +32,27 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 	return nil
 }
 
-<<<<<<< HEAD
-// Calculate total expenes per category
-func (exps *ExpensesService) CalculateTotalPerCategory(userId string, category string) (totalExpensesPerCategory, error) {
-	var total float32 = 0.0
-
-	expenses, err := exps.expensesRepository.GetExpensesByUserIdAndCategory(userId, category)
-
-	if err != nil {
-		log.Print("error", err)
-		return totalExpensesPerCategory{}, err
-	}
-
-	// for loop to calculate total
-	for _, expense := range expenses {
-		total = total + float32(expense.Amount)
-	}
-
-	// create json response for totalExpensesPerCategory
-	totalExpensesPerCategory := totalExpensesPerCategory{
-		Category: category,
-		UserId:   userId,
-		Total:    total,
-	}
-
-	return totalExpensesPerCategory, nil
-
-}
-=======
 // Function to get expenses by tag
 
-func (exps *ExpensesService) GetExpensesByTag(tag string, userId string) ([]models.Expense, error) {
+func (exps *ExpensesService) GetExpensesByCategory(tag string, userId string) ([]models.Expense, error) {
+	if validateUserToken(userId) == 200 {
+		expenses, err := exps.expensesRepository.GetExpensesByCategory(tag, userId)
 
-	expenses, err := exps.expensesRepository.GetExpensesByTag(tag, userId)
+		if err != nil {
+			return nil, err
+		}
+
+		return expenses, nil
+	} else {
+		return nil, common.ErrWrongCredentials
+	}
+}
+
+// Get expenses by userId
+
+func (exps *ExpensesService) GetExpensesByUserId(userId string) ([]models.Expense, error) {
+
+	expenses, err := exps.expensesRepository.GetExpensesByUserId(userId)
 
 	if err != nil {
 		return nil, err
@@ -76,12 +61,11 @@ func (exps *ExpensesService) GetExpensesByTag(tag string, userId string) ([]mode
 	return expenses, nil
 }
 
-
 // Function to calculate the cost of expenses by tag
 
 func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (float64, error) {
-	
-	expenses, err := exps.expensesRepository.GetExpensesByTag(tag, userId)
+
+	expenses, err := exps.expensesRepository.GetExpensesByCategory(tag, userId)
 
 	if err != nil {
 		return 0, err
@@ -89,9 +73,42 @@ func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (floa
 
 	var cost float64
 	for _, expense := range expenses {
-		cost += expense.amount
+		cost += expense.Amount
 	}
 
 	return cost, nil
 }
->>>>>>> 2826218 (update k8 version to 1.29)
+
+// Internal function to validate user token
+func validateUserToken(userId string) int {
+	// Define the base URL of the service
+	baseURL := "http://localhost:8181"
+
+	// Create a map to hold query parameters
+	queryParams := map[string]string{
+		"id": userId,
+	}
+
+	// Encode the query parameters and append them to the base URL
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Printf("Error parsing URL: %v\n", err)
+		//	return err
+	}
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+	// Make a GET request with the constructed URL
+	resp, err := http.Get(u.String())
+	if err != nil {
+		fmt.Printf("Error making HTTP request: %v\n", err)
+		//return err
+	}
+	defer resp.Body.Close()
+	// Check the response status code
+	fmt.Println(resp.StatusCode)
+
+	return resp.StatusCode
+}

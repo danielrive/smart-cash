@@ -124,7 +124,6 @@ module "ecr_registry_expenses_service" {
   environment  = var.environment
 }
 
-/*
 
 ###########################
 ##### K8 Manifests 
@@ -145,7 +144,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
       SERVICE_PORT = "8182"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8181" 
+      SERVICE_PORT_HEALTH_CHECKS = "8282" 
     }
   )
   commit_message      = "Managed by Terraform"
@@ -177,4 +176,3 @@ resource "github_repository_file" "overlays-expenses-svc" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-*/

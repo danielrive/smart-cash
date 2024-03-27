@@ -50,11 +50,12 @@ func main() {
 	router.GET("/", userHandler.GetUser)
 
 	// GET api/v1/[controller]/user[?userID=0]
-	router.POST("/createUser", userHandler.CreateUser)
+	router.POST("/", userHandler.CreateUser)
+
+	// login method, will return a token and userId
+	router.POST("/login", userHandler.Login)
 
 	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
-
-	// Find User by email, userId and username
 
 }
