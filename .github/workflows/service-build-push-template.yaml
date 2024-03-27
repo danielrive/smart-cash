@@ -65,46 +65,14 @@ jobs:
             SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
             
             echo "${{ github.ref }}"
-
-            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
-
-            echo "Tag the image with the commit ID"
             
-            echo "IMAGE_TAG=${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID" >> $GITHUB_OUTPUT
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }} --push --platform linux/amd64 .
 
-  service-push-gitops:
-    needs: docker-build
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout gitops repo
-        id: checkout-gitops-repo
-        uses: actions/checkout@v4
-        with:
-            repository: danielrive/smart-cash-gitops-flux
-            token: ${{ secrets.GH_TOKEN_FLUX }}
-      - name: install-yq
-        id: install-yq
-        run: |
-          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /tmp/yq && chmod +x /tmp/yq
-          yq --version
-      - name: commit-push-dev-env
-        run: |
-          git config user.name "gh-action-smartcash"
-          git config user.email "non-replyl@example.com"
-      - name: update-tag-in-kustomization
-        id: test
-        run: |
-            IMAGE_TAG="${{ needs.docker-build.outputs.IMAGE_TAG }}"
-            yq eval ".images[0].newTag = \"$IMAGE_TAG\"" -i kustomization.yaml
-        working-directory: './manifests/${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
-      - name: Commit and push changes
-        env: 
-          IMAGE_TAG: ${{ needs.docker-build.outputs.IMAGE_TAG }}
-        run: |
-            git add .
-            git commit -m "updating for ${{ inputs.SERVICE_NAME }}  to $IMAGE_TAG "
-            git push origin main
-        working-directory: './manifests/${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'
+            #docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
+
+            #echo "Tag the image with the env name"
+            
+            
 
   
 
