@@ -96,7 +96,7 @@ jobs:
         run: |
             IMAGE_TAG="${{ needs.docker-build.outputs.IMAGE_TAG }}"
             yq eval ".images[0].newTag = \"$IMAGE_TAG\"" -i kustomization.yaml
-        working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
+        working-directory: './manifests/${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'         
       - name: Commit and push changes
         env: 
           IMAGE_TAG: ${{ needs.docker-build.outputs.IMAGE_TAG }}
@@ -104,7 +104,7 @@ jobs:
             git add .
             git commit -m "updating for ${{ inputs.SERVICE_NAME }}  to $IMAGE_TAG "
             git push origin main
-        working-directory: './${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'
+        working-directory: './manifests/${{ inputs.SERVICE_NAME }}/overlays/${{ inputs.ENVIRONMENT }}'
 
   
 
