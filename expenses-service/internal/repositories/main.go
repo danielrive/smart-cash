@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"expenses-service/internal/common"
+
 	"expenses-service/internal/models"
 	"log"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
-
 // Define DynamoDB repository struct
 
 type DynamoDBExpensesRepository struct {

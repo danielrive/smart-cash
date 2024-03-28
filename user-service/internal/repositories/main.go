@@ -14,7 +14,6 @@ import (
 )
 
 // Define DynamoDB repository struct
-
 type DynamoDBUsersRepository struct {
 	client     *dynamodb.Client
 	tableUsers string
@@ -28,7 +27,6 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string) *Dyn
 }
 
 // function to Get user by ID
-
 func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
 
 	output := models.User{}
@@ -106,7 +104,6 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
 	}
 	return nil
 }
-
 // function to get user by email
 func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, error) {
 	output := models.User{}

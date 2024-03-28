@@ -81,5 +81,7 @@ variable "public_endpoint_api" {
   default     = false
 }
 
-
-
+variable "account_number" {
+  type = string
+  default = ""
+}

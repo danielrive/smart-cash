@@ -88,6 +88,7 @@ func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "unknow"})
+
 		return
 	}
 	c.JSON(http.StatusOK, totalExpenses)

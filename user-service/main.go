@@ -52,10 +52,10 @@ func main() {
 	// GET api/v1/[controller]/user[?userID=0]
 	router.POST("/", userHandler.CreateUser)
 
-	// login method, will return a token and userId
+  // login method, will return a token and userId
 	router.POST("/login", userHandler.Login)
 
 	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
-
+	// Find User by email, userId and username
 }

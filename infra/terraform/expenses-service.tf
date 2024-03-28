@@ -23,11 +23,12 @@ resource "aws_dynamodb_table" "expenses_table" {
   }
 
   attribute {
-    name = "tag"
+    name = "category"
     type = "S"
   }
 
   attribute {
+
     name = "userId"
     type = "S"
   }
@@ -40,9 +41,9 @@ resource "aws_dynamodb_table" "expenses_table" {
   }
 
   global_secondary_index {
-    name               = "by_tag"
+    name               = "by_category"
     hash_key           = "userId"
-    range_key           = "tag"
+    range_key           = "category"
     projection_type    = "ALL"
   }
   tags = {
