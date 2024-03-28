@@ -111,7 +111,7 @@ resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
 
 module "ecr_registry_user_service" {
   source       = "./modules/ecr"
-  name         = "user"
+  name         = "user-service"
   project_name = var.project_name
   environment  = var.environment
 }

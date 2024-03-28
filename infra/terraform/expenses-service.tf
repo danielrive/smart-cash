@@ -120,7 +120,7 @@ resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
 
 module "ecr_registry_expenses_service" {
   source       = "./modules/ecr"
-  name         = "expenses"
+  name         = "expenses-service"
   project_name = var.project_name
   environment  = var.environment
 }
