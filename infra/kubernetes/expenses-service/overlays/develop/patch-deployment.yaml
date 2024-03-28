@@ -8,5 +8,5 @@ spec:
       containers:
       - name: ${SERVICE_NAME}-container
         env:
-        - name: DYNAMODB_${SERVICE_NAME}_TABLE
+        - name: DYNAMODB_EXPENSES_TABLE
           value: ${DYNAMODB_TABLE_NAME}
