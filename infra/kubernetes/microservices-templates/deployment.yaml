@@ -19,6 +19,9 @@ spec:
       - name: ${SERVICE_NAME}-container
         image: service-image
         imagePullPolicy: Always
+        env:
+        - name: AWS_REGION
+          value: ${AWS_REGION}
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:

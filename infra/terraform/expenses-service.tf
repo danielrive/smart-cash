@@ -56,8 +56,8 @@ resource "aws_dynamodb_table" "expenses_table" {
 ##############################
 ###### IAM Role K8 SA
 
-resource "aws_iam_role" "expenses-service-role" {
-  name = "role-expenses-service-${var.environment}"
+resource "aws_iam_role" "expenses-role" {
+  name = "role-expenses-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -71,7 +71,7 @@ resource "aws_iam_role" "expenses-service-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses"
         }
       }
     }
@@ -79,10 +79,10 @@ resource "aws_iam_role" "expenses-service-role" {
 })
 }
 
-####### IAM policy for SA expenses-service
+####### IAM policy for SA expenses
 
-resource "aws_iam_policy" "dynamodb-expenses-service-policy" {
-  name        = "policy-dynamodb-expenses-service-${var.environment}"
+resource "aws_iam_policy" "dynamodb-expenses-policy" {
+  name        = "policy-dynamodb-expenses-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -109,8 +109,8 @@ resource "aws_iam_policy" "dynamodb-expenses-service-policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-expenses-service-policy.arn
-  role       = aws_iam_role.expenses-service-role.name
+  policy_arn = aws_iam_policy.dynamodb-expenses-policy.arn
+  role       = aws_iam_role.expenses-role.name
 }
 
 
@@ -120,7 +120,7 @@ resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
 
 module "ecr_registry_expenses_service" {
   source       = "./modules/ecr"
-  name         = "expenses-service"
+  name         = "expenses"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -141,11 +141,12 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "expenses-service"
+      SERVICE_NAME = "expenses"
       SERVICE_PORT = "8282"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8282" 
+      SERVICE_PORT_HEALTH_CHECKS = "8282"
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -169,7 +170,8 @@ resource "github_repository_file" "overlays-expenses-svc" {
     "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
     {
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.expenses-service-role.arn
+      ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
     }
   )
   commit_message      = "Managed by Terraform"

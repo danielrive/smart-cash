@@ -49,8 +49,8 @@ resource "aws_dynamodb_table" "user_table" {
 ########################
 ###### IAM Role
 
-resource "aws_iam_role" "user-service-role" {
-  name = "role-user-service-${var.environment}"
+resource "aws_iam_role" "user-role" {
+  name = "role-user-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -64,7 +64,7 @@ resource "aws_iam_role" "user-service-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user-service"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user"
         }
       }
     }
@@ -72,10 +72,10 @@ resource "aws_iam_role" "user-service-role" {
 })
 }
 
-####### IAM policy for SA user-service
+####### IAM policy for SA user
 
-resource "aws_iam_policy" "dynamodb-user-service-policy" {
-  name        = "policy-dynamodb-user-service-${var.environment}"
+resource "aws_iam_policy" "dynamodb-user-policy" {
+  name        = "policy-dynamodb-user-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -102,8 +102,8 @@ resource "aws_iam_policy" "dynamodb-user-service-policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-user-service-policy.arn
-  role       = aws_iam_role.user-service-role.name
+  policy_arn = aws_iam_policy.dynamodb-user-policy.arn
+  role       = aws_iam_role.user-role.name
 }
 
 #######################
@@ -111,7 +111,7 @@ resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
 
 module "ecr_registry_user_service" {
   source       = "./modules/ecr"
-  name         = "user-service"
+  name         = "user"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -131,11 +131,12 @@ resource "github_repository_file" "base-manifests" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "user-service"
+      SERVICE_NAME = "user"
       SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8181" 
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -159,7 +160,8 @@ resource "github_repository_file" "overlays-user-svc" {
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
       ECR_REPO = module.ecr_registry_user_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.user-service-role.arn
+      ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
     }
   )
   commit_message      = "Managed by Terraform"
