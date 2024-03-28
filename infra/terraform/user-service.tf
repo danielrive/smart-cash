@@ -159,6 +159,7 @@ resource "github_repository_file" "overlays-user-svc" {
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
+      SERVICE_NAME = "user"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name

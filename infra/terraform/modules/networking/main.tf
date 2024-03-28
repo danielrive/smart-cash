@@ -57,6 +57,7 @@ resource "aws_security_group" "allow_tls" {
 # In ECN, it is not working as expected
 ###############################################
 
+/*
 resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   vpc_id              = module.vpc.vpc_id
   service_name        = "com.amazonaws.${var.region}.ecr.dkr"
@@ -76,7 +77,7 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   private_dns_enabled = true
   security_group_ids  = [aws_security_group.allow_tls.id]
 }
-
+*/
 
 ### AWS VPC S3 GATEWAY ENDPOINT
 

@@ -169,6 +169,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
   content = templatefile(
     "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
     {
+      SERVICE_NAME = "expenses"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
