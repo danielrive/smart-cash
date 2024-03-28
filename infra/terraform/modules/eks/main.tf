@@ -1,7 +1,7 @@
 
 locals {
-  eksClusterName   = "${var.project_name}-${var.environment}"
-  eksNodeGroupName = "${var.project_name}-${var.environment}-eks-node-group"
+  eks_cluster_name   = var.cluster_name
+  eks_node_group_name = "${var.project_name}-${var.environment}-eks-node-group"
 }
 
 ################################
@@ -15,7 +15,7 @@ This role must be created before the cluster creation
 */
 
 resource "aws_iam_role" "eks-iam-role" {
-  name = "role-eks-${local.eksClusterName}-${var.region}"
+  name = "role-eks-${local.eks_cluster_name}-${var.region}"
 
   path = "/"
 
@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly-EK
 #############################
 
 resource "aws_cloudwatch_log_group" "log_groups_eks" {
-  name              = "/aws/eks/${local.eksClusterName}/cluster"
+  name              = "/aws/eks/${local.eks_cluster_name}/cluster"
   retention_in_days = var.retention_control_plane_logs
   kms_key_id        = var.kms_arn
 }
@@ -62,7 +62,7 @@ resource "aws_cloudwatch_log_group" "log_groups_eks" {
 
 resource "aws_eks_cluster" "kube_cluster" {
   depends_on = [aws_cloudwatch_log_group.log_groups_eks]
-  name       = local.eksClusterName
+  name       = local.eks_cluster_name
   role_arn   = aws_iam_role.eks-iam-role.arn
   version    = var.cluster_version
   encryption_config {
@@ -89,7 +89,7 @@ that is attached to EC2 instance
 */
 
 resource "aws_iam_role" "workernodes" {
-  name = "role-${local.eksNodeGroupName}"
+  name = "role-${local.eks_node_group_name}"
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRole"
@@ -133,8 +133,8 @@ ec2 instances has associated the node role created before
 
 */
 resource "aws_eks_node_group" "worker-node-group" {
-  cluster_name    = local.eksClusterName
-  node_group_name = local.eksNodeGroupName
+  cluster_name    = local.eks_cluster_name
+  node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.workernodes.arn
   subnet_ids      = var.subnet_ids
   ami_type        = var.AMI_for_worker_nodes
@@ -184,18 +184,17 @@ resource "null_resource" "iam-role-cluster-access" {
     command = <<EOF
       curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
       /tmp/eksctl version
-      /tmp/eksctl create iamidentitymapping --cluster ${local.eksClusterName} --region=${var.region} --arn ${var.userRoleARN} --group system:masters --username "AWSAdministratorAccess:{{SessionName}}"
+      /tmp/eksctl create iamidentitymapping --cluster ${local.eks_cluster_name} --region=${var.region} --arn ${var.userRoleARN} --group system:masters --username "AWSAdministratorAccess:{{SessionName}}"
     EOF
   }
   depends_on = [
     aws_eks_cluster.kube_cluster,
     aws_eks_node_group.worker-node-group
   ]
-
   triggers = {
-    version = var.userRoleARN
-    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+    cluster_instance_ids = aws_eks_node_group.worker-node-group.id
   }
+
 }
 
 
@@ -227,56 +226,3 @@ resource "aws_eks_addon" "vpc-cni" {
   cluster_name      = aws_eks_cluster.kube_cluster.name
   addon_name        = "vpc-cni"
 }
-
-########################################
-# EBS-CSI Driver
-#########################################
-
-## Get aws managed policy
-
-data "aws_iam_policy" "ebspolicy" {
-  name = "AmazonEBSCSIDriverPolicy"
-}
-
-# create service account 
-resource "null_resource" "ebs-csi-sa" {
-  provisioner "local-exec" {
-    command = <<EOF
-      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      /tmp/eksctl version
-      /tmp/eksctl utils associate-iam-oidc-provider --cluster=${aws_eks_cluster.kube_cluster.name} --region ${var.region}
-      /tmp/eksctl create iamserviceaccount --cluster ${aws_eks_cluster.kube_cluster.name} --name ebs-csi-controller-sa --role-name AmazonEKS_EBS_CSI_DriverRole --namespace kube-system --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts --region ${var.region}
-    EOF
-  }
-  depends_on = [
-    aws_eks_cluster.kube_cluster,
-    aws_eks_node_group.worker-node-group
-  ]
-   triggers = {
-    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
-  }
-}
-
-
-# install add-on
-
-resource "null_resource" "ebs-csi-add-on" {
-  provisioner "local-exec" {
-    command = <<EOF
-      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      /tmp/eksctl version
-      /tmp/eksctl create addon --name aws-ebs-csi-driver --cluster ${aws_eks_cluster.kube_cluster.name} --service-account-role-arn arn:aws:iam::${var.account_number}:role/AmazonEKS_EBS_CSI_DriverRole --force --region ${var.region}
-    EOF
-  }
-  depends_on = [
-    aws_eks_cluster.kube_cluster,
-    aws_eks_node_group.worker-node-group,
-    null_resource.ebs-csi-sa
-  ]
-  triggers = {
-    oidc = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
-  }
-}
-
-
-

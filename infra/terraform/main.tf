@@ -1,3 +1,12 @@
+locals {
+  brach_gitops_repo = "main"
+  path_tf_repo_flux_kustomization = "../kubernetes/kustomizations"
+  path_tf_repo_flux_sources = "../kubernetes/flux-sources"
+  path_tf_repo_flux_common = "../kubernetes/common"
+  cluster_name = "${var.project_name}-${var.environment}"
+  gh_username = "danielrive"
+}
+
 #### Netwotking Creation
 
 module "networking" {
@@ -33,10 +42,12 @@ module "kms_key_eks" {
 
 module "eks_cluster" {
   source                       = "./modules/eks"
+  depends_on                   = [module.kms_key_eks,module.networking]
   environment                  = var.environment
   region                       = var.region
+  cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = "1.27"
+  cluster_version              = "1.29"
   subnet_ids                   = module.networking.main.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? ["t3.medium"] : ["t3.medium"]
@@ -51,6 +62,123 @@ module "eks_cluster" {
   account_number               = data.aws_caller_identity.id_account.id
 }
 
+###############################################
+#######    Flux Bootstrap 
+###############################################
+
+#### Get Kubeconfig
+  # $1 = CLUSTER_NAME
+  # $2 = AWS_REGION
+  # $3 = GH_USER_NAME
+  # $4 = FLUX_REPO_NAME
+resource "null_resource" "bootstrap-flux" {
+  depends_on          = [module.eks_cluster]
+  provisioner "local-exec" {
+    command = <<EOF
+    ./scripts/bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name}
+    EOF
+  }
+  triggers = {
+    cluster_oidc = module.eks_cluster.cluster_oidc
+    created_at   = module.eks_cluster.created_at
+  }
+
+}
+
+###############################################
+#######    GitOps Configuration 
+###############################################
+
+####################################
+#### Flux kustomizations bootstrap
+
+resource "github_repository_file" "kustomizations-bootstrap" {
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/bootstrap/core-kustomize.yaml"
+  content = templatefile(
+    "../kubernetes/core-kustomization/core-kustomize.yaml",
+    {
+      CLUSTER_NAME = local.cluster_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+################################################
+##### Flux kustomizations core
+
+resource "github_repository_file" "kustomizations" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/core/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_kustomization}/${each.key}",
+    {
+      ENVIRONMENT = var.environment
+      CLUSTER_NAME = local.cluster_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Flux Sources 
+
+resource "github_repository_file" "sources" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/core/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_sources}/${each.key}",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Common resources
+
+resource "github_repository_file" "common_resources" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/common/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_common}/${each.key}",
+    {
+      ## Common variables for manifests
+      AWS_REGION = var.region
+      ENVIRONMENT = var.environment
+      ## Variables cert manager
+      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ## Variables for Grafana
+      ## Variables for ingress
+      
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
 ########################################
 # IAM Role for CertManager Issuer DNS01 challenge
 #########################################

@@ -25,5 +25,4 @@ COPY --from=build  /bin/expenses_service /bin/expenses_service
 EXPOSE 8282
 
 # Set the command to run the application when the container starts
-
 CMD ["/bin/expenses_service"]

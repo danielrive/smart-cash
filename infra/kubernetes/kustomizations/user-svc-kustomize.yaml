@@ -1,0 +1,12 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: user-service
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./clusters/${CLUSTER_NAME}/manifests/user-service/overlays/${ENVIRONMENT}"
+  prune: true

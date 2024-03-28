@@ -20,16 +20,6 @@ on:
         required: false
         type: string
         default: '1.4.6'
-      GH_USER_NAME:
-        description: 'GH username to use to push to github repo'
-        required: false
-        type: string
-        default: 'flux-smart-cash'
-      FLUX_REPO_NAME:
-        description: 'Github repo name where the manifest will be stored'
-        required: false
-        type: string
-        default: 'smart-cash-gitops-flux'
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
@@ -47,8 +37,6 @@ env:
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
   WORKING_DIRECTORY: '/infra/terraform'
   CLUSTER_NAME: "smart-cash-${{ inputs.ENVIRONMENT }}"
-  GH_USER_NAME: ${{ inputs.GH_USER_NAME }}
-  FLUX_REPO_NAME: ${{ inputs.FLUX_REPO_NAME }}
 
 jobs:
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
@@ -106,22 +94,23 @@ jobs:
         uses: ./.github/actions/terraform-apply
         with:
           WORKING_DIRECTORY: '/infra/terraform'
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
   
-  flux-bootstrap:
-    runs-on: ubuntu-latest
-    needs: terraform-apply  
-    steps:
-     - name: checkout-repo
-       uses: actions/checkout@v4
-     - name: configure aws credentials
-       uses: aws-actions/configure-aws-credentials@v4
-       with:
-         role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
-         role-session-name: GitHub_to_AWS_via_FederatedOIDC
-         aws-region: ${{ env.AWS_REGION }}
-     - name: bootstrap flux
-       id: bootstrap-flux
-       run: ./bootstrap-flux.sh
-       working-directory: .github/jobs/
-       env: 
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
+ ## flux-bootstrap:
+ ##   runs-on: ubuntu-latest
+ ##   needs: terraform-apply  
+ ##   steps:
+ ##    - name: checkout-repo
+ ##      uses: actions/checkout@v4
+ ##    - name: configure aws credentials
+ ##      uses: aws-actions/configure-aws-credentials@v4
+ ##      with:
+ ##        role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+ ##        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+ ##        aws-region: ${{ env.AWS_REGION }}
+ ##    - name: bootstrap flux
+ ##      id: bootstrap-flux
+ ##      run: ./bootstrap-flux.sh
+ ##      working-directory: .github/jobs/
+ ##      env: 
+ ##       GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}

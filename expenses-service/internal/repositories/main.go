@@ -2,7 +2,8 @@ package repositories
 
 import (
 	"context"
-	"errors"
+	"expenses-service/internal/common"
+
 	"expenses-service/internal/models"
 	"log"
 
@@ -10,22 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
-
-// Define error types
-var ErrExpenseNotFound = errors.New("ERROR : expenses not found")
-var ErrExpenseNotCreated = errors.New("ERROR : expense not created")
-var ErrInternalError = errors.New("ERROR: internal error")
-
 // Define DynamoDB repository struct
 
 type DynamoDBExpensesRepository struct {
 	client        *dynamodb.Client
 	expensesTable string
 }
-
-// Define DynamoDB repository methods
-// func to create a new expense
 
 func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string) *DynamoDBExpensesRepository {
 	return &DynamoDBExpensesRepository{
@@ -41,7 +34,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
 		log.Println("unable to marshal expense item", err)
-		return models.Expense{}, ErrInternalError
+		return models.Expense{}, err
 	}
 
 	// Create a new expense item
@@ -50,104 +43,130 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 		Item:      item,
 	})
 	if err != nil {
-		log.Println("unable to put expense item", err)
-		return models.Expense{}, ErrExpenseNotCreated
+		log.Println(common.ErrExpenseNoCreated, err)
+		return models.Expense{}, common.ErrExpenseNoCreated
 	}
 
 	return models.Expense{}, nil
 }
 
-// Function to Get expenses by userId and category
+// Function to get a expense by id
 
-func (r *DynamoDBExpensesRepository) GetExpensesByUserIdAndCategory(userId string, category string) ([]models.Expense, error) {
-	output := []models.Expense{}
-
-	// create expression to filter by userId and category
-	condition := expression.And(
-		expression.Name("userId").Equal(expression.Value(userId)), expression.Name("category").Equal(expression.Value(category)),
-	)
-
-	builder := expression.NewBuilder().WithCondition(condition)
-
-	expres, err := builder.Build()
-	// Create a new expense item
-	queryInput := &dynamodb.QueryInput{
-		TableName:                 aws.String(r.expensesTable),
-		KeyConditionExpression:    expres.Condition(),
-		IndexName:                 aws.String("by_userid_and_category"),
-		ExpressionAttributeNames:  expres.Names(),
-		ExpressionAttributeValues: expres.Values(),
-	}
-	// validate if there is error in building the expression for dynamo
+func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, error) {
+	// Get expense item by id
+	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String(r.expensesTable),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
 	if err != nil {
-		log.Printf("unable to build dynamo expression, %v", err)
-		return []models.Expense{}, ErrInternalError
+		log.Println(err)
+		return models.Expense{}, err
+	}
+	if len(item.Item) == 0 {
+		log.Println(common.ErrExpenseNotFound, err)
+		return models.Expense{}, common.ErrExpenseNotFound
 	}
 
-
-	// Execute the query
-
-	response, err := r.client.Query(context.TODO(), queryInput)
-
+	// Unmarshal the expense item
+	var expense models.Expense
+	err = attributevalue.UnmarshalMap(item.Item, &expense)
 	if err != nil {
-		log.Printf("unable to query, %v", err)
-		return []models.Expense{}, ErrInternalError
+		log.Println(err)
+		return models.Expense{}, err
 	}
 
-	if len(response.Items) == 0 {
-		log.Print("expenses not found")
-		return []models.Expense{}, ErrExpenseNotFound
-	}
-
-	//unmarshall dynamodb output
-	err2 := attributevalue.UnmarshalListOfMaps(response.Items, &output)
-	if err2 != nil {
-		log.Print("failed to unmarshal Items, %w", err2)
-
-		return output, ErrInternalError
-	}
-	return output, nil
+	return expense, nil
 }
 
-// Function to get expenses by userId
+// Function to delete a expense by id
 
-// func (r *DynamoDBExpensesRepository) GetExpensesByUserId(userId string) (models.Expense, error) {
-// 	output := models.Expense{}
+func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
+	// Delete expense item by id
+	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+		TableName: aws.String(r.expensesTable),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
-// 	// create expression to filter by userId and category
-// 	keyCondition := expression.Key("userId").Equal(expression.Value(userId))
+	return nil
+}
 
-// 	builder := expression.NewBuilder().WithKeyCondition(keyCondition)
+// Function get expense by userID
+func (r *DynamoDBExpensesRepository) GetExpensesByUserId(userId string) ([]models.Expense, error) {
+	// create keycondition for userId
+	keyCondition := expression.Key("userId").Equal(expression.Value(userId))
 
-// 	expres, err := builder.Build()
-// 	// Create a new expense item
-// 	queryInput := &dynamodb.QueryInput{
-// 		TableName:                 aws.String(r.expensesTable),
-// 		KeyConditionExpression:    expres.KeyCondition(),
-// 		IndexName:                 aws.String("by_userid_and_category"),
-// 		ExpressionAttributeNames:  expres.Names(),
-// 		ExpressionAttributeValues: expres.Values(),
-// 	}
+	// create expression for userId
+	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
+	if err != nil {
+		log.Println("unable to build expression", err)
+		return nil, err
+	}
+	// Get expenses by userID
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(r.expensesTable),
+		IndexName:                 aws.String("by_userid_and_category"),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+	}
 
-// 	// Execute the query
+	items, err := r.client.Query(context.TODO(), input)
 
-// 	response, err := r.client.Query(context.TODO(), queryInput)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
-// 	if err != nil {
-// 		log.Printf("unable to query, %v", err)
-// 		return models.Expense{}, err
-// 	}
+	// Unmarshal the expense items
+	var expenses []models.Expense
+	err = attributevalue.UnmarshalListOfMaps(items.Items, &expenses)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
-// 	if len(response.Items) == 0 {
-// 		log.Print("expenses not found")
-// 		return models.Expense{}, ErrExpenseNotFound
-// 	}
+	return expenses, nil
+}
 
-// 	//unmarshall dynamodb output
-// 	err2 := attributevalue.UnmarshalMap(response.Items[0], &output)
-// 	if err2 != nil {
-// 		log.Print("failed to unmarshal Items, %w", err2)
-// 		return output, ErrInternalError
-// 	}
-// 	return output, nil
-// }
+// funtion to get expenses filtered by category and userID as a global secondary indexes
+func (r *DynamoDBExpensesRepository) GetExpensesByCategory(tag string, userId string) ([]models.Expense, error) {
+	// create keycondition for tag and userId
+	keyCondition := expression.Key("category").Equal(expression.Value(tag)).And(expression.Key("userId").Equal(expression.Value(userId)))
+
+	// create expression for tag and userId
+	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
+	if err != nil {
+		log.Println("unable to build expression", err)
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(r.expensesTable),
+		IndexName:                 aws.String("by_userid_and_category"),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	response, err := r.client.Query(context.TODO(), input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the expense response
+	var expenses []models.Expense
+	err = attributevalue.UnmarshalListOfMaps(response.Items, &expenses)
+	if err != nil {
+		return nil, err
+	}
+	return expenses, nil
+}

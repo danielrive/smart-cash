@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-${SERVICE_NAME}
+  labels:
+    app: ${SERVICE_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${SERVICE_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${SERVICE_NAME}
+    spec:
+      serviceAccountName: sa-${SERVICE_NAME}
+      containers:
+      - name: ${SERVICE_NAME}-container
+        image: service-image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: ${SERVICE_PORT}
+        livenessProbe:
+          httpGet:
+            port: ${SERVICE_PORT_HEALTH_CHECKS}  
+            path: ${SERVICE_PATH_HEALTH_CHECKS}  
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "echo Container started"]
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "echo Container stopping"]
