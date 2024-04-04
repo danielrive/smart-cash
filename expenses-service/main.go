@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"expenses-service/internal/handler"
+	"expenses-service/internal/repositories"
+	"expenses-service/internal/service"
 	"log"
 	"os"
 	"strconv"
 	"sync"
-	"expenses-service/internal/repositories"
-	"expenses-service/internal/service"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"

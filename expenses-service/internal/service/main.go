@@ -82,7 +82,7 @@ func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (floa
 // Internal function to validate user token
 func validateUserToken(userId string) int {
 	// Define the base URL of the service
-	baseURL := "http://localhost:8181"
+	baseURL := "http://user-service:8181"
 
 	// Create a map to hold query parameters
 	queryParams := map[string]string{

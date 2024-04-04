@@ -162,7 +162,7 @@ resource "github_repository_file" "overlays-user-svc" {
       SERVICE_NAME = "user"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+   #   DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
     }
   )
   commit_message      = "Managed by Terraform"
