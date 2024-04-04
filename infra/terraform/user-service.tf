@@ -31,7 +31,7 @@ resource "aws_dynamodb_table" "user_table" {
     name               = "by_email"
     hash_key           = "email"
     projection_type    = "INCLUDE"
-    non_key_attributes = ["userId","email","status","username"]
+    non_key_attributes = ["userId","email","status","username","password"]
   }
 
   global_secondary_index {
