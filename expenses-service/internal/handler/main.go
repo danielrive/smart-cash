@@ -84,7 +84,7 @@ func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
 /// Health check
 
 func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
-	baseURL := "http://user-service:8181"
+	baseURL := "http://user:8181"
 
 	// Create a map to hold query parameters
 	queryParams := map[string]string{
