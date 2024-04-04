@@ -30,7 +30,3 @@ spec:
             path: ${SERVICE_PATH_HEALTH_CHECKS}  
           initialDelaySeconds: 1
           periodSeconds: 10
-     #   lifecycle:
-     #     postStart:
-     #       exec:
-     #         command: ["/bin/sh", "-c", "aws dynamodb describe-table --table-name ${DYNAMODB_TABLE_NAME} --region ${AWS_REGION}"]
