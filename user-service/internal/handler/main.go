@@ -86,6 +86,5 @@ func (h *UserHandler) Login(c *gin.Context) {
 /// Health check
 
 func (h *UserHandler) HealthCheck(c *gin.Context) {
-
 	c.JSON(http.StatusOK, "ok")
 }

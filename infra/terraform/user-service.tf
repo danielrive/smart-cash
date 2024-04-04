@@ -64,7 +64,7 @@ resource "aws_iam_role" "user-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user-service"
         }
       }
     }
@@ -135,7 +135,7 @@ resource "github_repository_file" "base-manifests" {
       SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8181" 
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
       AWS_REGION  = var.region
     }
   )

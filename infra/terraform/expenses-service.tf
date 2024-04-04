@@ -71,7 +71,7 @@ resource "aws_iam_role" "expenses-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-services"
         }
       }
     }
@@ -147,6 +147,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
       AWS_REGION  = var.region
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
     }
   )
   commit_message      = "Managed by Terraform"

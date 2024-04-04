@@ -52,8 +52,11 @@ func main() {
 	// GET api/v1/[controller]/user[?userID=0]
 	router.POST("/", userHandler.CreateUser)
 
-  // login method, will return a token and userId
+	// login method, will return a token and userId
 	router.POST("/login", userHandler.Login)
+
+	// Health check
+	router.GET("/health", userHandler.HealthCheck)
 
 	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
