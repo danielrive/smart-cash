@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
-	"net/url"
 
 	"expenses-service/internal/common"
 	"expenses-service/internal/models"
@@ -84,28 +82,6 @@ func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
 /// Health check
 
 func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
-	baseURL := "http://user:8181"
-
-	// Create a map to hold query parameters
-	queryParams := map[string]string{
-		"id": "125",
-	}
-
-	// Encode the query parameters and append them to the base URL
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		fmt.Printf("Error parsing URL: %v\n", err)
-		//	return err
-	}
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, value)
-	}
-	u.RawQuery = q.Encode()
-	// Make a GET request with the constructed URL
-	resp, err := http.Get(u.String())
-	fmt.Println(err)
-	fmt.Println(resp)
 	c.JSON(http.StatusOK, "ok")
 }
 
