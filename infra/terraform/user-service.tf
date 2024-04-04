@@ -14,7 +14,7 @@ resource "aws_dynamodb_table" "user_table" {
 
   attribute {
     name = "userId"
-    type = "N"
+    type = "S"
   }
 
   attribute {
