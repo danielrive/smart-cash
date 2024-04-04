@@ -79,6 +79,12 @@ func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
 	}
 }
 
+/// Health check
+
+func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, "ok")
+}
+
 /*
 func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
 

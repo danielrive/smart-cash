@@ -128,6 +128,8 @@ func main() {
 	// define router for get expenses by tag
 	router.GET("/", expensesHandler.GetExpenses)
 
+	router.GET("/health", expensesHandler.HealthCheck)
+
 	router.Run(":8282")
 
 }
