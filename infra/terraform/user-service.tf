@@ -135,7 +135,6 @@ resource "github_repository_file" "base-manifests" {
       SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
       AWS_REGION  = var.region
     }
   )
@@ -162,7 +161,7 @@ resource "github_repository_file" "overlays-user-svc" {
       SERVICE_NAME = "user"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
-   #   DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
     }
   )
   commit_message      = "Managed by Terraform"

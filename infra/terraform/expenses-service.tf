@@ -147,7 +147,6 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
       AWS_REGION  = var.region
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
     }
   )
   commit_message      = "Managed by Terraform"
@@ -173,7 +172,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
       SERVICE_NAME = "expenses"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
-   #   DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
     }
   )
   commit_message      = "Managed by Terraform"
