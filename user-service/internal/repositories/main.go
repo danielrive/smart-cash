@@ -28,7 +28,6 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string) *Dyn
 
 // function to Get user by ID
 func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
-
 	output := models.User{}
 
 	// create input for get item
@@ -104,6 +103,7 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
 	}
 	return nil
 }
+
 // function to get user by email
 func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, error) {
 	output := models.User{}
