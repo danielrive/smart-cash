@@ -22,8 +22,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	if _, isMapContainsKey := uri["id"]; isMapContainsKey {
-		user, err := h.userService.GetUserById(uri["id"][0])
+	if _, isMapContainsKey := uri["userId"]; isMapContainsKey {
+		user, err := h.userService.GetUserById(uri["userId"][0])
 		if err != nil {
 			if err == common.ErrUserNotFound {
 				c.JSON(http.StatusNotFound, gin.H{"error": err})
@@ -35,7 +35,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, user)
 	} else if _, isMapContainsKey := uri["email"]; isMapContainsKey {
-		user, err := h.userService.GetUserByEmail(uri["emain"][0]) /////// FIIX
+		user, err := h.userService.GetUserByEmail(uri["email"][0])
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
