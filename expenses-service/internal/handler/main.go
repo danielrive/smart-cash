@@ -29,7 +29,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	}
 	// create the expense
 	if err := h.expensesService.CreateExpense(expense); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not created"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "expenses not created"})
 		return
 	}
 	c.JSON(http.StatusOK, "ok")

@@ -71,7 +71,7 @@ resource "aws_iam_role" "expenses-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-services"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
         }
       }
     }
