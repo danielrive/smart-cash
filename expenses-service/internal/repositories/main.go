@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
 // Define DynamoDB repository struct
 
 type DynamoDBExpensesRepository struct {
@@ -112,7 +113,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserId(userId string) ([]model
 	// Get expenses by userID
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(r.expensesTable),
-		IndexName:                 aws.String("by_userid_and_category"),
+		IndexName:                 aws.String("by_userid"),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeValues: expr.Values(),
@@ -150,7 +151,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByCategory(tag string, userId st
 
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(r.expensesTable),
-		IndexName:                 aws.String("by_userid_and_category"),
+		IndexName:                 aws.String("by_category"),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeValues: expr.Values(),
