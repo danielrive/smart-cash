@@ -113,7 +113,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserId(userId string) ([]model
 	// Get expenses by userID
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(r.expensesTable),
-		IndexName:                 aws.String("by_userid"),
+		IndexName:                 aws.String("by_userId"),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeValues: expr.Values(),
