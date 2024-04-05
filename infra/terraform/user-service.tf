@@ -95,7 +95,10 @@ resource "aws_iam_policy" "dynamodb-user-policy" {
                 "dynamodb:UpdateItem"
         ]
         Effect   = "Allow"
-        Resource = aws_dynamodb_table.user_table.arn
+        Resource = [
+                    aws_dynamodb_table.user_table.arn,
+                    "${aws_dynamodb_table.user_table.arn}/index/by_email",
+                    "${aws_dynamodb_table.user_table.arn}/index/by_username"
       },
     ]
   })
