@@ -103,7 +103,7 @@ resource "aws_iam_policy" "dynamodb-expenses-policy" {
         ]
         Effect   = "Allow"
         Resource = [
-                    aws_dynamodb_table.expenses_table.arn
+                    aws_dynamodb_table.expenses_table.arn,
                     "${aws_dynamodb_table.expenses_table.arn}/index/by_userId",
                     "${aws_dynamodb_table.expenses_table.arn}/index/by_category"
         ]
