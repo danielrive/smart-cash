@@ -10,15 +10,9 @@ resource "aws_dynamodb_table" "expenses_table" {
   name         = "expenses-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "expenseId"
-  range_key    = "date"
 
   attribute {
     name = "expenseId"
-    type = "S"
-  }
-
-  attribute {
-    name = "date"
     type = "S"
   }
 

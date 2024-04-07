@@ -58,8 +58,6 @@ var (
 
 func prometheusMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// log the init of the middleware
-		log.Println("middleware execution")
 		// take the current time when the request arrives
 
 		durationMutex.Lock()

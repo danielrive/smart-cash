@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"expenses-service/internal/common"
+	"fmt"
 
 	"expenses-service/internal/models"
 	"log"
@@ -138,9 +139,11 @@ func (r *DynamoDBExpensesRepository) GetExpensesByUserId(userId string) ([]model
 }
 
 // funtion to get expenses filtered by category and userID as a global secondary indexes
-func (r *DynamoDBExpensesRepository) GetExpensesByCategory(tag string, userId string) ([]models.Expense, error) {
+func (r *DynamoDBExpensesRepository) GetExpensesByCategory(category string, userId string) ([]models.Expense, error) {
 	// create keycondition for tag and userId
-	keyCondition := expression.Key("category").Equal(expression.Value(tag)).And(expression.Key("userId").Equal(expression.Value(userId)))
+	var expenses []models.Expense
+	fmt.Println("getting by category")
+	keyCondition := expression.Key("category").Equal(expression.Value(category)).And(expression.Key("userId").Equal(expression.Value(userId)))
 
 	// create expression for tag and userId
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
@@ -160,13 +163,15 @@ func (r *DynamoDBExpensesRepository) GetExpensesByCategory(tag string, userId st
 	response, err := r.client.Query(context.TODO(), input)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	// Unmarshal the expense response
-	var expenses []models.Expense
+
 	err = attributevalue.UnmarshalListOfMaps(response.Items, &expenses)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	return expenses, nil
