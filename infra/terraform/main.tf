@@ -188,6 +188,7 @@ resource "github_repository_file" "common_resources" {
       ## Common variables for manifests
       AWS_REGION = var.region
       ENVIRONMENT = var.environment
+      PROJECT = var.project_name
       ## Variables cert manager
       ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
       ## Variables for Grafana
