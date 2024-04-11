@@ -61,9 +61,12 @@ jobs:
         working-directory: 'app/${{ inputs.SERVICE_NAME }}'
         run: |
 
-            echo "------> printt"
+            echo "---> coping GO mod to build directory" 
 
-            ls ../  
+            cp  ../go.mod .
+
+            ls 
+            
             COMMIT_ID=${{ github.sha}}
 
             SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
