@@ -201,7 +201,6 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-ß
 ########################################
 # IAM Role for CertManager Issuer DNS01 challenge
 #########################################
