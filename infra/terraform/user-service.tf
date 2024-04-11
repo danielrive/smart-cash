@@ -179,7 +179,7 @@ resource "github_repository_file" "overlays-user-svc" {
 
 resource "github_repository_file" "network-policies" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = local.service_definitions.user_service.connect_with
+  count               = length(local.service_definitions.user_service.connect_with)
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/manifests/user-service/network-policies/svc-${local.service_definitions.user_service.name}"
@@ -187,9 +187,9 @@ resource "github_repository_file" "network-policies" {
     "../kubernetes/network-policies/np-services",
     {
       FROM_SVC_NAME = local.service_definitions.user_service.name
-      TO_SVC_NAME   = each.name
+      TO_SVC_NAME   = local.service_definitions.user_service.connect_with[count.index].name
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = each.port
+      TO_SVC_PORT   = local.service_definitions.user_service.connect_with[count.index].name
 
     }
   )
