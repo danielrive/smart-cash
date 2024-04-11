@@ -189,7 +189,7 @@ resource "github_repository_file" "network-policies" {
       FROM_SVC_NAME = local.service_definitions.user_service.name
       TO_SVC_NAME   = local.service_definitions.user_service.connect_with[count.index].name
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = local.service_definitions.user_service.connect_with[count.index].name
+      TO_SVC_PORT   = local.service_definitions.user_service.connect_with[count.index].port
 
     }
   )

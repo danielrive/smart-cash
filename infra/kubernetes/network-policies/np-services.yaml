@@ -1,8 +1,8 @@
-## Allow communication between ${FROM_SVC_NAME} to ${TO_SVC_NAME} in the port specified
+## Allow communication FROM ${FROM_SVC_NAME} service TO ${TO_SVC_NAME} service in the port specified
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-${FROM_SVC_NAME}-${TO_SVC_NAME}
+  name: ingress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
 spec:
   podSelector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-${FROM_SVC_NAME}-${TO_SVC_NAME}
+  name: engress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
 spec:
   podSelector:
     matchLabels:
