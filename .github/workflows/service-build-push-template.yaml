@@ -59,7 +59,11 @@ jobs:
       - name: Build containter
         id: build-and-push
         working-directory: 'app/${{ inputs.SERVICE_NAME }}'
-        run: | 
+        run: |
+
+            echo "------> printt"
+
+            ls ../  
             COMMIT_ID=${{ github.sha}}
 
             SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
