@@ -41,7 +41,7 @@ jobs:
     strategy: 
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/service-build-push-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/service-build-push-template.yaml@feat/k8-services
     with: 
       AWS_REGION: us-west-2
       ENVIRONMENT: 'develop'

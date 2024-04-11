@@ -184,7 +184,7 @@ resource "github_repository_file" "network-policies" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/np-services",
+    "../kubernetes/network-policies/np-services.yaml",
     {
       FROM_SVC_NAME = local.service_definitions.user_service.name
       TO_SVC_NAME   = local.service_definitions.user_service.connect_with[count.index].name
