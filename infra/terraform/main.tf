@@ -5,6 +5,27 @@ locals {
   path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
+  
+  service_definitions = {
+    user_service = {
+      name          = "user"
+      port          = 8181
+      protocol     = "TCP"
+      connect_with = [
+        {
+          name  = "expenses"
+          port  = 8282
+        }
+      ]
+    }
+    expenses_service = {
+      name          = "expenses"
+      port          = 8282
+      protocol     = "TCP"
+      connect_with = []  # Empty list for expenses service
+    }
+  }
+  
 }
 
 #### Netwotking Creation
@@ -179,6 +200,8 @@ resource "github_repository_file" "common_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
+ß
 ########################################
 # IAM Role for CertManager Issuer DNS01 challenge
 #########################################

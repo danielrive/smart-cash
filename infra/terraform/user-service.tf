@@ -134,8 +134,8 @@ resource "github_repository_file" "base-manifests" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "user"
-      SERVICE_PORT = "8181"
+      SERVICE_NAME = local.user_service.name
+      SERVICE_PORT = local.user_service.port
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       AWS_REGION  = var.region
@@ -161,10 +161,36 @@ resource "github_repository_file" "overlays-user-svc" {
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
-      SERVICE_NAME = "user"
+      SERVICE_NAME = local.user_service.name
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Network Policies
+
+resource "github_repository_file" "network-policies" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  for_each            = local.user_service.connect_with
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/manifests/user-service/network-policies/svc-${local.user_service.name}"
+  content = templatefile(
+    "../kubernetes/network-policies/np-services",
+    {
+      FROM_SVC_NAME = local.user_service.name
+      TO_SVC_NAME   = each.name
+      PROJECT_NAME  = var.project_name
+      TO_SVC_PORT   = each.port
+
     }
   )
   commit_message      = "Managed by Terraform"

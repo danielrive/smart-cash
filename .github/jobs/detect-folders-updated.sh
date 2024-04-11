@@ -10,7 +10,7 @@ for file in $GIT_FOLDERS_UPDATED; do
     if [[ "$folder_name" == *".github"* ]] || [[ "$folder_name" == *"infra"* ]]; then
         echo "ignoring the folder $folder_name"
     else
-        root_folder=$(echo "$folder_name" | awk -F'/' '{print $1}')
+        root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
         echo "adding the folder $root_folder"
         CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
         echo "updating the the variable"
