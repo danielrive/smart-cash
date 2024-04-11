@@ -6,16 +6,16 @@ CHANGED_FOLDERS=""
 
 for file in $GIT_FOLDERS_UPDATED; do
     folder_name=$(dirname "$file")
-    echo "checking the folder $folder_name"
-    if [[ "$folder_name" != *"-service"* ]]; then
+    echo "--> checking the folder $folder_name"
+    if [[ "$folder_name" == *"-service"* ]]; then
         root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
-        echo "adding the folder $root_folder"
+        echo "--> adding the folder $root_folder"
         CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
-        echo "updating the the variable"
+        echo "--> updating the the variable"
         echo $CHANGED_FOLDERS
         
     else
-        echo "ignoring the folder $folder_name"
+        echo "--> ignoring the folder $folder_name"
     fi
 done
 

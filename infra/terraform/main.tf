@@ -11,18 +11,19 @@ locals {
       name          = "user"
       port          = 8181
       protocol     = "TCP"
-      connect_with = 
+      connect_with = [
         {
           name  = "expenses"
           port  = 8282
         }
+      ]
     }
-    expenses_service = {
-      name          = "expenses"
-      port          = 8282
-      protocol     = "TCP"
-      connect_with = []  # Empty list for expenses service
-    }
+    #expenses_service = {
+    #  name          = "expenses"
+    #  port          = 8282
+    #  protocol     = "TCP"
+    #  connect_with = []  # Empty list for expenses service
+    #}
   }
   
 }
