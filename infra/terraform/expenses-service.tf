@@ -189,7 +189,9 @@ resource "github_repository_file" "np-expenses" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/expenses.yaml",{})
+    "../kubernetes/network-policies/expenses.yaml",{
+      SERVICE_NAME = "expenses"
+    })
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
