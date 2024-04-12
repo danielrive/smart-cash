@@ -1,10 +1,6 @@
 ################################################
 ########## Resources for expenses-service
 
-locals {
-  this_service_name = "expenses"
-  this_service_port = 8282
-}
 
 #######################
 #### DynamoDB tables
@@ -195,8 +191,8 @@ resource "github_repository_file" "np-expenses" {
   file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/expenses.yaml",{
-       FROM_SVC_NAME = local.this_service_name
-      TO_SVC_NAME   = "expenses"
+      FROM_SVC_NAME = "expenses"
+      TO_SVC_NAME   = "user"
       PROJECT_NAME  = var.project_name
       TO_SVC_PORT   = "8181"
     })
