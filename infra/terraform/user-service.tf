@@ -182,13 +182,13 @@ resource "github_repository_file" "overlays-user-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-user-to-expense" {
+resource "github_repository_file" "np-user" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/user-to-expenses.yaml",
+    "../kubernetes/network-policies/user.yaml",
     {
       FROM_SVC_NAME = local.this_service_name
       TO_SVC_NAME   = "expenses"
