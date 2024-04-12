@@ -1,5 +1,10 @@
 ################################################
 ########## Resources for User-service
+locals {
+  this_service_name = "user"
+  this_service_port = 8181
+}
+
 
 #######################
 #### DynamoDB tables
@@ -134,8 +139,8 @@ resource "github_repository_file" "base-manifests" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = local.service_definitions.user_service.name
-      SERVICE_PORT = local.service_definitions.user_service.port
+      SERVICE_NAME = local.this_service_name
+      SERVICE_PORT = local.this_service_port
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       AWS_REGION  = var.region
@@ -161,7 +166,7 @@ resource "github_repository_file" "overlays-user-svc" {
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
-      SERVICE_NAME = local.service_definitions.user_service.name
+      SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
@@ -177,19 +182,18 @@ resource "github_repository_file" "overlays-user-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "network-policies" {
+resource "github_repository_file" "np-user-to-expense" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  count               = length(local.service_definitions.user_service.connect_with)
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policies/network-policy-${count.index}.yaml"
+  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policies/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/np-services.yaml",
+    "../kubernetes/network-policies/user-to-expenses.yaml",
     {
-      FROM_SVC_NAME = local.service_definitions.user_service.name
-      TO_SVC_NAME   = local.service_definitions.user_service.connect_with[count.index].name
+      FROM_SVC_NAME = local.this_service_name
+      TO_SVC_NAME   = "expenses"
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = local.service_definitions.user_service.connect_with[count.index].port
+      TO_SVC_PORT   = "8282"
 
     }
   )
