@@ -187,7 +187,7 @@ resource "github_repository_file" "np-expenses" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
+  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/expenses.yaml",{
       SERVICE_NAME = "expenses"
