@@ -3,14 +3,26 @@ FROM golang:1.22-alpine AS build
 
 # Copy the Go modules files and download dependencies
 
-WORKDIR app
+WORKDIR /app
 
-COPY ../go.mod ./
+COPY go.mod .
 
-RUN go mod download
+COPY go.sum .
+
+#RUN go mod download
 
 # Copy the application source code to the container
-COPY . ./
+
+COPY  user-service/internal/common/* ./user-service/internal/common/
+COPY  user-service/internal/handler/* ./user-service/internal/handler/
+COPY  user-service/internal/models/* ./user-service/internal/models/
+COPY  user-service/internal/repositories/* ./user-service/internal/repositories/
+COPY  user-service/internal/service/* ./user-service/internal/service/
+COPY  user-service/main.go ./user-service/main.go
+
+# Build the Go application statically
+
+WORKDIR /app/user-service
 
 # Build the Go application statically
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/user_service main.go

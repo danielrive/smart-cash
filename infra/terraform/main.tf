@@ -15,6 +15,10 @@ locals {
         {
           name  = "expenses"
           port  = 8282
+        },
+        {
+          name  = "bank"
+          port  = 8283
         }
       ]
     }
