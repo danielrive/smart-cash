@@ -190,8 +190,7 @@ resource "github_repository_file" "np-expenses" {
   file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/expenses.yaml",
-    {
-    }
+    {}
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
