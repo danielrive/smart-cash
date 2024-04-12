@@ -6,4 +6,4 @@ resources:
 - service.yaml
 - service-account.yaml
 - ingress.yaml
-- network-policy.yaml
+- network-policy*.yaml
