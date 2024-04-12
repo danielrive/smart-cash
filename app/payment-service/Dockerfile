@@ -13,6 +13,7 @@ COPY go.sum .
 
 # Copy the application source code to the container
 
+COPY  utils/*.go ./utils/
 COPY  payment-service/internal/common/* ./payment-service/internal/common/
 COPY  payment-service/internal/handler/* ./payment-service/internal/handler/
 COPY  payment-service/internal/models/* ./payment-service/internal/models/

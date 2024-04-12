@@ -13,6 +13,7 @@ COPY go.sum .
 
 # Copy the application source code to the container
 
+COPY  utils/*.go ./utils/
 COPY  user-service/internal/common/* ./user-service/internal/common/
 COPY  user-service/internal/handler/* ./user-service/internal/handler/
 COPY  user-service/internal/models/* ./user-service/internal/models/
