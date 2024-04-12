@@ -182,7 +182,7 @@ resource "github_repository_file" "network-policies" {
   count               = length(local.service_definitions.user_service.connect_with)
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
+  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy${count.index}.yaml"
   content = templatefile(
     "../kubernetes/network-policies/np-services.yaml",
     {
