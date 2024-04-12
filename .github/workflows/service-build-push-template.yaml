@@ -58,7 +58,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build containter
         id: build-and-push
-        working-directory: '/app'
+        working-directory: 'app/'
         run: |
 
             COMMIT_ID=${{ github.sha}}
