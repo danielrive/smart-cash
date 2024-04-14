@@ -34,10 +34,10 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 		return err
 	}
 	// validate if the expense has automatic pay
-	if expense.AutomaticPay {
-		// Call the internal function to validate the user token
-		createOrder(expense)
-	}
+	//if expense.AutomaticPay {
+	// Call the internal function to validate the user token
+	//	createOrder(expense)
+	//}
 
 	return nil
 }
