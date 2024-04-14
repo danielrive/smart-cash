@@ -5,10 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net/http"
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/models"
 	"smart-cash/user-service/internal/repositories"
 )
+
+var domain_name string = "rootdr.info"
 
 type UserService struct {
 	userRepository *repositories.DynamoDBUsersRepository
@@ -98,4 +101,25 @@ func (us *UserService) Login(u models.User) (string, string, error) {
 	}
 	log.Println("error", common.ErrWrongCredentials)
 	return "", "", common.ErrWrongCredentials
+}
+
+// communicate with another service
+
+func (us *UserService) ConnectOtherSVC(svc_name string) error {
+	baseURL := "http://" + svc_name + "." + domain_name + "/health"
+	//baseURL := "http://payment:8383"
+
+	resp, err := http.Get(baseURL)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return err
+	}
+
+	// Close the response body after reading
+	defer resp.Body.Close()
+
+	// Call the internal function to validate the user token
+	log.Println("response from http call ", resp)
+	return nil
+
 }

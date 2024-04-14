@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
@@ -11,6 +12,8 @@ import (
 	"net/http"
 	"net/url"
 )
+
+var domain_name string = "rootdr.info"
 
 // Define service interface
 
@@ -89,7 +92,7 @@ func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (floa
 // Internal function to validate user token
 func validateUserToken(userId string) int {
 	// Define the base URL of the service
-	baseURL := "http://user:8181"
+	baseURL := "http://user/login"
 
 	// Create a map to hold query parameters
 	queryParams := map[string]string{
@@ -124,7 +127,7 @@ func validateUserToken(userId string) int {
 
 func createOrder(expense models.Expense) error {
 	// create order format input
-	baseURL := "http://127.0.0.1:8383"
+	baseURL := "http://payment"
 	//baseURL := "http://payment:8383"
 
 	// Create a map to hold query parameters
@@ -166,4 +169,22 @@ func createOrder(expense models.Expense) error {
 	fmt.Println("scheduled to pay ", resp.Body)
 
 	return nil
+}
+
+func (us *ExpensesService) ConnectOtherSVC(svc_name string) error {
+	baseURL := "http://" + svc_name + "." + domain_name + "/health"
+
+	resp, err := http.Get(baseURL)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return err
+	}
+
+	// Close the response body after reading
+	defer resp.Body.Close()
+
+	// Call the internal function to validate the user token
+	log.Println("response from http call ", resp)
+	return nil
+
 }

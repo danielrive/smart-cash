@@ -57,6 +57,8 @@ func main() {
 	// GET api/v1/[controller]/user[?userID=0]
 	router.POST("/", paymentHandler.CreateOrder)
 
+	router.GET("/connectToSvc", paymentHandler.ConnectToOtherSvc)
+
 	router.Run(":8383")
 
 }

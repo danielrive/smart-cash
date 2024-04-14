@@ -72,3 +72,17 @@ func (h *PaymentHandler) GetOrder(c *gin.Context) {
 func (h *PaymentHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }
+
+func (h *PaymentHandler) ConnectToOtherSvc(c *gin.Context) {
+
+	uri := c.Request.URL.Query()
+
+	err := h.paymentService.ConnectOtherSVC(uri["svcName"][0])
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, "ok")
+
+}

@@ -85,18 +85,16 @@ func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }
 
-/*
-func (h *ExpensesHandler) CalculateTotalPerCategory(c *gin.Context) {
+func (h *ExpensesHandler) ConnectToOtherSvc(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	totalExpenses, err := h.expensesService.CalculateTotalPerCategory(uri["id"][0], uri["category"][0])
+	err := h.expensesService.ConnectOtherSVC(uri["svcName"][0])
 
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "unknow"})
-
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, totalExpenses)
+	c.JSON(http.StatusOK, "ok")
+
 }
-*/

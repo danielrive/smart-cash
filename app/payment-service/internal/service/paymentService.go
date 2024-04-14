@@ -1,11 +1,16 @@
 package service
 
 import (
+	"fmt"
+	"log"
+	"net/http"
 	"smart-cash/payment-service/internal/models"
 	"smart-cash/payment-service/internal/repositories"
 )
 
 // Define service interface
+
+var domain_name string = "rootdr.info"
 
 type PaymentService struct {
 	paymentRepository *repositories.DynamoDBPaymentRepository
@@ -45,4 +50,23 @@ func (exps *PaymentService) GetOrderById(id string) (models.Order, error) {
 	}
 
 	return order, nil
+}
+
+func (us *PaymentService) ConnectOtherSVC(svc_name string) error {
+	baseURL := "http://" + svc_name + "." + domain_name + "/health"
+	//baseURL := "http://payment:8383"
+
+	resp, err := http.Get(baseURL)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return err
+	}
+
+	// Close the response body after reading
+	defer resp.Body.Close()
+
+	// Call the internal function to validate the user token
+	log.Println("response from http call ", resp)
+	return nil
+
 }

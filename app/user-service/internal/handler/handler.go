@@ -88,3 +88,19 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }
+
+// Handler to connect to other svc (just test)
+
+func (h *UserHandler) ConnectToOtherSvc(c *gin.Context) {
+
+	uri := c.Request.URL.Query()
+
+	err := h.userService.ConnectOtherSVC(uri["svcName"][0])
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, "ok")
+
+}

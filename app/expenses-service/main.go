@@ -132,6 +132,8 @@ func main() {
 
 	router.GET("/health", expensesHandler.HealthCheck)
 
+	router.GET("/connectToSvc", expensesHandler.ConnectToOtherSvc)
+
 	router.Run(":8282")
 
 }

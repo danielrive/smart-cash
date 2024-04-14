@@ -61,6 +61,10 @@ func main() {
 	// Health check
 	router.GET("/health", userHandler.HealthCheck)
 
+	// test connect to other services
+
+	router.GET("/connectToSvc", userHandler.ConnectToOtherSvc)
+
 	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
 	// Find User by email, userId and username
