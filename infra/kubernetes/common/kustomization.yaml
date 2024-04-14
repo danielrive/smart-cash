@@ -5,6 +5,7 @@ resources:
 - namespaces.yaml
 - storage-class-aws-ebs.yaml
 - helm-nginx-ingress.yaml
+- np-default-deny.yaml
 #- helm-prometheus.yaml
 #- crd-cert-manager.yaml
 #- helm-cert-manager.yaml
