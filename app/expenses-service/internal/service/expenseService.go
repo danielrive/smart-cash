@@ -173,8 +173,9 @@ func createOrder(expense models.Expense) error {
 
 func (us *ExpensesService) ConnectOtherSVC(svc_name string) error {
 	baseURL := "http://" + svc_name + "/health"
-
+	log.Println(baseURL)
 	resp, err := http.Get(baseURL)
+	log.Println("response from http call ", resp)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return err
