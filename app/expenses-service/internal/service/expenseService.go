@@ -172,7 +172,7 @@ func createOrder(expense models.Expense) error {
 }
 
 func (us *ExpensesService) ConnectOtherSVC(svc_name string) error {
-	baseURL := "http://" + svc_name + "." + domain_name + "/health"
+	baseURL := "http://" + svc_name + "/health"
 
 	resp, err := http.Get(baseURL)
 	if err != nil {
