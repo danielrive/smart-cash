@@ -105,8 +105,8 @@ func (us *UserService) Login(u models.User) (string, string, error) {
 
 // communicate with another service
 
-func (us *UserService) ConnectOtherSVC(svc_name string) error {
-	baseURL := "http://" + svc_name + "/health"
+func (us *UserService) ConnectOtherSVC(svc_name string, port string) error {
+	baseURL := "http://" + svc_name + ":" + port + "/health"
 	//baseURL := "http://payment:8383"
 	log.Println(baseURL)
 	resp, err := http.Get(baseURL)

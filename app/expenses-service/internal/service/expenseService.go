@@ -171,8 +171,8 @@ func createOrder(expense models.Expense) error {
 	return nil
 }
 
-func (us *ExpensesService) ConnectOtherSVC(svc_name string) error {
-	baseURL := "http://" + svc_name + "/health"
+func (us *ExpensesService) ConnectOtherSVC(svc_name string, port string) error {
+	baseURL := "http://" + svc_name + ":" + port + "/health"
 	log.Println(baseURL)
 	resp, err := http.Get(baseURL)
 	log.Println("response from http call ", resp)

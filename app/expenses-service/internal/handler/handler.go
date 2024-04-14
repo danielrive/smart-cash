@@ -89,7 +89,7 @@ func (h *ExpensesHandler) ConnectToOtherSvc(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	err := h.expensesService.ConnectOtherSVC(uri["svcName"][0])
+	err := h.expensesService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})

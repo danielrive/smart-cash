@@ -95,7 +95,7 @@ func (h *UserHandler) ConnectToOtherSvc(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	err := h.userService.ConnectOtherSVC(uri["svcName"][0])
+	err := h.userService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
