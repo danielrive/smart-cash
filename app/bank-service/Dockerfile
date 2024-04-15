@@ -13,6 +13,7 @@ COPY go.sum .
 
 # Copy the application source code to the container
 
+COPY  utils/*.go ./utils/
 COPY  bank-service/internal/common/* ./bank-service/internal/common/
 COPY  bank-service/internal/handler/* ./bank-service/internal/handler/
 COPY  bank-service/internal/models/* ./bank-service/internal/models/
