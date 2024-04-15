@@ -38,7 +38,6 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 		err := createOrder(expense)
 		if err != nil {
 			log.Println("error", err)
-			return err
 		}
 	}
 	return nil
