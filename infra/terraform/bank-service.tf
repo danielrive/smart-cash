@@ -1,48 +1,25 @@
 ################################################
-########## Resources for expenses-service
+########## Resources for bank-service
 
 
 #######################
 #### DynamoDB tables
 
-### expenses Table
+### bank Table
 
-resource "aws_dynamodb_table" "expenses_table" {
-  name         = "expenses-table"
+resource "aws_dynamodb_table" "transactions_table" {
+  name         = "transactions-table"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "expenseId"
+  hash_key     = "transactionId"
 
   attribute {
-    name = "expenseId"
+    name = "transactionId"
     type = "S"
   }
 
-  attribute {
-    name = "category"
-    type = "S"
-  }
 
-  attribute {
-
-    name = "userId"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name               = "by_userId"
-    hash_key           = "userId"
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["expenseId","currency","date","amount"]
-  }
-
-  global_secondary_index {
-    name               = "by_category"
-    hash_key           = "userId"
-    range_key           = "category"
-    projection_type    = "ALL"
-  }
   tags = {
-    Name = "expenses_${var.environment}"
+    ENVIRONMENT = "${var.environment}"
   }
   
 }
@@ -51,8 +28,8 @@ resource "aws_dynamodb_table" "expenses_table" {
 ##############################
 ###### IAM Role K8 SA
 
-resource "aws_iam_role" "expenses-role" {
-  name = "role-expenses-${var.environment}"
+resource "aws_iam_role" "bank-role" {
+  name = "role-bank-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -66,7 +43,7 @@ resource "aws_iam_role" "expenses-role" {
       Condition={
         StringEquals= {
           "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
+          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-bank-service"
         }
       }
     }
@@ -74,10 +51,10 @@ resource "aws_iam_role" "expenses-role" {
 })
 }
 
-####### IAM policy for SA expenses
+####### IAM policy for SA bank
 
-resource "aws_iam_policy" "dynamodb-expenses-policy" {
-  name        = "policy-dynamodb-expenses-${var.environment}"
+resource "aws_iam_policy" "dynamodb-bank-policy" {
+  name        = "policy-dynamodb-bank-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -98,18 +75,16 @@ resource "aws_iam_policy" "dynamodb-expenses-policy" {
         ]
         Effect   = "Allow"
         Resource = [
-                    aws_dynamodb_table.expenses_table.arn,
-                    "${aws_dynamodb_table.expenses_table.arn}/index/by_userId",
-                    "${aws_dynamodb_table.expenses_table.arn}/index/by_category"
+                    aws_dynamodb_table.transactions_table.arn,
         ]
       },
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-expenses-policy.arn
-  role       = aws_iam_role.expenses-role.name
+resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
+  policy_arn = aws_iam_policy.dynamodb-bank-policy.arn
+  role       = aws_iam_role.bank-role.name
 }
 
 
@@ -117,9 +92,9 @@ resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
 #############################
 ##### ECR Repo
 
-module "ecr_registry_expenses_service" {
+module "ecr_registry_bank_service" {
   source       = "./modules/ecr"
-  name         = "expenses-service"
+  name         = "bank-service"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -131,18 +106,18 @@ module "ecr_registry_expenses_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests-expenses-svc" {
+resource "github_repository_file" "base-manifests-bank-svc" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/${each.key}"
+  file                = "clusters/${local.cluster_name}/manifests/bank-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "expenses"
+      SERVICE_NAME = "bank"
       SERVICE_PORT = "8282"
-      ECR_REPO = module.ecr_registry_expenses_service.repo_url
+      ECR_REPO = module.ecr_registry_bank_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
       AWS_REGION  = var.region
@@ -159,19 +134,19 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-expenses-svc" {
+resource "github_repository_file" "overlays-bank-svc" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/expenses-service/overlays/${var.environment}", "*.yaml")
+  for_each            = fileset("../kubernetes/bank-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/overlays/${var.environment}/${each.key}"
+  file                = "clusters/${local.cluster_name}/manifests/bank-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
+    "../kubernetes/bank-service/overlays/${var.environment}/${each.key}",
     {
-      SERVICE_NAME = "expenses"
-      ECR_REPO = module.ecr_registry_expenses_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
+      SERVICE_NAME = "bank"
+      ECR_REPO = module.ecr_registry_bank_service.repo_url
+      ARN_ROLE_SERVICE = aws_iam_role.bank-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.transactions_table.name
     }
   )
   commit_message      = "Managed by Terraform"
@@ -184,13 +159,13 @@ resource "github_repository_file" "overlays-expenses-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-expenses" {
+resource "github_repository_file" "np-bank" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/network-policy.yaml"
+  file                = "clusters/${local.cluster_name}/manifests/bank-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/expenses.yaml",{
+    "../kubernetes/network-policies/bank.yaml",{
       PROJECT_NAME  = var.project_name
     })
   commit_message      = "Managed by Terraform"

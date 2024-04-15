@@ -24,16 +24,9 @@ spec:
           value: ${AWS_REGION}
         ports:
         - containerPort: ${SERVICE_PORT}
-       # livenessProbe:
-       #   httpGet:
-       #     port: ${SERVICE_PORT_HEALTH_CHECKS}  
-       #     path: ${SERVICE_PATH_HEALTH_CHECKS}  
-       #   initialDelaySeconds: 5
-       #   periodSeconds: 10
-        #lifecycle:
-        #  postStart:
-        #    exec:
-        #      command: ["/bin/sh", "-c", "echo Container started"]
-        #  preStop:
-        #    exec:
-        #     command: ["/bin/sh", "-c", "echo Container stopping"]
+        livenessProbe:
+          httpGet:
+            port: ${SERVICE_PORT}  
+            path: ${SERVICE_PATH_HEALTH_CHECKS}  
+          initialDelaySeconds: 1
+          periodSeconds: 10

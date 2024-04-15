@@ -1,0 +1,99 @@
+## Allow communication FROM expenses service TO user service in the port specified
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-expenses-to-user
+spec:
+  podSelector:
+    matchLabels:
+      app: user
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: expenses
+    ports:
+    - protocol: TCP
+      port: 8181
+
+---
+
+## Allow communication FROM expenses service TO user service in the port specified
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engress-expenses-to-user
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: user
+    ports:
+    - protocol: TCP
+      port: 8181
+
+---
+
+## Allow communication FROM expenses service TO user service in the port specified
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engress-expenses-to-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: payment
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: expenses
+    ports:
+    - protocol: TCP
+      port: 8383
+
+---
+
+## Allow communication FROM expenses service TO payment service in the port specified
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engress-expenses-to-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: payment
+    ports:
+    - protocol: TCP
+      port: 8383
