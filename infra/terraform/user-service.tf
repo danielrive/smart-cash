@@ -1,5 +1,10 @@
 ################################################
 ########## Resources for User-service
+locals {
+  this_service_name = "user"
+  this_service_port = 8181
+}
+
 
 #######################
 #### DynamoDB tables
@@ -10,11 +15,10 @@ resource "aws_dynamodb_table" "user_table" {
   name         = "user-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "userId"
-  range_key    = "email"
 
   attribute {
     name = "userId"
-    type = "N"
+    type = "S"
   }
 
   attribute {
@@ -31,7 +35,7 @@ resource "aws_dynamodb_table" "user_table" {
     name               = "by_email"
     hash_key           = "email"
     projection_type    = "INCLUDE"
-    non_key_attributes = ["userId","email","status","username"]
+    non_key_attributes = ["userId","email","status","username","password"]
   }
 
   global_secondary_index {
@@ -49,8 +53,8 @@ resource "aws_dynamodb_table" "user_table" {
 ########################
 ###### IAM Role
 
-resource "aws_iam_role" "user-service-role" {
-  name = "role-user-service-${var.environment}"
+resource "aws_iam_role" "user-role" {
+  name = "role-user-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -72,10 +76,10 @@ resource "aws_iam_role" "user-service-role" {
 })
 }
 
-####### IAM policy for SA user-service
+####### IAM policy for SA user
 
-resource "aws_iam_policy" "dynamodb-user-service-policy" {
-  name        = "policy-dynamodb-user-service-${var.environment}"
+resource "aws_iam_policy" "dynamodb-user-policy" {
+  name        = "policy-dynamodb-user-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -95,15 +99,19 @@ resource "aws_iam_policy" "dynamodb-user-service-policy" {
                 "dynamodb:UpdateItem"
         ]
         Effect   = "Allow"
-        Resource = aws_dynamodb_table.user_table.arn
+        Resource = [
+                    aws_dynamodb_table.user_table.arn,
+                    "${aws_dynamodb_table.user_table.arn}/index/by_email",
+                    "${aws_dynamodb_table.user_table.arn}/index/by_username"
+        ]
       },
     ]
   })
 }
 
 resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-user-service-policy.arn
-  role       = aws_iam_role.user-service-role.name
+  policy_arn = aws_iam_policy.dynamodb-user-policy.arn
+  role       = aws_iam_role.user-role.name
 }
 
 #######################
@@ -131,11 +139,19 @@ resource "github_repository_file" "base-manifests" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
+<<<<<<< HEAD
       SERVICE_NAME = "user-service"
       SERVICE_PORT = "8181"
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8181" 
+=======
+      SERVICE_NAME = local.this_service_name
+      SERVICE_PORT = local.this_service_port
+      ECR_REPO = module.ecr_registry_user_service.repo_url
+      SERVICE_PATH_HEALTH_CHECKS = "/health"     
+      AWS_REGION  = var.region
+>>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"
@@ -158,8 +174,36 @@ resource "github_repository_file" "overlays-user-svc" {
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
+<<<<<<< HEAD
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-service-role.arn
+=======
+      SERVICE_NAME = local.this_service_name
+      ECR_REPO = module.ecr_registry_user_service.repo_url
+      ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Network Policies
+
+resource "github_repository_file" "np-user" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
+  content = templatefile(
+    "../kubernetes/network-policies/user.yaml",
+    {
+      PROJECT_NAME  = var.project_name
+>>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"

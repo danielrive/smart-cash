@@ -1,6 +1,7 @@
 ################################################
 ########## Resources for expenses-service
 
+
 #######################
 #### DynamoDB tables
 
@@ -17,11 +18,14 @@ resource "aws_dynamodb_table" "expenses_table" {
     type = "S"
   }
 
+<<<<<<< HEAD
   attribute {
     name = "date"
     type = "S"
   }
 
+=======
+>>>>>>> develop
   attribute {
     name = "category"
     type = "S"
@@ -56,8 +60,8 @@ resource "aws_dynamodb_table" "expenses_table" {
 ##############################
 ###### IAM Role K8 SA
 
-resource "aws_iam_role" "expenses-service-role" {
-  name = "role-expenses-service-${var.environment}"
+resource "aws_iam_role" "expenses-role" {
+  name = "role-expenses-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -79,10 +83,10 @@ resource "aws_iam_role" "expenses-service-role" {
 })
 }
 
-####### IAM policy for SA expenses-service
+####### IAM policy for SA expenses
 
-resource "aws_iam_policy" "dynamodb-expenses-service-policy" {
-  name        = "policy-dynamodb-expenses-service-${var.environment}"
+resource "aws_iam_policy" "dynamodb-expenses-policy" {
+  name        = "policy-dynamodb-expenses-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -102,15 +106,19 @@ resource "aws_iam_policy" "dynamodb-expenses-service-policy" {
                 "dynamodb:UpdateItem"
         ]
         Effect   = "Allow"
-        Resource = aws_dynamodb_table.expenses_table.arn
+        Resource = [
+                    aws_dynamodb_table.expenses_table.arn,
+                    "${aws_dynamodb_table.expenses_table.arn}/index/by_userId",
+                    "${aws_dynamodb_table.expenses_table.arn}/index/by_category"
+        ]
       },
     ]
   })
 }
 
 resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-expenses-service-policy.arn
-  role       = aws_iam_role.expenses-service-role.name
+  policy_arn = aws_iam_policy.dynamodb-expenses-policy.arn
+  role       = aws_iam_role.expenses-role.name
 }
 
 
@@ -141,11 +149,20 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
+<<<<<<< HEAD
       SERVICE_NAME = "expenses-service"
       SERVICE_PORT = "8282"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282" 
+=======
+      SERVICE_NAME = "expenses"
+      SERVICE_PORT = "8282"
+      ECR_REPO = module.ecr_registry_expenses_service.repo_url
+      SERVICE_PATH_HEALTH_CHECKS = "/health"     
+      SERVICE_PORT_HEALTH_CHECKS = "8282"
+      AWS_REGION  = var.region
+>>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"
@@ -168,10 +185,31 @@ resource "github_repository_file" "overlays-expenses-svc" {
   content = templatefile(
     "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
     {
+      SERVICE_NAME = "expenses"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.expenses-service-role.arn
+      ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
     }
   )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+###########################
+##### Network Policies
+
+resource "github_repository_file" "np-expenses" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/network-policy.yaml"
+  content = templatefile(
+    "../kubernetes/network-policies/expenses.yaml",{
+      PROJECT_NAME  = var.project_name
+    })
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"

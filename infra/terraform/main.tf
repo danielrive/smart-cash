@@ -5,6 +5,10 @@ locals {
   path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
+<<<<<<< HEAD
+=======
+   
+>>>>>>> develop
 }
 
 #### Netwotking Creation
@@ -167,6 +171,7 @@ resource "github_repository_file" "common_resources" {
       ## Common variables for manifests
       AWS_REGION = var.region
       ENVIRONMENT = var.environment
+      PROJECT = var.project_name
       ## Variables cert manager
       ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
       ## Variables for Grafana

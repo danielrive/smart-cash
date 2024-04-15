@@ -14,23 +14,19 @@ spec:
       labels:
         app: ${SERVICE_NAME}
     spec:
-      serviceAccountName: sa-${SERVICE_NAME}
+      serviceAccountName: sa-${SERVICE_NAME}-service
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
         imagePullPolicy: Always
+        env:
+        - name: AWS_REGION
+          value: ${AWS_REGION}
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:
           httpGet:
-            port: ${SERVICE_PORT_HEALTH_CHECKS}  
+            port: ${SERVICE_PORT}  
             path: ${SERVICE_PATH_HEALTH_CHECKS}  
-          initialDelaySeconds: 5
+          initialDelaySeconds: 1
           periodSeconds: 10
-        lifecycle:
-          postStart:
-            exec:
-              command: ["/bin/sh", "-c", "echo Container started"]
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "echo Container stopping"]

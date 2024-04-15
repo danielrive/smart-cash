@@ -5,10 +5,11 @@ import (
 	"log"
 	"os"
 
-	"user-service/internal/handler"
+	"smart-cash/user-service/internal/handler"
+	"smart-cash/utils"
 
-	"user-service/internal/repositories"
-	"user-service/internal/service"
+	"smart-cash/user-service/internal/repositories"
+	"smart-cash/user-service/internal/service"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -36,10 +37,17 @@ func main() {
 	}
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
+
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
+	// new UUID helper
+	uuidHelper := utils.NewUUIDHelper()
 
 	// // Initialize user repository
-	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable)
+	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper)
 	// Initialize user service
 	userService := service.NewUserService(userRepo)
 
@@ -52,8 +60,15 @@ func main() {
 	// GET api/v1/[controller]/user[?userID=0]
 	router.POST("/", userHandler.CreateUser)
 
-  // login method, will return a token and userId
+	// login method, will return a token and userId
 	router.POST("/login", userHandler.Login)
+
+	// Health check
+	router.GET("/health", userHandler.HealthCheck)
+
+	// test connect to other services
+
+	router.GET("/connectToSvc", userHandler.ConnectToOtherSvc)
 
 	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")

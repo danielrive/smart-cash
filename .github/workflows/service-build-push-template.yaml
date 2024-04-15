@@ -58,15 +58,16 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build containter
         id: build-and-push
-        working-directory: './${{ inputs.SERVICE_NAME }}'
-        run: | 
+        working-directory: 'app/'
+        run: |
+
             COMMIT_ID=${{ github.sha}}
 
             SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
             
             echo "${{ github.ref }}"
 
-            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }} --push --platform linux/amd64 .
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --push --platform linux/amd64 .
 
             #docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
 

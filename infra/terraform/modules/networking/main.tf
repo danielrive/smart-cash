@@ -77,7 +77,6 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   security_group_ids  = [aws_security_group.allow_tls.id]
 }
 
-
 ### AWS VPC S3 GATEWAY ENDPOINT
 
 resource "aws_vpc_endpoint" "s3" {

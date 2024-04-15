@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"log"
-	"user-service/internal/common"
-	"user-service/internal/models"
+	"smart-cash/user-service/internal/common"
+	"smart-cash/user-service/internal/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -13,22 +13,28 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+// define UUID interface
+type UUIDHelper interface {
+	New() string
+}
+
 // Define DynamoDB repository struct
 type DynamoDBUsersRepository struct {
 	client     *dynamodb.Client
 	tableUsers string
+	uuid       UUIDHelper
 }
 
-func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string) *DynamoDBUsersRepository {
+func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid UUIDHelper) *DynamoDBUsersRepository {
 	return &DynamoDBUsersRepository{
 		client:     client,
 		tableUsers: tableUsers,
+		uuid:       uuid,
 	}
 }
 
 // function to Get user by ID
 func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
-
 	output := models.User{}
 
 	// create input for get item
@@ -63,6 +69,9 @@ func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
 // function to Create user
 
 func (c *DynamoDBUsersRepository) CreateUser(u models.User) error {
+
+	u.UserId = c.uuid.New()
+
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
 		log.Println(err)
@@ -104,12 +113,13 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
 	}
 	return nil
 }
+
 // function to get user by email
-func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, error) {
+func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (models.User, error) {
 	output := models.User{}
 
 	// create keycondition dynamodb expression for the query
-	keyCondition := expression.Key("email").Equal(expression.Value(email))
+	keyCondition := expression.Key(k).Equal(expression.Value(v))
 
 	// create expression builder for the keyCondition
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
@@ -122,7 +132,7 @@ func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, err
 	// Create the input for the dynamodb query
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(c.tableUsers),
-		IndexName:                 aws.String("by_email"),
+		IndexName:                 aws.String("by_" + k),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),

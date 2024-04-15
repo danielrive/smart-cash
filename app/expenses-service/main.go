@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"expenses-service/internal/handler"
 	"log"
 	"os"
+	"smart-cash/expenses-service/internal/handler"
+	"smart-cash/expenses-service/internal/repositories"
+	"smart-cash/expenses-service/internal/service"
+	"smart-cash/utils"
 	"strconv"
 	"sync"
-	"expenses-service/internal/repositories"
-	"expenses-service/internal/service"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -58,8 +59,6 @@ var (
 
 func prometheusMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// log the init of the middleware
-		log.Println("middleware execution")
 		// take the current time when the request arrives
 
 		durationMutex.Lock()
@@ -101,9 +100,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
+	// define uuid helper
+	uuidHelper := utils.NewUUIDHelper()
+
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
 
 	// using the middleware to collect http requests
 
@@ -113,7 +119,7 @@ func main() {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// // Initialize expenses repository
-	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable)
+	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper)
 
 	// Initialize expenses service
 	expensesService := service.NewExpensesService(expensesRepo)
@@ -121,12 +127,19 @@ func main() {
 	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
+	// create expenses
 	router.POST("/", expensesHandler.CreateExpense)
 
 	//router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
 
 	// define router for get expenses by tag
 	router.GET("/", expensesHandler.GetExpenses)
+
+	// Endpoint to test health check
+	router.GET("/health", expensesHandler.HealthCheck)
+
+	// endpoint to test k8 network policies
+	router.GET("/connectToSvc", expensesHandler.ConnectToOtherSvc)
 
 	router.Run(":8282")
 

@@ -225,4 +225,9 @@ resource "null_resource" "vpc_cni_plugin_for_iam" {
 resource "aws_eks_addon" "vpc-cni" {
   cluster_name      = aws_eks_cluster.kube_cluster.name
   addon_name        = "vpc-cni"
+  resolve_conflicts_on_create = "OVERWRITE"
+
+  configuration_values = jsonencode({
+    enableNetworkPolicy= "true"
+  })
 }
