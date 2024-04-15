@@ -13,8 +13,6 @@ import (
 	"net/url"
 )
 
-var domain_name string = "rootdr.info"
-
 // Define service interface
 
 type ExpensesService struct {
@@ -31,14 +29,18 @@ func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
 	_, err := exps.expensesRepository.CreateExpense(expense)
 
 	if err != nil {
+		log.Println("error", err)
 		return err
 	}
 	// validate if the expense has automatic pay
-	//if expense.AutomaticPay {
-	// Call the internal function to validate the user token
-	//	createOrder(expense)
-	//}
-
+	if expense.AutomaticPay {
+		// Call the internal function to validate the user token
+		err := createOrder(expense)
+		if err != nil {
+			log.Println("error", err)
+			return err
+		}
+	}
 	return nil
 }
 
@@ -49,6 +51,7 @@ func (exps *ExpensesService) GetExpensesByCategory(tag string, userId string) ([
 		expenses, err := exps.expensesRepository.GetExpensesByCategory(tag, userId)
 
 		if err != nil {
+			log.Println("error", err)
 			return nil, err
 		}
 
@@ -65,6 +68,7 @@ func (exps *ExpensesService) GetExpensesByUserId(userId string) ([]models.Expens
 	expenses, err := exps.expensesRepository.GetExpensesByUserId(userId)
 
 	if err != nil {
+		log.Println("error", err)
 		return nil, err
 	}
 
@@ -73,11 +77,12 @@ func (exps *ExpensesService) GetExpensesByUserId(userId string) ([]models.Expens
 
 // Function to calculate the cost of expenses by tag
 
-func (exps *ExpensesService) CalculateCostByTag(tag string, userId string) (float64, error) {
+func (exps *ExpensesService) CalculateCostByCategory(category string, userId string) (float64, error) {
 
-	expenses, err := exps.expensesRepository.GetExpensesByCategory(tag, userId)
+	expenses, err := exps.expensesRepository.GetExpensesByCategory(category, userId)
 
 	if err != nil {
+		log.Println("error", err)
 		return 0, err
 	}
 
@@ -102,8 +107,8 @@ func validateUserToken(userId string) int {
 	// Encode the query parameters and append them to the base URL
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Printf("Error parsing URL: %v\n", err)
-		//	return err
+		log.Println("Error parsing URL ", err)
+		return 500
 	}
 	q := u.Query()
 	for key, value := range queryParams {
@@ -113,12 +118,10 @@ func validateUserToken(userId string) int {
 	// Make a GET request with the constructed URL
 	resp, err := http.Get(u.String())
 	if err != nil {
-		fmt.Printf("Error making HTTP request: %v\n", err)
-		//return err
+		log.Println("error", err)
+		return 500
 	}
 	defer resp.Body.Close()
-	// Check the response status code
-	fmt.Println(resp.StatusCode)
 
 	return resp.StatusCode
 }
@@ -127,7 +130,7 @@ func validateUserToken(userId string) int {
 
 func createOrder(expense models.Expense) error {
 	// create order format input
-	baseURL := "http://payment"
+	baseURL := "http://payment:8383"
 	//baseURL := "http://payment:8383"
 
 	// Create a map to hold query parameters
@@ -147,7 +150,7 @@ func createOrder(expense models.Expense) error {
 	// Create a new HTTP request object
 	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		log.Println("Error creating request:", err)
 		return err
 	}
 
@@ -158,7 +161,7 @@ func createOrder(expense models.Expense) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
+		log.Println("Error sending request:", err)
 		return err
 	}
 
@@ -166,7 +169,7 @@ func createOrder(expense models.Expense) error {
 	defer resp.Body.Close()
 
 	// Call the internal function to validate the user token
-	fmt.Println("scheduled to pay ", resp.Body)
+	log.Println("Scheduled to pay ", resp.Body)
 
 	return nil
 }

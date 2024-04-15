@@ -12,17 +12,24 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+// Define uuid helper interface
+type UUIDHelper interface {
+	New() string
+}
+
 // Define DynamoDB repository struct
 
 type DynamoDBTransactionRepository struct {
 	client            *dynamodb.Client
 	transactionsTable string
+	uuid              UUIDHelper
 }
 
-func NewDynamoDBTransactionRepository(client *dynamodb.Client, transactionsTable string) *DynamoDBTransactionRepository {
+func NewDynamoDBTransactionRepository(client *dynamodb.Client, transactionsTable string, uuid UUIDHelper) *DynamoDBTransactionRepository {
 	return &DynamoDBTransactionRepository{
 		client:            client,
 		transactionsTable: transactionsTable,
+		uuid:              uuid,
 	}
 }
 
@@ -44,6 +51,8 @@ func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string) *Dynam
 // Create a new transaction
 
 func (c *DynamoDBTransactionRepository) CreateTransaction(transaction models.Transaction) error {
+
+	transaction.TransactionId = c.uuid.New()
 	item, err := attributevalue.MarshalMap(transaction)
 	if err != nil {
 		log.Println(err)

@@ -115,11 +115,11 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
 }
 
 // function to get user by email
-func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, error) {
+func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (models.User, error) {
 	output := models.User{}
 
 	// create keycondition dynamodb expression for the query
-	keyCondition := expression.Key("email").Equal(expression.Value(email))
+	keyCondition := expression.Key(k).Equal(expression.Value(v))
 
 	// create expression builder for the keyCondition
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
@@ -132,7 +132,7 @@ func (c *DynamoDBUsersRepository) GetUserByEmail(email string) (models.User, err
 	// Create the input for the dynamodb query
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String(c.tableUsers),
-		IndexName:                 aws.String("by_email"),
+		IndexName:                 aws.String("by_" + k),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),

@@ -27,12 +27,14 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// create the expense
-	if err := h.paymentService.CreateOrder(order); err != nil {
+	// create order
+	orderId, err := h.paymentService.CreateOrder(order)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "order not created"})
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+
+	c.JSON(http.StatusOK, orderId)
 
 }
 
@@ -77,7 +79,7 @@ func (h *PaymentHandler) ConnectToOtherSvc(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
 
-	err := h.paymentService.ConnectOtherSVC(uri["svcName"][0])
+	err := h.paymentService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})

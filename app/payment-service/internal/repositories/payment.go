@@ -34,13 +34,13 @@ func NewDynamoDBPaymentRepository(client *dynamodb.Client, paymentTable string, 
 }
 
 // Create a order
-func (c *DynamoDBPaymentRepository) CreateOrder(order models.Order) error {
+func (c *DynamoDBPaymentRepository) CreateOrder(order models.Order) (string, error) {
 
 	order.OrderId = c.uuid.New()
 	item, err := attributevalue.MarshalMap(order)
 	if err != nil {
 		log.Println(err)
-		return err
+		return "", err
 	}
 	input := &dynamodb.PutItemInput{
 		TableName:           aws.String(c.paymentTable),
@@ -52,9 +52,9 @@ func (c *DynamoDBPaymentRepository) CreateOrder(order models.Order) error {
 
 	if err != nil {
 		log.Println(common.ErrOrderNoCreated, err)
-		return common.ErrOrderNoCreated
+		return "", common.ErrOrderNoCreated
 	}
-	return nil
+	return order.OrderId, nil
 
 }
 
@@ -75,18 +75,18 @@ func (c *DynamoDBPaymentRepository) GetOrderById(orderId string) (models.Order, 
 	response, err := c.client.GetItem(context.TODO(), input)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("error", err)
 		return output, err
 	}
 	if len(response.Item) == 0 {
-		log.Println(common.ErrOrderNotFound, err)
+		log.Println("error", common.ErrOrderNotFound, err)
 		return output, common.ErrOrderNotFound
 	}
 	// unmarshal item to models.user struct
-	err2 := attributevalue.UnmarshalMap(response.Item, &output)
-	if err2 != nil {
-		log.Println(err2)
-		return output, err2
+	err = attributevalue.UnmarshalMap(response.Item, &output)
+	if err != nil {
+		log.Println("error", err)
+		return output, err
 	}
 	return output, nil
 }

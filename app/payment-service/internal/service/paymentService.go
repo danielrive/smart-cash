@@ -22,7 +22,7 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 }
 
 // create order
-func (pay *PaymentService) CreateOrder(order models.Order) error {
+func (pay *PaymentService) CreateOrder(order models.Order) (string, error) {
 	data := models.Order{
 		OrderId:    "12",
 		Date:       "20-12-2024",
@@ -32,13 +32,13 @@ func (pay *PaymentService) CreateOrder(order models.Order) error {
 		Amount:     order.Amount,
 		Currency:   order.Currency,
 	}
-	err := pay.paymentRepository.CreateOrder(data)
+	orderId, err := pay.paymentRepository.CreateOrder(data)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return orderId, nil
 }
 
 // Get order
@@ -52,11 +52,11 @@ func (exps *PaymentService) GetOrderById(id string) (models.Order, error) {
 	return order, nil
 }
 
-func (us *PaymentService) ConnectOtherSVC(svc_name string) error {
-	baseURL := "http://" + svc_name + "." + domain_name + "/health"
-	//baseURL := "http://payment:8383"
-
+func (us *PaymentService) ConnectOtherSVC(svc_name string, port string) error {
+	baseURL := "http://" + svc_name + ":" + port + "/health"
+	log.Println(baseURL)
 	resp, err := http.Get(baseURL)
+	log.Println("response from http call ", resp)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return err

@@ -105,7 +105,11 @@ func main() {
 
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
 
 	// using the middleware to collect http requests
 
@@ -123,6 +127,7 @@ func main() {
 	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService)
 
+	// create expenses
 	router.POST("/", expensesHandler.CreateExpense)
 
 	//router.GET("/calculateTotal", expensesHandler.CalculateTotalPerCategory)
@@ -130,8 +135,10 @@ func main() {
 	// define router for get expenses by tag
 	router.GET("/", expensesHandler.GetExpenses)
 
+	// Endpoint to test health check
 	router.GET("/health", expensesHandler.HealthCheck)
 
+	// endpoint to test k8 network policies
 	router.GET("/connectToSvc", expensesHandler.ConnectToOtherSvc)
 
 	router.Run(":8282")

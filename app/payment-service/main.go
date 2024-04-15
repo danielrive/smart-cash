@@ -42,8 +42,11 @@ func main() {
 
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
-
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
 	// init pyament repositories
 	paymentRepository := repositories.NewDynamoDBPaymentRepository(dynamoClient, paymentTable, uuidHelper)
 	// init payment service
@@ -60,6 +63,7 @@ func main() {
 	// Health check
 	router.GET("/health", paymentHandler.HealthCheck)
 
+	// endpoint to test k8 network policies
 	router.GET("/connectToSvc", paymentHandler.ConnectToOtherSvc)
 
 	router.Run(":8383")

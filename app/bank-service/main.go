@@ -8,6 +8,8 @@ import (
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
 
+	"smart-cash/utils"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
@@ -15,8 +17,8 @@ import (
 
 func main() {
 	// validate if env variables exists
-	bankTable := os.Getenv("DYNAMODB_TRANSACTIONS_TABLE")
-	if bankTable == "" {
+	transactionsTable := os.Getenv("DYNAMODB_TRANSACTIONS_TABLE")
+	if transactionsTable == "" {
 		panic("DYNAMODB_TRANSACTIONS_TABLE cannot be empty")
 	}
 
@@ -32,15 +34,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
+	uuidHelper := utils.NewUUIDHelper()
+
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
 
 	// // Initialize bank repository
-	bankRepo := repositories.NewDynamoDBTransactionRepository(dynamoClient, bankTable)
+	transactionsRepo := repositories.NewDynamoDBTransactionRepository(dynamoClient, transactionsTable, uuidHelper)
 
 	// Initialize bank service
-	bankService := service.NewBankService(bankRepo)
+	bankService := service.NewBankService(transactionsRepo)
 
 	// Init bank handler
 	bankHandler := handler.NewBankHandler(bankService)

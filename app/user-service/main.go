@@ -37,7 +37,12 @@ func main() {
 	}
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
-	router := gin.Default()
+
+	router := gin.New()
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.Recovery(),
+	)
 	// new UUID helper
 	uuidHelper := utils.NewUUIDHelper()
 

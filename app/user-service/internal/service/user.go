@@ -11,8 +11,6 @@ import (
 	"smart-cash/user-service/internal/repositories"
 )
 
-var domain_name string = "rootdr.info"
-
 type UserService struct {
 	userRepository *repositories.DynamoDBUsersRepository
 }
@@ -33,6 +31,7 @@ func generateRandomToken(length int) (string, error) {
 	// Fill the byte slice with random bytes
 	_, err := rand.Read(randomBytes)
 	if err != nil {
+		log.Println("error", err)
 		return "", err
 	}
 
@@ -47,17 +46,19 @@ func (us *UserService) GetUserById(userId string) (models.User, error) {
 	user, err := us.userRepository.GetUserById(userId)
 
 	if err != nil {
+		log.Println("error", err)
 		return models.User{}, err
 	}
 
 	return user, nil
 }
 
-func (us *UserService) GetUserByEmail(email string) (models.User, error) {
+func (us *UserService) GetUserByEmailorUsername(key string, value string) (models.User, error) {
 	// Find user
-	user, err := us.userRepository.GetUserByEmail(email)
+	user, err := us.userRepository.GetUserByEmailorUsername(key, value)
 
 	if err != nil {
+		log.Println("error", err)
 		return models.User{}, err
 	}
 
@@ -70,6 +71,7 @@ func (us *UserService) CreateUser(u models.User) error {
 	err := us.userRepository.CreateUser(u)
 
 	if err != nil {
+		log.Println("error", err)
 		return err
 	}
 
@@ -82,8 +84,9 @@ func (us *UserService) CreateUser(u models.User) error {
 
 func (us *UserService) Login(u models.User) (string, string, error) {
 	// Find user
-	user, err := us.userRepository.GetUserByEmail(u.Email)
+	user, err := us.userRepository.GetUserByEmailorUsername("email", u.Email)
 	if err != nil {
+		log.Println("error", err)
 		return "", "", err
 	}
 
@@ -92,9 +95,10 @@ func (us *UserService) Login(u models.User) (string, string, error) {
 		token, err := generateRandomToken(32)
 		user.Token = token
 		if err != nil {
+			log.Println("error", err)
 			return "", "", err
 		} else {
-			log.Println("User validated ")
+			log.Println("User validated")
 			us.userRepository.UpdateUser(user)
 			return user.UserId, token, nil
 		}
@@ -107,11 +111,9 @@ func (us *UserService) Login(u models.User) (string, string, error) {
 
 func (us *UserService) ConnectOtherSVC(svc_name string, port string) error {
 	baseURL := "http://" + svc_name + ":" + port + "/health"
-	//baseURL := "http://payment:8383"
-	log.Println(baseURL)
 	resp, err := http.Get(baseURL)
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		log.Println("Error creating request:", err)
 		return err
 	}
 
@@ -119,7 +121,7 @@ func (us *UserService) ConnectOtherSVC(svc_name string, port string) error {
 	defer resp.Body.Close()
 
 	// Call the internal function to validate the user token
-	log.Println("response from http call ", resp)
+	log.Println("response from http call ", resp.StatusCode)
 	return nil
 
 }
