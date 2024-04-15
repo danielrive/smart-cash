@@ -97,7 +97,7 @@ func (exps *ExpensesService) CalculateCostByCategory(category string, userId str
 // Internal function to validate user token
 func validateUserToken(userId string) int {
 	// Define the base URL of the service
-	baseURL := "http://user/login"
+	baseURL := "http://user:8181/login"
 
 	// Create a map to hold query parameters
 	queryParams := map[string]string{
