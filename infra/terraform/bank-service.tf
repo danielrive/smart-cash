@@ -166,10 +166,7 @@ resource "github_repository_file" "np-bank" {
   file                = "clusters/${local.cluster_name}/manifests/bank-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/bank.yaml",{
-      FROM_SVC_NAME = "bank"
-      TO_SVC_NAME   = "user"
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = "8181"
     })
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"

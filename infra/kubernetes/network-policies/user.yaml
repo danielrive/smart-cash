@@ -1,12 +1,12 @@
-## Allow communication FROM ${FROM_SVC_NAME} service TO ${TO_SVC_NAME} service in the port specified
+## Allow communication FROM user service TO expenses service in the port specified
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
+  name: ingress-user-to-expenses
 spec:
   podSelector:
     matchLabels:
-      app: ${TO_SVC_NAME}
+      app: expenses
   policyTypes:
   - Ingress
   ingress:
@@ -16,21 +16,21 @@ spec:
           project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
-          app: ${FROM_SVC_NAME}
+          app: user
     ports:
     - protocol: TCP
-      port: ${TO_SVC_PORT}
+      port: 8282
 
 ---
 
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
+  name: engress-user-to-expenses
 spec:
   podSelector:
     matchLabels:
-      app: ${FROM_SVC_NAME}
+      app: user
   policyTypes:
   - Egress
   egress:
@@ -40,7 +40,7 @@ spec:
           project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
-          app: ${TO_SVC_NAME}
+          app: expenses
     ports:
     - protocol: TCP
-      port: ${TO_SVC_PORT}
+      port: 8282

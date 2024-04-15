@@ -190,11 +190,7 @@ resource "github_repository_file" "np-user" {
   content = templatefile(
     "../kubernetes/network-policies/user.yaml",
     {
-      FROM_SVC_NAME = local.this_service_name
-      TO_SVC_NAME   = "expenses"
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = "8282"
-
     }
   )
   commit_message      = "Managed by Terraform"

@@ -1,12 +1,12 @@
-## Allow communication FROM ${FROM_SVC_NAME} service TO ${TO_SVC_NAME} service in the port specified
+## Allow communication FROM expenses service TO user service in the port specified
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
+  name: ingress-expenses-to-user
 spec:
   podSelector:
     matchLabels:
-      app: ${TO_SVC_NAME}
+      app: user
   policyTypes:
   - Ingress
   ingress:
@@ -16,21 +16,23 @@ spec:
           project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
-          app: ${FROM_SVC_NAME}
+          app: expenses
     ports:
     - protocol: TCP
-      port: ${TO_SVC_PORT}
+      port: 8181
 
 ---
+
+## Allow communication FROM expenses service TO user service in the port specified
 
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-${FROM_SVC_NAME}-to-${TO_SVC_NAME}
+  name: engress-expenses-to-user
 spec:
   podSelector:
     matchLabels:
-      app: ${FROM_SVC_NAME}
+      app: expenses
   policyTypes:
   - Egress
   egress:
@@ -40,7 +42,58 @@ spec:
           project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
-          app: ${TO_SVC_NAME}
+          app: user
     ports:
     - protocol: TCP
-      port: ${TO_SVC_PORT}
+      port: 8181
+
+---
+
+## Allow communication FROM expenses service TO user service in the port specified
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engress-expenses-to-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: payment
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: expenses
+    ports:
+    - protocol: TCP
+      port: 8383
+
+---
+
+## Allow communication FROM expenses service TO payment service in the port specified
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engress-expenses-to-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    - podSelector:
+        matchLabels:
+          app: payment
+    ports:
+    - protocol: TCP
+      port: 8383

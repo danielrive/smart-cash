@@ -165,10 +165,7 @@ resource "github_repository_file" "np-payment" {
   file                = "clusters/${local.cluster_name}/manifests/payment-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/payment.yaml",{
-      FROM_SVC_NAME = "payment"
-      TO_SVC_NAME   = "expenses"
       PROJECT_NAME  = var.project_name
-      TO_SVC_PORT   = "8282"
     })
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
