@@ -141,20 +141,12 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-<<<<<<< HEAD
-      SERVICE_NAME = "expenses-service"
-      SERVICE_PORT = "8282"
-      ECR_REPO = module.ecr_registry_expenses_service.repo_url
-      SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8282" 
-=======
       SERVICE_NAME = "expenses"
       SERVICE_PORT = "8282"
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
       AWS_REGION  = var.region
->>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"
