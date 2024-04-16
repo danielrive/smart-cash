@@ -5,6 +5,7 @@ metadata:
   labels:
     project: ${PROJECT}
 
+
 ---
 
 apiVersion: v1
@@ -12,7 +13,7 @@ kind: Namespace
 metadata:
   name: nginx-ingress
   labels:
-    project: ${PROJECT}  
+    ingress: nginx
 
 ---
 
@@ -20,13 +21,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: monitoring
-  labels:
-    project: ${PROJECT}
 ---
 
 apiVersion: v1
 kind: Namespace
 metadata:
   name: cert-manager
-  labels:
-    project: ${PROJECT}

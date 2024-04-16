@@ -10,3 +10,5 @@ spec:
         env:
         - name: DYNAMODB_PAYMENT_TABLE
           value: ${DYNAMODB_TABLE_NAME}
+        - name: AWS_REGION
+          value: ${AWS_REGION}

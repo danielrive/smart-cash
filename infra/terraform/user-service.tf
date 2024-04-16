@@ -135,15 +135,13 @@ resource "github_repository_file" "base-manifests" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/base/${each.key}"
+  file                = "manifests/user-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
-      ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -162,7 +160,7 @@ resource "github_repository_file" "overlays-user-svc" {
   for_each            = fileset("../kubernetes/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/overlays/${var.environment}/${each.key}"
+  file                = "manifests/user-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
@@ -170,6 +168,7 @@ resource "github_repository_file" "overlays-user-svc" {
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -186,7 +185,7 @@ resource "github_repository_file" "np-user" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/user-service/base/network-policy.yaml"
+  file                = "manifests/user-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/user.yaml",
     {

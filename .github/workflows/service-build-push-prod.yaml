@@ -47,5 +47,5 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       SERVICE_NAME: ${{ matrix.folders }}
     secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_PROD }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
