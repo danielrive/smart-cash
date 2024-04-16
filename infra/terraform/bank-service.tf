@@ -111,16 +111,14 @@ resource "github_repository_file" "base-manifests-bank-svc" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/bank-service/base/${each.key}"
+  file                = "manifests/bank-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "bank"
       SERVICE_PORT = "8282"
-      ECR_REPO = module.ecr_registry_bank_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
-      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -139,7 +137,7 @@ resource "github_repository_file" "overlays-bank-svc" {
   for_each            = fileset("../kubernetes/bank-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/bank-service/overlays/${var.environment}/${each.key}"
+  file                = "manifests/bank-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/bank-service/overlays/${var.environment}/${each.key}",
     {
@@ -147,6 +145,7 @@ resource "github_repository_file" "overlays-bank-svc" {
       ECR_REPO = module.ecr_registry_bank_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.bank-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.transactions_table.name
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -163,7 +162,7 @@ resource "github_repository_file" "np-bank" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/bank-service/base/network-policy.yaml"
+  file                = "manifests/bank-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/bank.yaml",{
       PROJECT_NAME  = var.project_name

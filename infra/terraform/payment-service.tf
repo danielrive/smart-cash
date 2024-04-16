@@ -110,16 +110,14 @@ resource "github_repository_file" "base-manifests-payment-svc" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/payment-service/base/${each.key}"
+  file                = "manifests/payment-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "payment"
       SERVICE_PORT = "8383"
-      ECR_REPO = module.ecr_registry_payment_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8383"
-      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -138,7 +136,7 @@ resource "github_repository_file" "overlays-payment-svc" {
   for_each            = fileset("../kubernetes/payment-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/payment-service/overlays/${var.environment}/${each.key}"
+  file                = "manifests/payment-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/payment-service/overlays/${var.environment}/${each.key}",
     {
@@ -146,6 +144,7 @@ resource "github_repository_file" "overlays-payment-svc" {
       ECR_REPO = module.ecr_registry_payment_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.payment-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.payment_table.name
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -162,7 +161,7 @@ resource "github_repository_file" "np-payment" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/payment-service/base/network-policy.yaml"
+  file                = "manifests/payment-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/payment.yaml",{
       PROJECT_NAME  = var.project_name

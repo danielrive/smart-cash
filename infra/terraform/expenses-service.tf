@@ -136,16 +136,14 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/${each.key}"
+  file                = "manifests/expenses-service/base/${each.key}"
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "expenses"
       SERVICE_PORT = "8282"
-      ECR_REPO = module.ecr_registry_expenses_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       SERVICE_PORT_HEALTH_CHECKS = "8282"
-      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -164,7 +162,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
   for_each            = fileset("../kubernetes/expenses-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/overlays/${var.environment}/${each.key}"
+  file                = "manifests/expenses-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "../kubernetes/expenses-service/overlays/${var.environment}/${each.key}",
     {
@@ -172,6 +170,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
       ECR_REPO = module.ecr_registry_expenses_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.expenses-role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.expenses_table.name
+      AWS_REGION  = var.region
     }
   )
   commit_message      = "Managed by Terraform"
@@ -188,7 +187,7 @@ resource "github_repository_file" "np-expenses" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/manifests/expenses-service/base/network-policy.yaml"
+  file                = "manifests/expenses-service/base/network-policy.yaml"
   content = templatefile(
     "../kubernetes/network-policies/expenses.yaml",{
       PROJECT_NAME  = var.project_name
