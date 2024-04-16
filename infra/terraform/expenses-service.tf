@@ -18,14 +18,6 @@ resource "aws_dynamodb_table" "expenses_table" {
     type = "S"
   }
 
-<<<<<<< HEAD
-  attribute {
-    name = "date"
-    type = "S"
-  }
-
-=======
->>>>>>> develop
   attribute {
     name = "category"
     type = "S"

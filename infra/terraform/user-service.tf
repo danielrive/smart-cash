@@ -139,19 +139,11 @@ resource "github_repository_file" "base-manifests" {
   content = templatefile(
     "../kubernetes/microservices-templates/${each.key}",
     {
-<<<<<<< HEAD
-      SERVICE_NAME = "user-service"
-      SERVICE_PORT = "8181"
-      ECR_REPO = module.ecr_registry_user_service.repo_url
-      SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8181" 
-=======
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
       ECR_REPO = module.ecr_registry_user_service.repo_url
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
       AWS_REGION  = var.region
->>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"
@@ -174,10 +166,6 @@ resource "github_repository_file" "overlays-user-svc" {
   content = templatefile(
     "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
     {
-<<<<<<< HEAD
-      ECR_REPO = module.ecr_registry_user_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.user-service-role.arn
-=======
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry_user_service.repo_url
       ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
@@ -203,7 +191,6 @@ resource "github_repository_file" "np-user" {
     "../kubernetes/network-policies/user.yaml",
     {
       PROJECT_NAME  = var.project_name
->>>>>>> develop
     }
   )
   commit_message      = "Managed by Terraform"
