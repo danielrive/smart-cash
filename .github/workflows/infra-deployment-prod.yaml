@@ -1,0 +1,33 @@
+name: Terraform infra workflow PROD
+run-name: terraform-deploy-PROD
+
+on: 
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./infra/terraform
+
+jobs:
+  ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the prod environment
+  infra-deploy:
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@main
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'prod'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+     # GH_USER_NAME: "danielrive"
+     # FLUX_REPO_NAME: "smart-cash-gitops-flux"
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_PROD }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

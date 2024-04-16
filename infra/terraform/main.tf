@@ -5,10 +5,6 @@ locals {
   path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
-<<<<<<< HEAD
-=======
-   
->>>>>>> develop
 }
 
 #### Netwotking Creation

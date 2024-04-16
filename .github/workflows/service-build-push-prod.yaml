@@ -1,11 +1,10 @@
-name: Microservice deploy DEVELOP
-run-name: Microservice-deploy-DEVELOP
+name: Microservice deploy PROD
+run-name: Microservice-deploy-PROD
 
 on: 
   push:
     branches:
-      - develop
-      - feat/*
+      - main
     paths-ignore:
       - '.github/**'
       - 'infra/**'
@@ -41,10 +40,10 @@ jobs:
     strategy: 
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/service-build-push-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/service-build-push-template.yaml@main
     with: 
       AWS_REGION: us-west-2
-      ENVIRONMENT: 'develop'
+      ENVIRONMENT: 'prod'
       PROJECT_NAME: 'smart-cash'
       SERVICE_NAME: ${{ matrix.folders }}
     secrets:
