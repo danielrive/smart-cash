@@ -11,9 +11,6 @@ spec:
   - Ingress
   ingress:
   - from:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: user
@@ -35,9 +32,6 @@ spec:
   - Egress
   egress:
   - to:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: expenses
@@ -63,7 +57,7 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
-          project: ${PROJECT_NAME}
+          ingress: nginx
     ports:
     - protocol: TCP
       port: 8181

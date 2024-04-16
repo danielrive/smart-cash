@@ -11,9 +11,6 @@ spec:
   - Ingress
   ingress:
   - from:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: expenses
@@ -37,9 +34,6 @@ spec:
   - Egress
   egress:
   - to:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: user
@@ -62,9 +56,6 @@ spec:
   - Ingress
   ingress:
   - from:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: expenses
@@ -88,12 +79,32 @@ spec:
   - Egress
   egress:
   - to:
-    - namespaceSelector:
-        matchLabels:
-          project: ${PROJECT_NAME}
     - podSelector:
         matchLabels:
           app: payment
     ports:
     - protocol: TCP
       port: 8383
+
+## from nginx to user service
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-nginx-to-expenses
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Ingress
+  ingress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          ingress: nginx
+    ports:
+    - protocol: TCP
+      port: 8282
