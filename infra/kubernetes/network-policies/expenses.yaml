@@ -28,7 +28,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-expenses-to-user
+  name: egress-expenses-to-user
 spec:
   podSelector:
     matchLabels:
@@ -53,7 +53,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-expenses-to-payment
+  name: ingress-expenses-to-payment
 spec:
   podSelector:
     matchLabels:
@@ -79,7 +79,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-expenses-to-payment
+  name: egress-payment-to-expenses
 spec:
   podSelector:
     matchLabels:

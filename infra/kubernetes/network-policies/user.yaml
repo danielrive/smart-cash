@@ -26,7 +26,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: engress-user-to-expenses
+  name: egress-user-to-expenses
 spec:
   podSelector:
     matchLabels:
@@ -44,3 +44,26 @@ spec:
     ports:
     - protocol: TCP
       port: 8282
+
+## from nginx to user service
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-nginx-to-user
+spec:
+  podSelector:
+    matchLabels:
+      app: user
+  policyTypes:
+  - Ingress
+  ingress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          project: ${PROJECT_NAME}
+    ports:
+    - protocol: TCP
+      port: 8181
