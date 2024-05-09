@@ -35,3 +35,21 @@ spec:
       - prod
   parameters:
     registry: ["${ECR_REGISTRY}"]
+
+---
+
+#########################################################
+######## Container Security 
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: ContainerSecurity
+metadata:
+  name: container-security
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: [""]
+    namespaces: 
+      - develop
+      - prod
