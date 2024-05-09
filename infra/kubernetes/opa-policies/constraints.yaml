@@ -1,0 +1,37 @@
+################################################
+######## Force to have project-label
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: RequiredLabels
+metadata:
+  name: project-label
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: [""]
+    namespaces: 
+      - develop
+      - prod
+  parameters:
+    labels: ["projectId"]
+
+---
+
+#########################################################
+######## Trust in AWS ECR registry only for workloads 
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: TrustRegistry
+metadata:
+  name: project-label
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: [""]
+    namespaces: 
+      - develop
+      - prod
+  parameters:
+    labels: ["$ECR_REGISTRY"]

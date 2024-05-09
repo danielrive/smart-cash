@@ -1,12 +1,14 @@
 locals {
   brach_gitops_repo = "main"
   path_tf_repo_flux_kustomization = "../kubernetes/kustomizations"
+  path_tf_repo_services = "../kubernetes/services"
   path_tf_repo_flux_sources = "../kubernetes/flux-sources"
   path_tf_repo_flux_common = "../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
 }
 
+####################################
 #### Netwotking Creation
 
 module "networking" {
@@ -24,8 +26,9 @@ module "networking" {
   single_nat_gw         = false
   enable_auto_public_ip = true
 }
-
+######################################################
 ### KMS Key to encrypt kubernetes resources
+
 module "kms_key_eks" {
   source              = "./modules/kms"
   region              = var.region
@@ -37,8 +40,8 @@ module "kms_key_eks" {
 }
 
 ##########################
-# EKS Cluster
-##########################
+####### EKS Cluster
+
 
 module "eks_cluster" {
   source                       = "./modules/eks"
@@ -64,7 +67,7 @@ module "eks_cluster" {
 
 ###############################################
 #######    Flux Bootstrap 
-###############################################
+
 
 #### Get Kubeconfig
   # $1 = CLUSTER_NAME
@@ -98,7 +101,7 @@ resource "github_repository_file" "kustomizations-bootstrap" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/bootstrap/core-kustomize.yaml"
   content = templatefile(
-    "../kubernetes/core-kustomization/core-kustomize.yaml",
+    "${local.path_tf_repo_flux_kustomization}/core-kustomize.yaml",
     {
       CLUSTER_NAME = local.cluster_name
     }
@@ -180,9 +183,35 @@ resource "github_repository_file" "common_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-########################################
-# IAM Role for CertManager Issuer DNS01 challenge
-#########################################
+
+############################
+##### OPA policies
+
+
+resource "github_repository_file" "opa_policies" {
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  for_each            = fileset("../kubernetes/opa-policies", "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/opa-policies/${each.key}"
+  content = templatefile(
+    "../kubernetes/opa-policies/${each.key}",
+    {
+     
+      ECR_REGISTRY = module.ecr_registry_payment_service.repo_url
+
+      
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+###################################################################
+########## IAM Role for CertManager Issuer DNS01 challenge
+
 
 resource "aws_iam_role" "cert-manager-iam-role" {
   name = "cert-manager-${var.region}"

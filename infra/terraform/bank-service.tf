@@ -108,12 +108,12 @@ module "ecr_registry_bank_service" {
 
 resource "github_repository_file" "base-manifests-bank-svc" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
+  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/bank-service/base/${each.key}"
   content = templatefile(
-    "../kubernetes/microservices-templates/${each.key}",
+    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "bank"
       SERVICE_PORT = "8282"
@@ -134,12 +134,12 @@ resource "github_repository_file" "base-manifests-bank-svc" {
 
 resource "github_repository_file" "overlays-bank-svc" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/bank-service/overlays/${var.environment}", "*.yaml")
+  for_each            = fileset("${local.path_tf_repo_services}/bank-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/bank-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "../kubernetes/bank-service/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/bank-service/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = "bank"
       ECR_REPO = module.ecr_registry_bank_service.repo_url

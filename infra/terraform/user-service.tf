@@ -132,12 +132,12 @@ module "ecr_registry_user_service" {
 
 resource "github_repository_file" "base-manifests" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/microservices-templates", "*.yaml")
+  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/user-service/base/${each.key}"
   content = templatefile(
-    "../kubernetes/microservices-templates/${each.key}",
+    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
@@ -157,12 +157,12 @@ resource "github_repository_file" "base-manifests" {
 
 resource "github_repository_file" "overlays-user-svc" {
   depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/user-service/overlays/${var.environment}", "*.yaml")
+  for_each            = fileset("${local.path_tf_repo_services}/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/user-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "../kubernetes/user-service/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/user-service/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry_user_service.repo_url
