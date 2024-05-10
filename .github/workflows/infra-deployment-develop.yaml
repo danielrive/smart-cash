@@ -44,7 +44,8 @@ jobs:
         working-directory: .github/jobs/
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   infra-deploy-base:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: set-up-terraform-backend
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
@@ -57,7 +58,8 @@ jobs:
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
 
   infra-deploy-eks:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: infra-deploy-base
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
