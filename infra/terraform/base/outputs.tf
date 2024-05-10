@@ -2,7 +2,7 @@
 ####### Networking outputs
 
 output "vpc_id" {
-  value = module.networking.vpc.id
+  value = module.networking.main.vpc_id
 }
 
 
