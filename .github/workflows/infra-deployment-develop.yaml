@@ -40,6 +40,10 @@ jobs:
       - name: config tf backend
         id: tf-backend
         run: ./terraform-backend.sh
+        env:
+          AWS_REGION: 'us-west-2'
+          ENVIRONMENT: 'develop'
+          PROJECT_NAME: 'smart-cash'
         working-directory: .github/jobs/
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   infra-deploy-base:
