@@ -9,6 +9,9 @@ inputs:
   GITHUB_TOKEN:
     description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
     required: true
+  STAGE:
+    description: 'terraform stage to deploy, start from base'
+    required: true
    
 
 runs:
@@ -37,7 +40,7 @@ runs:
            terraform init \
            -backend-config=bucket="$BUCKET_NAME" \
            -backend-config=region='${{ env.AWS_REGION }}' \
-           -backend-config=key='state' \
+            -backend-config=key='stage/${{ input.STAGE }}/${{ input.STAGE }}.tfstate' \
            -backend-config=dynamodb_table="$DYNAMODB_TABLE"
       shell: bash
       working-directory: '.${{ inputs.WORKING_DIRECTORY }}'

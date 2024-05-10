@@ -20,6 +20,10 @@ on:
         required: false
         type: string
         default: '1.4.6'
+      STAGE:
+        description: 'folder name corresponding to the stage to deploy, this must follow an order, starting from base'
+        required: true
+        type: string
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
@@ -34,27 +38,9 @@ env:
   AWS_REGION: ${{ inputs.AWS_REGION }}
   PROJECT_NAME: ${{ inputs.PROJECT_NAME }}
   TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION }}
-  AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-  WORKING_DIRECTORY: '/infra/terraform'
-  CLUSTER_NAME: "smart-cash-${{ inputs.ENVIRONMENT }}"
+  AWS_IAM_ROLE_GH: ${{ inputs.AWS_IAM_ROLE_GH }}
 
 jobs:
-## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
-  set-up-terraform-backend:
-    runs-on: ubuntu-latest
-    steps:  
-      - name: checkout-repo
-        uses: actions/checkout@v4
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
-          aws-region: ${{ env.AWS_REGION }}
-      - name: config tf backend
-        id: tf-backend
-        run: ./terraform-backend.sh
-        working-directory: .github/jobs/
 
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
@@ -66,14 +52,15 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ input.AWS_IAM_ROLE_GH }}'
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
       - name: terraform plan
         id: terraform-plan
         uses: ./.github/actions/terraform-plan
         with:
-          WORKING_DIRECTORY: '/infra/terraform'
+          WORKING_DIRECTORY: '/infra/terraform/${{ input.STAGE}}'
+          STAGE: ${{ input.STAGE }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:
@@ -86,31 +73,13 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ input.AWS_IAM_ROLE_GH }}'
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
       - name: terraform apply
         id: tf-apply
         uses: ./.github/actions/terraform-apply
         with:
-          WORKING_DIRECTORY: '/infra/terraform'
+          WORKING_DIRECTORY: '/infra/terraform/${{ input.STAGE}}'
+          STAGE: ${{ input.STAGE }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
-  
- ## flux-bootstrap:
- ##   runs-on: ubuntu-latest
- ##   needs: terraform-apply  
- ##   steps:
- ##    - name: checkout-repo
- ##      uses: actions/checkout@v4
- ##    - name: configure aws credentials
- ##      uses: aws-actions/configure-aws-credentials@v4
- ##      with:
- ##        role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
- ##        role-session-name: GitHub_to_AWS_via_FederatedOIDC
- ##        aws-region: ${{ env.AWS_REGION }}
- ##    - name: bootstrap flux
- ##      id: bootstrap-flux
- ##      run: ./bootstrap-flux.sh
- ##      working-directory: .github/jobs/
- ##      env: 
- ##       GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}

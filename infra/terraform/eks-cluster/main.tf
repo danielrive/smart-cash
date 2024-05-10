@@ -9,20 +9,18 @@ locals {
 }
 
 
-
 ##########################
 ####### EKS Cluster
 
 
 module "eks_cluster" {
-  source                       = "./modules/eks"
-  depends_on                   = [module.kms_key_eks,module.networking]
+  source                       = "../modules/eks"
   environment                  = var.environment
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
   cluster_version              = "1.29"
-  subnet_ids                   = module.networking.main.public_subnets
+  subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? ["t3.medium"] : ["t3.medium"]
   AMI_for_worker_nodes         = "AL2_x86_64"
@@ -31,7 +29,7 @@ module "eks_cluster" {
   min_instances_node_group     = 2
   private_endpoint_api         = true
   public_endpoint_api          = true
-  kms_arn                      = module.kms_key_eks.kms_arn
+  kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
   account_number               = data.aws_caller_identity.id_account.id
 }
@@ -123,100 +121,4 @@ resource "github_repository_file" "sources" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-}
-
-
-###########################
-##### Common resources
-
-resource "github_repository_file" "common_resources" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/common/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_common}/${each.key}",
-    {
-      ## Common variables for manifests
-      AWS_REGION = var.region
-      ENVIRONMENT = var.environment
-      PROJECT = var.project_name
-      ## Variables cert manager
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
-      ## Variables for Grafana
-      ## Variables for ingress
-      
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-############################
-##### OPA policies
-
-
-resource "github_repository_file" "opa_policies" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("../kubernetes/opa-policies", "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/opa-policies/${each.key}"
-  content = templatefile(
-    "../kubernetes/opa-policies/${each.key}",
-    {
-     
-      ECR_REGISTRY = module.ecr_registry_payment_service.repo_url
-
-      
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-###################################################################
-########## IAM Role for CertManager Issuer DNS01 challenge
-
-
-resource "aws_iam_role" "cert-manager-iam-role" {
-  name = "cert-manager-${var.region}"
-
-  path = "/"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      "Condition": {
-        "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:cert-manager:cert-manager"
-        }
-      }
-    }
-  ]
-}
-EOF
-
-}
-
-resource "aws_iam_policy" "cert-manager-iam-role-policy" {
-  name        = "policy-cert-manager-iam-role"
-  policy      = data.aws_iam_policy_document.cert-manager-issuer.json
-}
-
-resource "aws_iam_role_policy_attachment" "cert-manager-role" {
-  policy_arn = aws_iam_policy.cert-manager-iam-role-policy.arn
-  role       = aws_iam_role.cert-manager-iam-role.name
 }
