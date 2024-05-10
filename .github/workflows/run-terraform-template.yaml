@@ -55,15 +55,15 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ input.AWS_IAM_ROLE_GH }}'
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ inputs.AWS_IAM_ROLE_GH }}'
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
       - name: terraform plan
         id: terraform-plan
         uses: ./.github/actions/terraform-plan
         with:
-          WORKING_DIRECTORY: '/infra/terraform/${{ input.STAGE}}'
-          STAGE: ${{ input.STAGE }}
+          WORKING_DIRECTORY: '/infra/terraform/${{ inputs.STAGE}}'
+          STAGE: ${{ inputs.STAGE }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:
@@ -76,13 +76,13 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ input.AWS_IAM_ROLE_GH }}'
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ inputs.AWS_IAM_ROLE_GH }}'
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
       - name: terraform apply
         id: tf-apply
         uses: ./.github/actions/terraform-apply
         with:
-          WORKING_DIRECTORY: '/infra/terraform/${{ input.STAGE}}'
-          STAGE: ${{ input.STAGE }}
+          WORKING_DIRECTORY: '/infra/terraform/${{ inputs.STAGE}}'
+          STAGE: ${{ inputs.STAGE }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
