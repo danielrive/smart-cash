@@ -6,6 +6,7 @@ on:
     branches:
       - develop
       - feat/*
+      - refactor/*
     paths:
       - "infra/**"
   pull_request:
