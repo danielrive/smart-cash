@@ -42,7 +42,6 @@ env:
   AWS_REGION: ${{ inputs.AWS_REGION }}
   PROJECT_NAME: ${{ inputs.PROJECT_NAME }}
   TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION }}
-  AWS_IAM_ROLE_GH: ${{ inputs.AWS_IAM_ROLE_GH }}
 
 jobs:
 
