@@ -7,8 +7,8 @@ on:
       - develop
       - feat/*
       - refactor/folder-structure
-    paths:
-      - "infra/**"
+  #  paths:
+  #    - "infra/**"
   pull_request:
     branches:
       - develop
