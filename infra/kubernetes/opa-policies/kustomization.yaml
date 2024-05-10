@@ -3,4 +3,4 @@ kind: Kustomization
 
 resources:
 - templates.yaml
-#- constraints.yaml
+- constraints.yaml

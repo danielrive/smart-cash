@@ -34,7 +34,7 @@ spec:
       - develop
       - prod
   parameters:
-    registry: ["${ECR_REGISTRY}"]
+    registry: "${ECR_REGISTRY}"
 
 ---
 
