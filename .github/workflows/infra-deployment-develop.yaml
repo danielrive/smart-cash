@@ -34,7 +34,7 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/GitHubAction-smart-cash' 
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-smart-cash' 
           role-session-name: 'GitHub_to_AWS_via_FederatedOIDC'
           aws-region: "us-west-2"
       - name: config tf backend
