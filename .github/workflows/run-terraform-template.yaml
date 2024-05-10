@@ -24,6 +24,10 @@ on:
         description: 'folder name corresponding to the stage to deploy, this must follow an order, starting from base'
         required: true
         type: string
+      AWS_IAM_ROLE_GH:
+        description: 'folder name corresponding to the stage to deploy, this must follow an order, starting from base'
+        required: true
+        type: string
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'

@@ -20,6 +20,7 @@ permissions:
 ### Define General env variables
 env:
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+
 defaults:
   run:
     shell: bash
@@ -36,7 +37,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          role-session-name: 'GitHub_to_AWS_via_FederatedOIDC'
           aws-region: "us-west-2"
       - name: config tf backend
         id: tf-backend
@@ -52,7 +53,7 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: ${{ env.AWS_IAM_ROLE_GH }}
-      STAGE: base
+      STAGE: 'base'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
@@ -66,7 +67,7 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: ${{ env.AWS_IAM_ROLE_GH }}
-      STAGE: eks-cluster
+      STAGE: 'eks-cluster'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
