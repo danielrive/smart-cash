@@ -107,9 +107,9 @@ jobs:
        working-directory: .github/jobs
 
   SERVICES_INFRA_DEPLOY:
-    needs: validate-folders-updated
+    needs: VALIDATE_SVC_UPDATED
     strategy: 
-      matrix: ${{ fromJSON(needs.validate-folders-updated.outputs.FOLDERS_UPDATED) }}
+      matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
     with: 
