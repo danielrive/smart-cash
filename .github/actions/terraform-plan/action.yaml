@@ -54,7 +54,7 @@ runs:
             -detailed-exitcode
 
             export EXIT_CODE_TF=$?
-            
+            echo $EXIT_CODE_TF
             #echo $EXIT_CODE_TF >> $GITHUB_OUTPUT
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
