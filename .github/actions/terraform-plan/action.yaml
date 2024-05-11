@@ -56,7 +56,21 @@ runs:
             -detailed-exitcode
             exitcode="$?"
             echo "tf-plan-code=$exitcode" >> $GITHUB_OUTPUT
-            exit "$exitcode"
+            if [ "$exitcode" -eq 0 ]; then
+                echo "No changes"
+            if [ "$exitcode" -eq 2 ]; then
+                echo "Changes"
+
+            if [ "$exitcode" -eq 0 ]; then
+              echo "No changes"
+              exit $exitcode
+            elif [ "$exitcode" -eq 2 ]; then
+              echo "changes"
+              exit 0
+            else
+              echo "Error"
+              exit $exitcode
+            fi
 
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
