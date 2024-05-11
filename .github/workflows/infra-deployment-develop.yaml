@@ -60,16 +60,16 @@ jobs:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
 
-  infra-deploy-eks:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
-    needs: infra-deploy-base
-    with: 
-      AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.4.6'
-      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'eks-cluster'
-    secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
-      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+#  infra-deploy-eks:
+#    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+#    needs: infra-deploy-base
+#    with: 
+#      AWS_REGION: 'us-west-2'
+#      ENVIRONMENT: 'develop'
+#      PROJECT_NAME: 'smart-cash'
+#      TERRAFORM_VERSION: '1.4.6'
+#      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+#      STAGE: 'eks-cluster'
+#    secrets:
+#      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+#      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
