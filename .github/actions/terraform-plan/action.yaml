@@ -44,7 +44,8 @@ runs:
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
       - name: Run terraform plan
         id: terraform-plan
-        run: | 
+        run: |
+            set +e 
             terraform plan \
             -input=false \
             -var 'region=${{ env.AWS_REGION }}' \
@@ -52,9 +53,10 @@ runs:
             -var 'project_name=${{ env.PROJECT_NAME }}' \
             -out ${{ github.run_id }}.tfplan \
             -detailed-exitcode && export EXIT_CODE_TF=$?
-            
-            echo $EXIT_CODE_TF
-            #echo $EXIT_CODE_TF >> $GITHUB_OUTPUT
+            exitcode="$?"
+            echo "tf-plan-code=$exitcode" >> $GITHUB_OUTPUT
+            exit "$exitcode"
+
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
 
