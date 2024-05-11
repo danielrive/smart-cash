@@ -21,6 +21,7 @@ runs:
         uses: hashicorp/setup-terraform@v2
         with: 
          terraform_version: '${{ env.TERRAFORM_VERSION }}'
+         terraform_wrapper: false
       - name: Validate terraform version
         id: validate-tf-version
         run: terraform version
