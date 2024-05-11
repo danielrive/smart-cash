@@ -50,7 +50,7 @@ runs:
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
-            -out ${{ github.run_id }}.tfplan
+            -out ${{ github.run_id }}.tfplan \
             -detailed-exitcode
 
             echo "tf-plan-code=$(echo $?)" >> $GITHUB_OUTPUT
