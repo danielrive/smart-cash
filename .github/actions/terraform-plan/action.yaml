@@ -53,9 +53,9 @@ runs:
             -out ${{ github.run_id }}.tfplan \
             -detailed-exitcode
 
-            $?
+            export EXIT_CODE_TF=$?
             
-            #echo $tf-plan-code >> $GITHUB_OUTPUT
+            #echo $EXIT_CODE_TF >> $GITHUB_OUTPUT
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
 
