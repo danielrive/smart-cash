@@ -51,9 +51,8 @@ runs:
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
             -out ${{ github.run_id }}.tfplan \
-            -detailed-exitcode
-
-            export EXIT_CODE_TF=$?
+            -detailed-exitcode && export EXIT_CODE_TF=$?
+            
             echo $EXIT_CODE_TF
             #echo $EXIT_CODE_TF >> $GITHUB_OUTPUT
         shell: bash
