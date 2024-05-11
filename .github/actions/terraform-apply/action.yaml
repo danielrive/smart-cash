@@ -22,7 +22,7 @@ runs:
   steps:
     - name: Terraform install
       id: 'install-terraform'
-      uses: hashicorp/setup-terraform@v3
+      uses: hashicorp/setup-terraform@v
       with: 
         terraform_version: '${{ env.TERRAFORM_VERSION }}'
     - name: Validate terraform version
@@ -31,7 +31,7 @@ runs:
       shell: bash
     - name: Download Artifact
       id: download-tf-plan
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: tf-plan
         path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}'
