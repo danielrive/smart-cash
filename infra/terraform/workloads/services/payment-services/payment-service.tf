@@ -1,6 +1,10 @@
 ################################################
 ########## Resources for payment-service
 
+locals {
+  path_tf_repo_services = "../../../../kubernetes/services"
+  brach_gitops_repo = "main"
+}
 
 #######################
 #### DynamoDB tables
@@ -36,13 +40,13 @@ resource "aws_iam_role" "payment-role" {
     {
       Effect= "Allow"
       Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.cluster_oidc}"
       },
       Action= "sts:AssumeRoleWithWebIdentity",
       Condition={
         StringEquals= {
-          "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-payment-service"
+          "${data.terraform_remote_state.eks.cluster_oidc}:aud": "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-payment-service"
         }
       }
     }
@@ -106,13 +110,12 @@ module "ecr_registry_payment_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests-payment-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
+  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/payment-service/base/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
+    "../../../../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "payment"
       SERVICE_PORT = "8383"
@@ -132,7 +135,6 @@ resource "github_repository_file" "base-manifests-payment-svc" {
 ##### overlays
 
 resource "github_repository_file" "overlays-payment-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("${local.path_tf_repo_services}/payment-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -158,12 +160,11 @@ resource "github_repository_file" "overlays-payment-svc" {
 ##### Network Policies
 
 resource "github_repository_file" "np-payment" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/payment-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/payment.yaml",{
+    "../../../../kubernetes/network-policies/payment.yaml",{
       PROJECT_NAME  = var.project_name
     })
   commit_message      = "Managed by Terraform"

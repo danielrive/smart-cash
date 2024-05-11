@@ -73,3 +73,52 @@ jobs:
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+  
+  K8_COMMON_RESOURCES_DEPLOY:
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: EKS_STAGE_DEPLOY
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      STAGE: 'workloads/common'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+  
+  VALIDATE_SVC_UPDATED:
+   runs-on: ubuntu-latest
+   needs: EKS_STAGE_DEPLOY
+   outputs:
+      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v4
+       with:
+          fetch-depth: 0
+     - name: Get modified services
+       id: get_folders_changed
+       run: |
+          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+          echo "getting file"
+       working-directory: .github/jobs
+
+  SERVICES_INFRA_DEPLOY:
+    needs: validate-folders-updated
+    strategy: 
+      matrix: ${{ fromJSON(needs.validate-folders-updated.outputs.FOLDERS_UPDATED) }}
+      fail-fast: false
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      STAGE: 'workloads/services/${{ matrix.folders }}'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

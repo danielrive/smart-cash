@@ -15,4 +15,3 @@ spec:
       dns01:
         route53:
           region: ${AWS_REGION}
-         

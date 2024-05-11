@@ -3,6 +3,8 @@
 locals {
   this_service_name = "user"
   this_service_port = 8181
+  path_tf_repo_services = "../../../../kubernetes/services"
+  brach_gitops_repo = "main"
 }
 
 
@@ -62,13 +64,13 @@ resource "aws_iam_role" "user-role" {
     {
       Effect= "Allow"
       Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.cluster_oidc}"
       },
       Action= "sts:AssumeRoleWithWebIdentity",
       Condition={
         StringEquals= {
-          "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user-service"
+          "${data.terraform_remote_state.eks.cluster_oidc}:aud": "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user-service"
         }
       }
     }
@@ -131,13 +133,12 @@ module "ecr_registry_user_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
+  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/user-service/base/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
+    "../../../../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
@@ -156,7 +157,6 @@ resource "github_repository_file" "base-manifests" {
 ##### overlays
 
 resource "github_repository_file" "overlays-user-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("${local.path_tf_repo_services}/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -182,12 +182,11 @@ resource "github_repository_file" "overlays-user-svc" {
 ##### Network Policies
 
 resource "github_repository_file" "np-user" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/user-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/user.yaml",
+    "../../../../kubernetes/network-policies/user.yaml",
     {
       PROJECT_NAME  = var.project_name
     }
