@@ -3,25 +3,25 @@
 
 
 output "cluster_endpoint" {
-  value = aws_eks_cluster.kube_cluster.endpoint
+  value = module.eks_cluster.cluster_endpoint
 }
 
 output "cluster_oidc" {
-  value = replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")
+  value = module.eks_cluster.cluster_oidc
 }
 
 output "cluster_name" {
   description = "Cluster name"
-  value       = aws_eks_cluster.kube_cluster.id
+  value       = module.eks_cluster.cluster_name
 }
 
 output "cluster_security_group_id" {
   description = "Cluster security group id"
-  value       = aws_eks_cluster.kube_cluster.vpc_config[0].cluster_security_group_id
+  value       = module.eks_cluster.cluster_security_group_id
 }
 
 output "created_at" {
   description = "Cluster created_at"
-  value       = aws_eks_cluster.kube_cluster.created_at
+  value       = module.eks_cluster.created_at
 }
 
