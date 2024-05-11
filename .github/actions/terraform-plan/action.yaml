@@ -9,6 +9,10 @@ inputs:
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
+outputs:
+  PLAN_EXIT_CODE:
+    description: "exit code generate after tf plan, 0= no changes, 2=changes, 1=error"
+    value: ${{ steps.terraform-plan.outputs.tf-plan-code }}
 runs:
   using: "composite"
   steps:
@@ -47,6 +51,9 @@ runs:
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
             -out ${{ github.run_id }}.tfplan
+            -detailed-exitcode
+
+            echo "tf-plan-code=$(echo $?)" >> $GITHUB_OUTPUT
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
 

@@ -7,6 +7,15 @@ data "terraform_remote_state" "base" {
   }
 }
 
+data "terraform_remote_state" "eks" {
+  backend = "s3"
+  config = {
+    bucket = "${var.project_name}-tf-state-lock-${var.environment}-${var.region}" 
+    key    = "base/eks-cluster.tfstate"
+    region  = var.region
+  }
+}
+
 ## Getting aws account ID 
 data "aws_caller_identity" "id_account" {}
 
