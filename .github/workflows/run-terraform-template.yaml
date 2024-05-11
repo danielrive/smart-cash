@@ -77,18 +77,18 @@ jobs:
         shell: bash
         run: |
             echo "${{ needs.terraform-plan.outputs.PLAN_EXIT_CODE }}"
-      #- name: checkout-repo
-      #  uses: actions/checkout@v4
-      #- name: configure aws credentials
-      #  uses: aws-actions/configure-aws-credentials@v4
-      #  with:
-      #    role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ inputs.AWS_IAM_ROLE_GH }}'
-      #    role-session-name: GitHub_to_AWS_via_FederatedOIDC
-      #    aws-region: ${{ env.AWS_REGION }}
-      #- name: terraform apply
-      #  id: tf-apply
-      #  uses: ./.github/actions/terraform-apply
-      #  with:
-      #    WORKING_DIRECTORY: '/infra/terraform/${{ inputs.STAGE}}'
-      #    STAGE: ${{ inputs.STAGE }}
-      #    GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
+      - name: checkout-repo
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ inputs.AWS_IAM_ROLE_GH }}'
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: terraform apply
+        id: tf-apply
+        uses: ./.github/actions/terraform-apply
+        with:
+          WORKING_DIRECTORY: '/infra/terraform/${{ inputs.STAGE}}'
+          STAGE: ${{ inputs.STAGE }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
