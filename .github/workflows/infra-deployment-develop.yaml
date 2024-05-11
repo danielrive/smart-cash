@@ -56,6 +56,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'base'
+      ARTIFAC_ID: 'base'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
@@ -70,6 +71,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'eks-cluster'
+      ARTIFAC_ID: 'eks'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
@@ -84,6 +86,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'workloads/common'
+      ARTIFAC_ID: 'k8-common'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
@@ -119,6 +122,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'workloads/services/${{ matrix.folders }}'
+      ARTIFAC_ID: 'k8-${{ matrix.folders }}'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

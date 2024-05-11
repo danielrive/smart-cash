@@ -12,6 +12,9 @@ inputs:
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
+  ARTIFAC_ID:
+    description: 'unique ID to named the artifacts'
+    required: true
    
 
 runs:
@@ -48,7 +51,7 @@ runs:
       run: |
            terraform apply \
            -input=false \
-           ${{ github.run_id }}.tfplan
+           ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan
       shell: bash
       working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
       env:

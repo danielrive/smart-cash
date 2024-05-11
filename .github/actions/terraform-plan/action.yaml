@@ -9,6 +9,9 @@ inputs:
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
+  ARTIFAC_ID:
+    description: 'unique ID to named the artifacts'
+    required: true
 outputs:
   PLAN_EXIT_CODE:
     description: "exit code generate after tf plan, 0= no changes, 2=changes, 1=error"
@@ -75,4 +78,4 @@ runs:
         uses: actions/upload-artifact@v4
         with:
           name: tf-plan
-          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}-${{ github.job }}.tfplan'
+          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan'
