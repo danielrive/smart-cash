@@ -1,9 +1,8 @@
 locals {
   brach_gitops_repo = "main"
-  path_tf_repo_flux_kustomization = "../kubernetes/kustomizations"
-  path_tf_repo_services = "../kubernetes/services"
-  path_tf_repo_flux_sources = "../kubernetes/flux-sources"
-  path_tf_repo_flux_common = "../kubernetes/common"
+  path_tf_repo_flux_kustomization = "../../kubernetes/kustomizations"
+  path_tf_repo_flux_sources = "../../kubernetes/flux-sources"
+  path_tf_repo_flux_common = "../../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
 }
