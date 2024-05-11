@@ -48,8 +48,8 @@ jobs:
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
     runs-on: ubuntu-latest
-    #outputs:
-    #  PLAN_EXIT_CODE: ${{ steps.terraform-plan.outputs.PLAN_EXIT_CODE }}
+    outputs:
+      PLAN_EXIT_CODE: ${{ steps.terraform-plan.outputs.PLAN_EXIT_CODE }}
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
