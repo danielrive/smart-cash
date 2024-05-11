@@ -75,4 +75,4 @@ runs:
         uses: actions/upload-artifact@v4
         with:
           name: tf-plan
-          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}.tfplan'
+          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}-${{ github.job }}.tfplan'
