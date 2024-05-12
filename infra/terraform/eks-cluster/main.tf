@@ -171,7 +171,7 @@ resource "github_repository_file" "kustomizations" {
 resource "github_repository_file" "opa_templates" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/core/opa-templrates.yaml"
+  file                = "clusters/${local.cluster_name}/core/opa-templates.yaml"
   content = templatefile(
     "../../kubernetes/opa-policies/opa-templates.yaml",{}
   )

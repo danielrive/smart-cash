@@ -8,7 +8,7 @@ on:
       - feat/*
       - refactor/folder-structure
     paths:
-      - "infra/terraform"
+      - "infra/terraform/**"
   pull_request:
     branches:
       - develop
