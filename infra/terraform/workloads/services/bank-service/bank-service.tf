@@ -96,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
 ##### ECR Repo
 
 module "ecr_registry_bank_service" {
-  source       = "./modules/ecr"
+  source       = "../../../modules/ecr"
   name         = "bank-service"
   project_name = var.project_name
   environment  = var.environment
