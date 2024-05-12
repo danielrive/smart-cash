@@ -46,6 +46,7 @@ jobs:
           aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
   set-up-terraform-backend:
+    needs: check-if-cluster-exists
     runs-on: ubuntu-latest
     steps:  
       - name: checkout-repo
@@ -68,7 +69,7 @@ jobs:
  
   K8_COMMON_RESOURCES_DEPLOY:
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
-    needs: EKS_STAGE_DEPLOY
+    needs: set-up-terraform-backend
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
