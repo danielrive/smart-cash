@@ -75,7 +75,8 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'workloads/common'
+      FOLDER: 'workloads/common'
+      STAGE: 'common'
       ARTIFAC_ID: 'k8-common'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
@@ -100,7 +101,7 @@ jobs:
   #     working-directory: .github/jobs
 
   SERVICES_INFRA_DEPLOY:
-   # needs: VALIDATE_SVC_UPDATED
+    needs: set-up-terraform-backend
     strategy: 
       matrix: 
         folders: ["user-service","bank-service","expenses-service","payment-service"]
@@ -113,7 +114,8 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'workloads/services/${{ matrix.folders }}'
+      FOLDER: 'workloads/services/${{ matrix.folders }}'
+      STAGE: '${{ matrix.folders }}'
       ARTIFAC_ID: 'k8-${{ matrix.folders }}'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}

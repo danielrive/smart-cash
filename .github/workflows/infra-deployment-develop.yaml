@@ -56,6 +56,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'base'
+      FOLDER: 'eks-cluster'
       ARTIFAC_ID: 'base'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
@@ -71,6 +72,7 @@ jobs:
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'eks-cluster'
+      FOLDER: 'eks-cluster'
       ARTIFAC_ID: 'eks'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
