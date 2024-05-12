@@ -1,5 +1,5 @@
-name: Terraform infra workflow DEVELOP
-run-name: terraform-deploy-DEVELOP
+name: K8 resource Deploy
+run-name: K8-Resource-Deploy
 
 on: 
   push:
@@ -43,7 +43,7 @@ jobs:
         id: eks-cluster
         run: |
           echo "Get EKS cluster"
-          aws eks describe-cluster --name ${{ envs.PROJECT_NAME }}-${{ envs.ENVIRONMENT }}
+          aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
   set-up-terraform-backend:
     runs-on: ubuntu-latest
