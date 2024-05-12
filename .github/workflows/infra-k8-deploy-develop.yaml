@@ -101,8 +101,9 @@ jobs:
   #     working-directory: .github/jobs
 
   SERVICES_INFRA_DEPLOY:
-    needs: set-up-terraform-backend
+    needs: K8_COMMON_RESOURCES_DEPLOY
     strategy: 
+      max-parallel: 1
       matrix: 
         folders: ["user-service","bank-service","expenses-service","payment-service"]
       #matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
