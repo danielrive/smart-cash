@@ -7,6 +7,7 @@ resources:
 - helm-nginx-ingress.yaml
 - np-default-deny.yaml
 - helm-opa-gatekeeper.yaml
+- opa-templates.yaml
 #- helm-prometheus.yaml
 #- crd-cert-manager.yaml
 #- helm-cert-manager.yaml

@@ -123,29 +123,6 @@ resource "github_repository_file" "kustomizations-bootstrap" {
   overwrite_on_create = true
 }
 
-################################################
-##### Flux kustomizations core
-
-resource "github_repository_file" "kustomizations" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/core/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_kustomization}/${each.key}",
-    {
-      ENVIRONMENT = var.environment
-      CLUSTER_NAME = local.cluster_name
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-
 ###########################
 ##### Flux Sources 
 
@@ -165,20 +142,59 @@ resource "github_repository_file" "sources" {
   overwrite_on_create = true
 }
 
-############################
-##### OPA templates
+################################################
+##### Flux kustomizations core
 
-
-resource "github_repository_file" "opa_templates" {
-  for_each            = fileset("../kubernetes/opa-policies", "template*.yaml")
+resource "github_repository_file" "kustomizations" {
+  depends_on          = [module.eks_cluster,github_repository_file.sources]
+  for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/opa-policies/${each.key}"
+  file                = "clusters/${local.cluster_name}/core/${each.key}"
   content = templatefile(
-    "../../kubernetes/opa-policies/${each.key}",{}
+    "${local.path_tf_repo_flux_kustomization}/${each.key}",
+    {
+      ENVIRONMENT = var.environment
+      CLUSTER_NAME = local.cluster_name
+    }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
+
+############################
+##### OPA templates
+
+resource "github_repository_file" "opa_templates" {
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/core/opa-templrates.yaml"
+  content = templatefile(
+    "../../kubernetes/opa-policies/opa-templates.yaml",{}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+############################
+##### OPA constraints
+
+resource "github_repository_file" "opa_constraints" {
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/opa-policies/opa-templrates.yaml"
+  content = templatefile(
+    "../../kubernetes/opa-policies/constraints.yaml",{}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+

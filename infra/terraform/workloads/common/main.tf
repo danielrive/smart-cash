@@ -36,6 +36,19 @@ resource "github_repository_file" "common_resources" {
 }
 
 
+############################
+##### OPA Constraints
 
-
-
+resource "github_repository_file" "opa_templates" {
+  for_each            = fileset("../kubernetes/opa-policies", "contraints*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "clusters/${local.cluster_name}/opa-policies/${each.key}"
+  content = templatefile(
+    "../../kubernetes/opa-policies/${each.key}",{}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
