@@ -9,7 +9,7 @@ spec:
   match:
     kinds:
       - apiGroups: [""]
-        kinds: [""]
+        kinds: ["Namespace", "Deployment","Pod","Service"]
     namespaces: 
       - develop
       - prod
@@ -29,7 +29,7 @@ spec:
   match:
     kinds:
       - apiGroups: [""]
-        kinds: [""]
+        kinds: ["Pod","Job","Deployment"]
     namespaces: 
       - develop
       - prod
@@ -49,7 +49,7 @@ spec:
   match:
     kinds:
       - apiGroups: [""]
-        kinds: [""]
+        kinds: ["Pod","Job"]
     namespaces: 
       - develop
       - prod
