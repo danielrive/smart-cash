@@ -22,7 +22,6 @@ permissions:
 defaults:
   run:
     shell: bash
-    working-directory: ./infra/terraform
 
 env:
   PROJECT_NAME: smart-cash
