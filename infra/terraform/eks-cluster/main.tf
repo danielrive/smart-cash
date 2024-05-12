@@ -173,7 +173,8 @@ resource "github_repository_file" "opa_templates" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/core/opa-templates.yaml"
   content = templatefile(
-    "../../kubernetes/opa-policies/opa-templates.yaml",{}
+    "../../kubernetes/opa-policies/opa-templates.yaml",
+    {}
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
@@ -190,7 +191,8 @@ resource "github_repository_file" "opa_constraints" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/opa-policies/opa-templrates.yaml"
   content = templatefile(
-    "../../kubernetes/opa-policies/constraints.yaml",{}
+    "../../kubernetes/opa-policies/constraints.yaml",
+    {}
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
