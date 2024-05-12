@@ -7,8 +7,8 @@ on:
       - develop
       - feat/*
       - refactor/folder-structure
-  #  paths:
-  #    - "infra/kubernetes/**"
+    paths:
+      - "infra/kubernetes/**"
   pull_request:
     branches:
       - develop
