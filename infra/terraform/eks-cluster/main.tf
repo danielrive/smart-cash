@@ -192,7 +192,9 @@ resource "github_repository_file" "opa_constraints" {
   file                = "clusters/${local.cluster_name}/opa-policies/opa-templrates.yaml"
   content = templatefile(
     "../../kubernetes/opa-policies/constraints.yaml",
-    {}
+    {
+      ECR_REGISTRY= "${data.aws_caller_identity.id_account.id}.dkr.ecr.${var.region}.amazonaws.com"
+    }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
