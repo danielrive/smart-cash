@@ -54,7 +54,7 @@ jobs:
  
   K8_COMMON_RESOURCES_DEPLOY:
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
-    needs: set-up-terraform-backend
+    needs: check-if-cluster-exists
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
