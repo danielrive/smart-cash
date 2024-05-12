@@ -7,7 +7,7 @@ on:
       - develop
       - feat/*
     paths:
-      - "infra/**"
+      - "infra/terraform/**"
   pull_request:
     branches:
       - develop
@@ -16,22 +16,63 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
 
+### Define General env variables
+
 defaults:
   run:
     shell: bash
     working-directory: ./infra/terraform
 
 jobs:
+## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
+  set-up-terraform-backend:
+    runs-on: ubuntu-latest
+    steps:  
+      - name: checkout-repo
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-smart-cash' 
+          role-session-name: 'GitHub_to_AWS_via_FederatedOIDC'
+          aws-region: "us-west-2"
+      - name: config tf backend
+        id: tf-backend
+        run: ./terraform-backend.sh
+        env:
+          AWS_REGION: 'us-west-2'
+          ENVIRONMENT: 'develop'
+          PROJECT_NAME: 'smart-cash'
+        working-directory: .github/jobs/
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
-  infra-deploy:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+  BASE_STAGE_DEPLOY:
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: set-up-terraform-backend
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
-     # GH_USER_NAME: "danielrive"
-     # FLUX_REPO_NAME: "smart-cash-gitops-flux"
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      STAGE: 'base'
+      FOLDER: 'base'
+      ARTIFAC_ID: 'base'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+
+  EKS_STAGE_DEPLOY:
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: BASE_STAGE_DEPLOY
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      STAGE: 'eks-cluster'
+      FOLDER: 'eks-cluster'
+      ARTIFAC_ID: 'eks'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

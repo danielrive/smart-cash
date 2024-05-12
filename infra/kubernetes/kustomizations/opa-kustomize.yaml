@@ -4,6 +4,8 @@ metadata:
   name: opa-policies
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: core
   interval: 1m0s
   sourceRef:
     kind: GitRepository

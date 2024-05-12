@@ -1,0 +1,106 @@
+name: K8 resource Deploy
+run-name: K8-Resource-Deploy
+
+on: 
+  workflow_dispatch:
+    inputs:
+      run-all:
+        description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
+        required: false
+        default: false
+
+  push:
+    branches:
+      - develop
+      - feat/*
+    paths:
+      - "infra/kubernetes/**"
+      - "infra/terraform/workloads/**"
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+### Define General env variables
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PROJECT_NAME: smart-cash
+  AWS_REGION: us-west-2
+  ENVIRONMENT: develop
+  
+jobs:
+  check-if-cluster-exists:
+    runs-on: ubuntu-latest
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-smart-cash' 
+          role-session-name: 'GitHub_to_AWS_via_FederatedOIDC'
+          aws-region: "us-west-2"
+      - name: validate-get-eks-cluster
+        id: eks-cluster
+        run: |
+          echo "Get EKS cluster"
+          aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}
+ 
+  K8_COMMON_RESOURCES_DEPLOY:
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    needs: check-if-cluster-exists
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      FOLDER: 'workloads/common'
+      STAGE: 'common'
+      ARTIFAC_ID: 'k8-common'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+  
+  VALIDATE_SVC_UPDATED:
+   runs-on: ubuntu-latest
+   needs: K8_COMMON_RESOURCES_DEPLOY
+   outputs:
+      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v4
+       with:
+          fetch-depth: 0
+     - name: Get modified services
+       id: get_folders_changed
+       run: |
+          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+          echo "getting file"
+       working-directory: .github/jobs
+
+  SERVICES_INFRA_DEPLOY:
+    needs: K8_COMMON_RESOURCES_DEPLOY
+    strategy: 
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
+      fail-fast: false
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    with: 
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
+      TERRAFORM_VERSION: '1.4.6'
+      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
+      FOLDER: 'workloads/services/${{ matrix.folders }}'
+      STAGE: '${{ matrix.folders }}'
+      ARTIFAC_ID: 'k8-${{ matrix.folders }}'
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

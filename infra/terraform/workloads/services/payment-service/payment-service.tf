@@ -1,22 +1,25 @@
 ################################################
-########## Resources for bank-service
+########## Resources for payment-service
 
+locals {
+  path_tf_repo_services = "../../../../kubernetes/services"
+  brach_gitops_repo = "main"
+}
 
 #######################
 #### DynamoDB tables
 
-### bank Table
+### payment Table
 
-resource "aws_dynamodb_table" "transactions_table" {
-  name         = "transactions-table"
+resource "aws_dynamodb_table" "payment_table" {
+  name         = "payment-table"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "transactionId"
+  hash_key     = "orderId"
 
   attribute {
-    name = "transactionId"
+    name = "orderId"
     type = "S"
   }
-
 
   tags = {
     ENVIRONMENT = "${var.environment}"
@@ -28,8 +31,8 @@ resource "aws_dynamodb_table" "transactions_table" {
 ##############################
 ###### IAM Role K8 SA
 
-resource "aws_iam_role" "bank-role" {
-  name = "role-bank-${var.environment}"
+resource "aws_iam_role" "payment-role" {
+  name = "role-payment-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -37,13 +40,13 @@ resource "aws_iam_role" "bank-role" {
     {
       Effect= "Allow"
       Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
       },
       Action= "sts:AssumeRoleWithWebIdentity",
       Condition={
         StringEquals= {
-          "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-bank-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-payment-service"
         }
       }
     }
@@ -51,10 +54,10 @@ resource "aws_iam_role" "bank-role" {
 })
 }
 
-####### IAM policy for SA bank
+####### IAM policy for SA payment
 
-resource "aws_iam_policy" "dynamodb-bank-policy" {
-  name        = "policy-dynamodb-bank-${var.environment}"
+resource "aws_iam_policy" "dynamodb-payment-policy" {
+  name        = "policy-dynamodb-payment-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -75,16 +78,16 @@ resource "aws_iam_policy" "dynamodb-bank-policy" {
         ]
         Effect   = "Allow"
         Resource = [
-                    aws_dynamodb_table.transactions_table.arn,
+                    aws_dynamodb_table.payment_table.arn
         ]
       },
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-bank-policy.arn
-  role       = aws_iam_role.bank-role.name
+resource "aws_iam_role_policy_attachment" "attachment-payment-policy-role1" {
+  policy_arn = aws_iam_policy.dynamodb-payment-policy.arn
+  role       = aws_iam_role.payment-role.name
 }
 
 
@@ -92,9 +95,9 @@ resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
 #############################
 ##### ECR Repo
 
-module "ecr_registry_bank_service" {
-  source       = "./modules/ecr"
-  name         = "bank-service"
+module "ecr_registry_payment_service" {
+  source       = "../../../modules/ecr"
+  name         = "payment-service"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -106,19 +109,18 @@ module "ecr_registry_bank_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests-bank-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
+resource "github_repository_file" "base-manifests-payment-svc" {
+  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/bank-service/base/${each.key}"
+  file                = "manifests/payment-service/base/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
+    "../../../../kubernetes/microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "bank"
-      SERVICE_PORT = "8282"
+      SERVICE_NAME = "payment"
+      SERVICE_PORT = "8383"
       SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8282"
+      SERVICE_PORT_HEALTH_CHECKS = "8383"
     }
   )
   commit_message      = "Managed by Terraform"
@@ -132,19 +134,18 @@ resource "github_repository_file" "base-manifests-bank-svc" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-bank-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("${local.path_tf_repo_services}/bank-service/overlays/${var.environment}", "*.yaml")
+resource "github_repository_file" "overlays-payment-svc" {
+  for_each            = fileset("${local.path_tf_repo_services}/payment-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/bank-service/overlays/${var.environment}/${each.key}"
+  file                = "manifests/payment-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/bank-service/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/payment-service/overlays/${var.environment}/${each.key}",
     {
-      SERVICE_NAME = "bank"
-      ECR_REPO = module.ecr_registry_bank_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.bank-role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.transactions_table.name
+      SERVICE_NAME = "payment"
+      ECR_REPO = module.ecr_registry_payment_service.repo_url
+      ARN_ROLE_SERVICE = aws_iam_role.payment-role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.payment_table.name
       AWS_REGION  = var.region
     }
   )
@@ -158,13 +159,12 @@ resource "github_repository_file" "overlays-bank-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-bank" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+resource "github_repository_file" "np-payment" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/bank-service/base/network-policy.yaml"
+  file                = "manifests/payment-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/bank.yaml",{
+    "../../../../kubernetes/network-policies/payment.yaml",{
       PROJECT_NAME  = var.project_name
     })
   commit_message      = "Managed by Terraform"

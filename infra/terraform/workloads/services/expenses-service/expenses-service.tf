@@ -1,6 +1,10 @@
 ################################################
 ########## Resources for expenses-service
 
+locals {
+  path_tf_repo_services = "../../../../kubernetes/services"
+  brach_gitops_repo = "main"
+}
 
 #######################
 #### DynamoDB tables
@@ -60,13 +64,13 @@ resource "aws_iam_role" "expenses-role" {
     {
       Effect= "Allow"
       Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
       },
       Action= "sts:AssumeRoleWithWebIdentity",
       Condition={
         StringEquals= {
-          "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
         }
       }
     }
@@ -118,7 +122,7 @@ resource "aws_iam_role_policy_attachment" "attachment-expenses-policy-role1" {
 ##### ECR Repo
 
 module "ecr_registry_expenses_service" {
-  source       = "./modules/ecr"
+  source       = "../../../modules/ecr"
   name         = "expenses-service"
   project_name = var.project_name
   environment  = var.environment
@@ -132,13 +136,12 @@ module "ecr_registry_expenses_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests-expenses-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
-  for_each            = fileset("${local.path_tf_repo_services}/microservices-templates", "*.yaml")
+  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/expenses-service/base/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/microservices-templates/${each.key}",
+    "../../../../kubernetes/microservices-templates/${each.key}",
     {
       SERVICE_NAME = "expenses"
       SERVICE_PORT = "8282"
@@ -158,7 +161,6 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
 ##### overlays
 
 resource "github_repository_file" "overlays-expenses-svc" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   for_each            = fileset("${local.path_tf_repo_services}/expenses-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -184,12 +186,11 @@ resource "github_repository_file" "overlays-expenses-svc" {
 ##### Network Policies
 
 resource "github_repository_file" "np-expenses" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "manifests/expenses-service/base/network-policy.yaml"
   content = templatefile(
-    "../kubernetes/network-policies/expenses.yaml",{
+    "../../../../kubernetes/network-policies/expenses.yaml",{
       PROJECT_NAME  = var.project_name
     })
   commit_message      = "Managed by Terraform"
