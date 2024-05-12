@@ -64,13 +64,13 @@ resource "aws_iam_role" "expenses-role" {
     {
       Effect= "Allow"
       Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.cluster_oidc}"
+        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
       },
       Action= "sts:AssumeRoleWithWebIdentity",
       Condition={
         StringEquals= {
-          "${data.terraform_remote_state.eks.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${data.terraform_remote_state.eks.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
         }
       }
     }
