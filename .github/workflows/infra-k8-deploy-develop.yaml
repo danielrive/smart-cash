@@ -49,7 +49,7 @@ jobs:
         id: eks-cluster
         run: |
           echo "Get EKS cluster"
-          aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}
+          aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} &> /dev/null
  
   K8_COMMON_RESOURCES_DEPLOY:
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
