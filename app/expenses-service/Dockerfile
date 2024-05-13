@@ -37,4 +37,4 @@ COPY --from=build  /bin/expenses_service /bin/expenses_service
 EXPOSE 8282
 
 # Set the command to run the application when the container starts
-ENTRYPOINT ["/bin/expenses_service"]
+CMD ["/bin/expenses_service"]

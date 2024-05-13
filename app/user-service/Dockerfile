@@ -39,4 +39,4 @@ EXPOSE 8181
 
 # Set the command to run the application when the container starts.
 
-ENTRYPOINT ["/bin/user_service"]
+CMD ["/bin/user_service"]
