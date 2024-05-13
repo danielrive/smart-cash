@@ -26,7 +26,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		user, err := h.userService.GetUserById(uri["userId"][0])
 		if err != nil {
 			if err == common.ErrUserNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"error": err})
+				c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 				return
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -37,19 +37,19 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	} else if _, isMapContainsKey := uri["email"]; isMapContainsKey {
 		user, err := h.userService.GetUserByEmailorUsername("email", uri["email"][0])
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 			return
 		}
 		c.JSON(http.StatusOK, user)
 	} else if _, isMapContainsKey := uri["username"]; isMapContainsKey {
 		user, err := h.userService.GetUserByEmailorUsername("username", uri["email"][0])
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 			return
 		}
 		c.JSON(http.StatusOK, user)
 	} else {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 		return
 	}
 }
@@ -68,7 +68,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.JSON(http.StatusCreated, "ok")
 }
 
 // Handler for login

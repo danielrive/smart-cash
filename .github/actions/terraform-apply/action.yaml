@@ -9,6 +9,12 @@ inputs:
   GITHUB_TOKEN:
     description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
     required: true
+  STAGE:
+    description: 'terraform stage to deploy, start from base'
+    required: true
+  ARTIFAC_ID:
+    description: 'unique ID to named the artifacts'
+    required: true
    
 
 runs:
@@ -16,7 +22,7 @@ runs:
   steps:
     - name: Terraform install
       id: 'install-terraform'
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       with: 
         terraform_version: '${{ env.TERRAFORM_VERSION }}'
     - name: Validate terraform version
@@ -25,9 +31,9 @@ runs:
       shell: bash
     - name: Download Artifact
       id: download-tf-plan
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
-        name: tf-plan
+        name: tf-plan-${{ inputs.ARTIFAC_ID}}
         path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}'
     - name: Run terraform init
       id: 'tf-init'
@@ -37,7 +43,7 @@ runs:
            terraform init \
            -backend-config=bucket="$BUCKET_NAME" \
            -backend-config=region='${{ env.AWS_REGION }}' \
-           -backend-config=key='state' \
+            -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
            -backend-config=dynamodb_table="$DYNAMODB_TABLE"
       shell: bash
       working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
@@ -45,7 +51,7 @@ runs:
       run: |
            terraform apply \
            -input=false \
-           ${{ github.run_id }}.tfplan
+           ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan
       shell: bash
       working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
       env:

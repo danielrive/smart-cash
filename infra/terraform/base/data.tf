@@ -6,14 +6,6 @@ data "aws_availability_zones" "available" {
 }
 
 
-####################################
-### Github data sources
-
-data "github_repository" "flux-gitops" {
-  full_name = "danielrive/smart-cash-gitops-flux"
-  
-}
-
 
 ####################################
 #########  KMS Policy
@@ -48,27 +40,4 @@ data "aws_iam_policy_document" "kms_key_policy_encrypt_logs" {
     }
   }
 }
-
-
-####################################
-#########  cert-manager Issuer policy
-
-data "aws_iam_policy_document" "cert-manager-issuer" {
-  statement {
-    actions   = ["route53:GetChange"]
-    resources = ["arn:aws:route53:::change/*"]
-    effect = "Allow"
-  }
-  statement {
-    actions   = ["route53:ChangeResourceRecordSets","route53:ListResourceRecordSets",]
-    resources = ["arn:aws:route53:::hostedzone/*"]
-    effect = "Allow"
-  }
-  statement {
-    actions   = ["route53:ListHostedZonesByName",]
-    resources = ["*"]
-    effect = "Allow"
-  }
-}
-
 

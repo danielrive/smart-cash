@@ -29,10 +29,10 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	}
 	// create the expense
 	if err := h.expensesService.CreateExpense(expense); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "expenses not created"})
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "expenses not created"})
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.JSON(http.StatusCreated, "ok")
 
 }
 
@@ -52,7 +52,7 @@ func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
 		expenses, err := h.expensesService.GetExpensesByCategory(uri["category"][0], uri["userId"][0])
 		if err != nil {
 			if err == common.ErrExpenseNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"error": err})
+				c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
 				return
 			} else if err == common.ErrWrongCredentials {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials})
@@ -68,7 +68,7 @@ func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
 		expenses, err := h.expensesService.GetExpensesByUserId(uri["userId"][0])
 		if err != nil {
 			if err == common.ErrExpenseNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"error": err})
+				c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
 				return
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})

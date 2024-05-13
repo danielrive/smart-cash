@@ -6,15 +6,25 @@ inputs:
     description: 'directory where the tf code is'
     required: false
     default: '/infra/terraform'
-
+  STAGE:
+    description: 'terraform stage to deploy, start from base'
+    required: true
+  ARTIFAC_ID:
+    description: 'unique ID to named the artifacts'
+    required: true
+outputs:
+  PLAN_EXIT_CODE:
+    description: "exit code generate after tf plan, 0= no changes, 2=changes, 1=error"
+    value: ${{ steps.terraform-plan.outputs.tf-plan-code }}
 runs:
   using: "composite"
   steps:
       - name: Terraform install
         id: 'install-terraform'
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with: 
          terraform_version: '${{ env.TERRAFORM_VERSION }}'
+         terraform_wrapper: false
       - name: Validate terraform version
         id: validate-tf-version
         run: terraform version
@@ -27,7 +37,7 @@ runs:
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key='state' \
+              -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
@@ -38,18 +48,34 @@ runs:
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
       - name: Run terraform plan
         id: terraform-plan
-        run: | 
+        run: |
+            set +e 
             terraform plan \
             -input=false \
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
-            -out ${{ github.run_id }}.tfplan
+            -out ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan \
+            -detailed-exitcode
+            exitcode="$?"
+            echo "tf-plan-code=$exitcode" >> $GITHUB_OUTPUT
+ 
+            if [ "$exitcode" -eq 0 ]; then
+              echo "No changes"
+              exit $exitcode
+            elif [ "$exitcode" -eq 2 ]; then
+              echo "changes"
+              exit 0
+            else
+              echo "Error"
+              exit $exitcode
+            fi
+
         shell: bash
         working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
 
       - name: Publish Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: tf-plan
-          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}.tfplan'
+          name: tf-plan-${{ inputs.ARTIFAC_ID}}
+          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan'

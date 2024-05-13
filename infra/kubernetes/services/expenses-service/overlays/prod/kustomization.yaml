@@ -1,0 +1,11 @@
+resources:
+  - ../../base
+namespace: prod
+images:
+  - name: service-image
+    newName: ${ECR_REPO}
+    newTag: prod
+
+patches:
+  - path: patch-service-account.yaml
+  - path: patch-deployment.yaml
