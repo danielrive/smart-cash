@@ -36,8 +36,21 @@ env:
   ENVIRONMENT: develop
   
 jobs:
+  validate-if-run-all:
+    runs-on: ubuntu-latest
+    outputs:
+      FOLDERS_UPDATED: ${{ steps.check_if_run_all.outputs.FOLDERS_UPDATED }}
+    if: github.event.inputs.run-all == 'true'
+    steps:
+      - name: Check if run all
+        id: check_if_run_all
+        run: |
+          echo "exporting static service array ONLY when user wants to run everything, this suspend the workflow to detect folders updated"
+          SERVICE_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
+          echo "FOLDERS_UPDATED=$SERVICE_ARRAY" >> $GITHUB_OUTPUT
   check-if-cluster-exists:
     runs-on: ubuntu-latest
+    if: ${{ success() }}
     steps:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -69,6 +82,7 @@ jobs:
   
   VALIDATE_SVC_UPDATED:
    runs-on: ubuntu-latest
+   if: github.event.inputs.run-all == 'false'
    needs: K8_COMMON_RESOURCES_DEPLOY
    outputs:
       FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
@@ -86,7 +100,7 @@ jobs:
        working-directory: .github/jobs
 
   SERVICES_INFRA_DEPLOY:
-    needs: K8_COMMON_RESOURCES_DEPLOY
+    if: ${{ success() }}
     strategy: 
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
