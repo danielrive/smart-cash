@@ -8,7 +8,7 @@ for file in $GIT_FOLDERS_UPDATED; do
     folder_name=$(dirname "$file")
     echo "--> checking the folder $folder_name"
     if [[ "$folder_name" == *"-service"* ]]; then    
-        root_folder=$(echo "$folder_name" | awk -F'/' '{print $4}')
+        root_folder=$(echo "$folder_name" | awk -F'/' '{print $5}')
         echo "--> adding the folder $root_folder"
         CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
         echo "--> updating the the variable"
