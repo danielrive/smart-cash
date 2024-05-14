@@ -162,6 +162,7 @@ resource "github_repository_file" "core_resources" {
       AWS_REGION = var.region
       ENVIRONMENT = var.environment
       PROJECT = var.project_name    
+      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"    
     }
   )
   commit_message      = "Managed by Terraform"
@@ -185,7 +186,6 @@ resource "github_repository_file" "common_resources" {
       AWS_REGION = var.region
       ENVIRONMENT = var.environment
       PROJECT = var.project_name
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"    
     }
   )
   commit_message      = "Managed by Terraform"
