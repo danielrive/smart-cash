@@ -107,7 +107,7 @@ resource "null_resource" "bootstrap-flux" {
 ################################################
 ##### Flux kustomizations bootstrap
 resource "github_repository_file" "kustomizations" {
-  depends_on          = [module.eks_cluster]
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
   for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -150,6 +150,7 @@ resource "github_repository_file" "sources" {
 ##### Core resources
 
 resource "github_repository_file" "core_resources" {
+  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
   for_each            = fileset(local.path_tf_repo_flux_core, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -174,6 +175,7 @@ resource "github_repository_file" "core_resources" {
 ##### Common resources
 
 resource "github_repository_file" "common_resources" {
+  depends_on          = [module.eks_cluster,github_repository_file.core_resources]
   for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -197,6 +199,7 @@ resource "github_repository_file" "common_resources" {
 ##### OPA constraints
 
 resource "github_repository_file" "opa_constraints" {
+  depends_on          = [module.eks_cluster,github_repository_file.common_resources]
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/opa-policies/opa-constraints.yaml"
