@@ -131,7 +131,7 @@ resource "github_repository_file" "kustomizations" {
 ##### Flux Sources 
 
 resource "github_repository_file" "sources" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations-bootstrap]
+  depends_on          = [module.eks_cluster,github_repository_file.kustomizations]
   for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
@@ -177,7 +177,7 @@ resource "github_repository_file" "common_resources" {
   for_each            = fileset(local.path_tf_repo_flux_common, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/core/${each.key}"
+  file                = "clusters/${local.cluster_name}/common/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_common}/${each.key}",
     {
