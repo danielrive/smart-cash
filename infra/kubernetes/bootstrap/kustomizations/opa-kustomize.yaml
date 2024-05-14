@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: core
+    - name: common
   interval: 1m0s
   sourceRef:
     kind: GitRepository

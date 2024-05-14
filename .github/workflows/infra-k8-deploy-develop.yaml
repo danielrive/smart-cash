@@ -63,27 +63,11 @@ jobs:
         run: |
           echo "Get EKS cluster"
           aws eks describe-cluster --name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} &> /dev/null
- 
-  K8_COMMON_RESOURCES_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
-    needs: check-if-cluster-exists
-    with: 
-      AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.4.6'
-      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      FOLDER: 'workloads/common'
-      STAGE: 'common'
-      ARTIFAC_ID: 'k8-common'
-    secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
-      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
-  
+
   VALIDATE_SVC_UPDATED:
    runs-on: ubuntu-latest
    if: github.event.inputs.run-all == 'false'
-   needs: K8_COMMON_RESOURCES_DEPLOY
+   needs: check-if-cluster-exists
    outputs:
       FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
    steps:
@@ -101,11 +85,12 @@ jobs:
 
   SERVICES_INFRA_DEPLOY:
     if: ${{ success() }}
+    needs:  check-if-cluster-exists
     strategy: 
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@refactor/folder-structure
+    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
