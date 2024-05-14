@@ -76,7 +76,7 @@ jobs:
             echo "TRUE run all"
           fi
           
-          if [[ "$RUN_ALL" == "true" ]] || ; then
+          if [[ "$RUN_ALL" == "true" ]]; then
 
             echo "Run all"
             FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
