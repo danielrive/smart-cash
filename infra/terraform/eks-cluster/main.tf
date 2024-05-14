@@ -94,8 +94,7 @@ resource "null_resource" "bootstrap-flux" {
     EOF
   }
   triggers = {
-    cluster_oidc = module.eks_cluster.cluster_oidc
-    created_at   = module.eks_cluster.created_at
+    always_run = timestamp() # this will always run
   }
 
 }
