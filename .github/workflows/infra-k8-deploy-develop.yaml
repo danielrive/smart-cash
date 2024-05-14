@@ -76,7 +76,7 @@ jobs:
             echo "NOT run all"
           fi
           
-          if [[ $RUN_ALL == false }} ]]; then
+          if [[ "$RUN_ALL" == "true" ]]; then
 
              . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
 
