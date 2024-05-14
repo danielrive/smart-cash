@@ -53,7 +53,6 @@ jobs:
 
   VALIDATE_SVC_UPDATED:
    runs-on: ubuntu-latest
-   if: github.event.inputs.run-all == 'false'
    needs: check-if-cluster-exists
    outputs:
       FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
