@@ -97,7 +97,7 @@ jobs:
 
           else 
 
-            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+            . k8-detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
 
           fi
        working-directory: .github/jobs
