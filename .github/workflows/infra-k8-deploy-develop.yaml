@@ -72,15 +72,11 @@ jobs:
             RUN_ALL=false
             echo "Run all"
           else
-            RUN_ALL=true
+            RUN_ALL=false
             echo "NOT run all"
           fi
           
-          if [[ "$RUN_ALL" == "true" ]]; then
-
-             . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
-
-          else 
+          if [[ "${{ github.event.inputs.run-all }}" != "true" ]]; then
 
             echo "Run all"
             FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
@@ -98,7 +94,11 @@ jobs:
             echo $FOLDERS_MODIFIED_JSON
 
             echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
-           
+
+          else 
+
+            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+
           fi
        working-directory: .github/jobs
 
