@@ -71,7 +71,7 @@ jobs:
           if [[ -z "$temVar" || "$temVar" == "false" ]]; then
             RUN_ALL=false
             echo "NOT Run all"
-          elif [[  "$temVar" == "true" ]]
+          elif [[  "$temVar" == "true" ]]; then
             RUN_ALL="$tempVar"
             echo "TRUE run all"
           fi
