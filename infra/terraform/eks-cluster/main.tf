@@ -1,7 +1,7 @@
 locals {
   brach_gitops_repo = "main"
-  path_tf_repo_flux_kustomization = "../../kubernetes/kustomizations"
-  path_tf_repo_flux_sources = "../../kubernetes/flux-sources"
+  path_tf_repo_flux_kustomization = "../../kubernetes/flux/kustomizations"
+  path_tf_repo_flux_sources = "../../kubernetes/flux/flux-sources"
   path_tf_repo_flux_common = "../../kubernetes/common"
   cluster_name = "${var.project_name}-${var.environment}"
   gh_username = "danielrive"
@@ -112,7 +112,7 @@ resource "github_repository_file" "kustomizations-bootstrap" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/bootstrap/core-kustomize.yaml"
   content = templatefile(
-    "${local.path_tf_repo_flux_kustomization}/core-kustomize.yaml",
+    "../../kubernetes/flux/kustomizations/core-kustomize.yaml",
     {
       CLUSTER_NAME = local.cluster_name
     }
@@ -193,23 +193,6 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-
-############################
-##### OPA templates
-
-resource "github_repository_file" "opa_templates" {
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/common/opa-templates.yaml"
-  content = templatefile(
-    "../../kubernetes/opa-policies/opa-templates.yaml",
-    {}
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
 
 
 ############################
