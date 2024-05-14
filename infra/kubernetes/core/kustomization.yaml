@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespaces.yaml
+- np-default-deny.yaml
+- helm-opa-gatekeeper.yaml
+- storage-class-aws-ebs.yaml
+- helm-nginx-ingress.yaml
+#- helm-prometheus.yaml
+#- helm-prometheus.yaml
+#- crd-cert-manager.yaml
+#- helm-cert-manager.yaml
+#- grafana.yaml
+#- cluster-issuer-cert-manager.yaml
