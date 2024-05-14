@@ -68,15 +68,15 @@ jobs:
           ## Validate if input is set to true to skip running bash script for folders updated
           tempVar=${{ github.event.inputs.run-all }}
           echo $tempVar
-          if [[ $tempVar == '' ]]; then
+          if [[ -z "$temVar" || "$temVar" == "false" ]]; then
             RUN_ALL=false
-            echo "Run all"
-          else
-            RUN_ALL=false
-            echo "NOT run all"
+            echo "NOT Run all"
+          elif [[  "$temVar" == "true" ]]
+            RUN_ALL="$tempVar"
+            echo "TRUE run all"
           fi
           
-          if [[ "${{ github.event.inputs.run-all }}" != "true" ]]; then
+          if [[ "$RUN_ALL" == "true" ]] || ; then
 
             echo "Run all"
             FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
