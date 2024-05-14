@@ -108,7 +108,7 @@ resource "null_resource" "bootstrap-flux" {
 ################################################
 ##### Flux kustomizations bootstrap
 resource "github_repository_file" "kustomizations" {
-  depends_on          = [module.eks_cluster,github_repository_file.sources]
+  depends_on          = [module.eks_cluster]
   for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
