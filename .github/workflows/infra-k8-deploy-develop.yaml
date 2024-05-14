@@ -66,10 +66,14 @@ jobs:
        id: get_folders_changed
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
-          echo "${{ github.inputs.run-all }}"
-          tempVar='${{ github.inputs.run-all }}'
+          tempVar='${{ github.event.inputs.run-all }}''
           echo $tempVar
-          if [[ $tempVar == 'true' }} ]]; then
+          if [[ ${{ github.event.inputs.run-all }} == 'false' }} ]]; then
+
+             . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+
+          else 
+
             echo "Run all"
             FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
           
@@ -86,10 +90,7 @@ jobs:
             echo $FOLDERS_MODIFIED_JSON
 
             echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
-
-          else 
-
-            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+           
           fi
        working-directory: .github/jobs
 
