@@ -67,6 +67,7 @@ jobs:
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
           if [[ ${{ github.event.inputs.run-all == 'true' }} ]];  then
+            echo "Run all"
             FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
           
             FOLDERS_MODIFIED_JSON="{\"folders\":["
