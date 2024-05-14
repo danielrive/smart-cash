@@ -112,7 +112,7 @@ resource "github_repository_file" "kustomizations-bootstrap" {
   branch              = local.brach_gitops_repo
   file                = "clusters/${local.cluster_name}/bootstrap/core-kustomize.yaml"
   content = templatefile(
-    "../../kubernetes/flux/kustomizations/core-kustomize.yaml",
+    "../../kubernetes/flux/core-kustomize.yaml",
     {
       CLUSTER_NAME = local.cluster_name
     }
