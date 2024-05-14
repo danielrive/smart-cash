@@ -36,21 +36,8 @@ env:
   ENVIRONMENT: develop
   
 jobs:
-  validate-if-run-all:
-    runs-on: ubuntu-latest
-    outputs:
-      FOLDERS_UPDATED: ${{ steps.check_if_run_all.outputs.FOLDERS_UPDATED }}
-    if: github.event.inputs.run-all == 'true'
-    steps:
-      - name: Check if run all
-        id: check_if_run_all
-        run: |
-          echo "exporting static service array ONLY when user wants to run everything, this suspend the workflow to detect folders updated"
-          SERVICE_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
-          echo "FOLDERS_UPDATED=$SERVICE_ARRAY" >> $GITHUB_OUTPUT
   check-if-cluster-exists:
     runs-on: ubuntu-latest
-    if: ${{ success() }}
     steps:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -79,13 +66,32 @@ jobs:
      - name: Get modified services
        id: get_folders_changed
        run: |
-          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
-          echo "getting file"
+          ## Validate if input is set to true to skip running bash script for folders updated
+          if [[ ${{ github.event.inputs.run-all == 'true' }} ]];  then
+            FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
+          
+            FOLDERS_MODIFIED_JSON="{\"folders\":["
+            
+            for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
+              FOLDERS_MODIFIED_JSON+="\"$item\","
+            done
+
+            FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
+                      
+            FOLDERS_MODIFIED_JSON+="]}"
+
+            echo $FOLDERS_MODIFIED_JSON
+
+            echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
+
+          else 
+
+            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
+          fi
        working-directory: .github/jobs
 
   SERVICES_INFRA_DEPLOY:
-    if: ${{ success() }}
-    needs:  check-if-cluster-exists
+    needs:  VALIDATE_SVC_UPDATED
     strategy: 
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
