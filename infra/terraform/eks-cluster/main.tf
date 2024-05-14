@@ -214,4 +214,3 @@ resource "github_repository_file" "opa_constraints" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
