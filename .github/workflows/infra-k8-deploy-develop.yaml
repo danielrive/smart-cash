@@ -68,7 +68,15 @@ jobs:
           ## Validate if input is set to true to skip running bash script for folders updated
           tempVar=${{ github.event.inputs.run-all }}
           echo $tempVar
-          if [[ ${{ github.event.inputs.run-all }} == 'false' }} ]]; then
+          if [[ $tempVar == '' ]]; then
+            RUN_ALL=false
+            echo "Run all"
+          else
+            RUN_ALL=true
+            echo "NOT run all"
+          fi
+          
+          if [[ $RUN_ALL == false }} ]]; then
 
              . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }}
 
