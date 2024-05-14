@@ -2,6 +2,12 @@ name: Terraform infra workflow DEVELOP
 run-name: terraform-deploy-DEVELOP
 
 on: 
+  workflow_dispatch:
+    inputs:
+      run-all:
+        description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
+        required: false
+        default: false
   push:
     branches:
       - develop
