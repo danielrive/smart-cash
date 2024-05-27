@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: core-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${ENVIRONMENT}.danielrive.site
+    http:
+      paths:
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port: 
+              number: 8181
+      - path: /expenses
+        pathType: Prefix
+        backend:
+          service:
+            name: expenses-service
+            port:
+              number: 8282
