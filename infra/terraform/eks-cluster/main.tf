@@ -197,7 +197,7 @@ resource "github_repository_file" "common_resources" {
 
 ############################
 ##### OPA constraints
-
+/*
 resource "github_repository_file" "opa_constraints" {
   depends_on          = [module.eks_cluster,github_repository_file.common_resources]
   repository          = data.github_repository.flux-gitops.name
@@ -214,3 +214,4 @@ resource "github_repository_file" "opa_constraints" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+*/
