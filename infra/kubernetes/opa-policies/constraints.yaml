@@ -6,6 +6,7 @@ kind: RequiredLabels
 metadata:
   name: project-label
 spec:
+  enforcementAction: dryrun
   match:
     kinds:
       - apiGroups: [""]
@@ -26,6 +27,7 @@ kind: TrustRegistry
 metadata:
   name: trust-registry
 spec:
+  enforcementAction: dryrun
   match:
     kinds:
       - apiGroups: [""]
@@ -46,6 +48,7 @@ kind: ContainerSecurity
 metadata:
   name: container-security
 spec:
+  enforcementAction: dryrun
   match:
     kinds:
       - apiGroups: [""]
