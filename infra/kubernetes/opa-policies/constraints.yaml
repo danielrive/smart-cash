@@ -1,23 +1,23 @@
 ################################################
 ######## Force to have project-label
 
-apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: RequiredLabels
-metadata:
-  name: project-label
-spec:
-  enforcementAction: dryrun
-  match:
-    kinds:
-      - apiGroups: [""]
-        kinds: ["Namespace", "Deployment","Pod","Service"]
-    namespaces: 
-      - develop
-      - prod
-  parameters:
-    labels: ["projectId"]
+#apiVersion: constraints.gatekeeper.sh/v1beta1
+#kind: RequiredLabels
+#metadata:
+#  name: project-label
+#spec:
+#  enforcementAction: dryrun
+#  match:
+#    kinds:
+#      - apiGroups: [""]
+#        kinds: ["Namespace", "Deployment","Pod","Service"]
+#    namespaces: 
+#      - develop
+#      - prod
+#  parameters:
+#    labels: ["projectId"]
 
----
+#---
 
 #########################################################
 ######## Trust in AWS ECR registry only for workloads 
@@ -55,4 +55,4 @@ spec:
         kinds: ["Pod","Job"]
     namespaces: 
       - develop
-      - prod
+      - pro#d
