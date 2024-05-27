@@ -67,7 +67,6 @@ jobs:
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
           tempVar=${{ github.event.inputs.run-all }}
-          echo $tempVar
           if [[ -z "$temVar" || "$temVar" == "false" ]]; then
             RUN_ALL=false
             echo "NOT Run all"
