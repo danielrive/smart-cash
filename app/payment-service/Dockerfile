@@ -37,5 +37,5 @@ COPY --from=build  /bin/payment_service /bin/payment_service
 EXPOSE 8282
 
 # Set the command to run the application when the container starts
-CMD ["/bin/payment_service"]
+ENTRYPOINT ["/bin/payment_service"]
 

@@ -21,4 +21,3 @@ data "aws_caller_identity" "id_account" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
-

@@ -1,5 +1,5 @@
 locals {
-  brach_gitops_repo = "main"
+  brach_gitops_repo = var.environment
   path_tf_repo_flux_kustomization = "../../kubernetes/bootstrap/kustomizations"
   path_tf_repo_flux_sources = "../../kubernetes/bootstrap/flux-sources"
   path_tf_repo_flux_core = "../../kubernetes/core"
@@ -90,7 +90,7 @@ resource "null_resource" "bootstrap-flux" {
   depends_on          = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    ../scripts/bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name}
+    ../scripts/bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name} ${var.environment}
     EOF
   }
   triggers = {
@@ -214,4 +214,3 @@ resource "github_repository_file" "opa_constraints" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-

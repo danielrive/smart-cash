@@ -1,5 +1,5 @@
-name: Terraform infra workflow DEVELOP
-run-name: terraform-deploy-DEVELOP
+name: Develop Terraform Base-and-EKS
+run-name: Dev-TF-Base-and-EKS
 
 on: 
   workflow_dispatch:
@@ -13,7 +13,8 @@ on:
       - develop
       - feat/*
     paths:
-      - "infra/terraform/**"
+      - "infra/terraform/base"
+      - "infra/terraform/eks-cluster"
   pull_request:
     branches:
       - develop
@@ -28,10 +29,14 @@ defaults:
   run:
     shell: bash
     working-directory: ./infra/terraform
+env:
+  PROJECT_NAME: smart-cash
+  AWS_REGION: us-west-2
+  ENVIRONMENT: develop
 
 jobs:
 ## Execute bash script that  create s3 bucket and dynamodb table for Terraform backend
-  set-up-terraform-backend:
+  SET_UP_TF_BACKEND:
     runs-on: ubuntu-latest
     steps:  
       - name: checkout-repo
@@ -47,17 +52,17 @@ jobs:
         run: ./terraform-backend.sh
         env:
           AWS_REGION: 'us-west-2'
-          ENVIRONMENT: 'develop'
-          PROJECT_NAME: 'smart-cash'
+          ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: .github/jobs/
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   BASE_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
-    needs: set-up-terraform-backend
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
+    needs: SET_UP_TF_BACKEND
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
+      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+      PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'base'
@@ -68,12 +73,12 @@ jobs:
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
 
   EKS_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     needs: BASE_STAGE_DEPLOY
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
+      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+      PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'eks-cluster'
