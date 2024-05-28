@@ -52,16 +52,16 @@ jobs:
         run: ./terraform-backend.sh
         env:
           AWS_REGION: 'us-west-2'
-          ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: .github/jobs/
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   BASE_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@main
     needs: SET_UP_TF_BACKEND
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+      ENVIRONMENT: ${{ env.ENVIRONMENT }}
       PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
@@ -73,11 +73,11 @@ jobs:
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
 
   EKS_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@main
     needs: BASE_STAGE_DEPLOY
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
+      ENVIRONMENT: ${{ env.ENVIRONMENT }}
       PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
