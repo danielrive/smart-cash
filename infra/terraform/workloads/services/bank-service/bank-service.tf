@@ -3,7 +3,7 @@
 
 locals {
   path_tf_repo_services = "../../../../kubernetes/services"
-  brach_gitops_repo = "main"
+  brach_gitops_repo = var.environment
 }
 #######################
 #### DynamoDB tables

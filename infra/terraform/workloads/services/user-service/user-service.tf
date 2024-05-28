@@ -4,7 +4,7 @@ locals {
   this_service_name = "user"
   this_service_port = 8181
   path_tf_repo_services = "../../../../kubernetes/services"
-  brach_gitops_repo = "main"
+  brach_gitops_repo = var.environment
 }
 
 
