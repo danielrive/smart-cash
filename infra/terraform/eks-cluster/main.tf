@@ -1,5 +1,5 @@
 locals {
-  brach_gitops_repo = "main"
+  brach_gitops_repo = var.environment
   path_tf_repo_flux_kustomization = "../../kubernetes/bootstrap/kustomizations"
   path_tf_repo_flux_sources = "../../kubernetes/bootstrap/flux-sources"
   path_tf_repo_flux_core = "../../kubernetes/core"

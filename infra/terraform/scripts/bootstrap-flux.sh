@@ -6,10 +6,16 @@
 # $2 = AWS_REGION
 # $3 = GH_USER_NAME
 # $4 = FLUX_REPO_NAME
+# $5 = Environment
 
 echo "---------->  get eks credentials"
 aws eks update-kubeconfig --name $1  --region $2
 
+if [ $5 -eq 'production'  ]; then
+  BRANCH="main"
+else 
+  BRANCH=$5
+fi
 ## validate if flux is installed
 
 flux_installed=$(kubectl api-resources | grep flux)
@@ -27,7 +33,7 @@ if [ -z "$flux_installed" ]; then
     --owner=$3 \
     --repository=$4 \
     --path="clusters/$1/bootstrap" \
-    --branch=main \
+    --branch=$BRANCH \
     --personal
 else
   echo "---------->  flux is installed"

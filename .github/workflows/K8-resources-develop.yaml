@@ -1,5 +1,5 @@
-name: K8 resource Deploy
-run-name: K8-Resource-Deploy
+name: Develop K8 deploy resources
+run-name: Dev-K8-Resources-Deploy
 
 on: 
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
         with:
           role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/GitHubAction-smart-cash' 
           role-session-name: 'GitHub_to_AWS_via_FederatedOIDC'
-          aws-region: "us-west-2"
+          aws-region: ${{ env.AWS_REGION }}
       - name: validate-get-eks-cluster
         id: eks-cluster
         run: |
@@ -109,9 +109,9 @@ jobs:
       fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
     with: 
-      AWS_REGION: 'us-west-2'
+      AWS_REGION: ${{ env.AWS_REGION }}
       ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
+      PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       FOLDER: 'workloads/services/${{ matrix.folders }}'

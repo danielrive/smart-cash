@@ -1,5 +1,5 @@
 name: Microservice deploy DEVELOP
-run-name: Microservice-deploy-DEVELOP
+run-name: Dev-Microservice-deploy
 
 on: 
   push:
