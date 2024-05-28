@@ -109,9 +109,9 @@ jobs:
       fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     with: 
-      AWS_REGION: ${{ env.AWS_REGION }}
-      ENVIRONMENT: ${{ env.ENVIRONMENT }}
-      PROJECT_NAME: ${{ env.PROJECT_NAME }}
+      AWS_REGION: 'us-west-2'
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       FOLDER: 'workloads/services/${{ matrix.folders }}'

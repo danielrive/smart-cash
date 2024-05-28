@@ -61,8 +61,8 @@ jobs:
     needs: SET_UP_TF_BACKEND
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
-      PROJECT_NAME: ${{ env.PROJECT_NAME }}
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'base'
@@ -77,8 +77,8 @@ jobs:
     needs: BASE_STAGE_DEPLOY
     with: 
       AWS_REGION: 'us-west-2'
-      ENVIRONMENT: ${{ env.ENVIRONMENT_NAME }}
-      PROJECT_NAME: ${{ env.PROJECT_NAME }}
+      ENVIRONMENT: 'develop'
+      PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: 'eks-cluster'
