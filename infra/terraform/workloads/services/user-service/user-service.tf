@@ -136,7 +136,7 @@ resource "github_repository_file" "base-manifests" {
   for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/user-service/base/${each.key}"
+  file                = "services/user-service/base/${each.key}"
   content = templatefile(
     "../../../../kubernetes/microservices-templates/${each.key}",
     {
@@ -160,7 +160,7 @@ resource "github_repository_file" "overlays-user-svc" {
   for_each            = fileset("${local.path_tf_repo_services}/user-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/user-service/overlays/${var.environment}/${each.key}"
+  file                = "services/user-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/user-service/overlays/${var.environment}/${each.key}",
     {
@@ -184,7 +184,7 @@ resource "github_repository_file" "overlays-user-svc" {
 resource "github_repository_file" "np-user" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/user-service/base/network-policy.yaml"
+  file                = "services/user-service/base/network-policy.yaml"
   content = templatefile(
     "../../../../kubernetes/network-policies/user.yaml",
     {

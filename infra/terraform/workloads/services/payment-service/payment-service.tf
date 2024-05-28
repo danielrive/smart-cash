@@ -113,7 +113,7 @@ resource "github_repository_file" "base-manifests-payment-svc" {
   for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/payment-service/base/${each.key}"
+  file                = "services/payment-service/base/${each.key}"
   content = templatefile(
     "../../../../kubernetes/microservices-templates/${each.key}",
     {
@@ -138,7 +138,7 @@ resource "github_repository_file" "overlays-payment-svc" {
   for_each            = fileset("${local.path_tf_repo_services}/payment-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/payment-service/overlays/${var.environment}/${each.key}"
+  file                = "services/payment-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/payment-service/overlays/${var.environment}/${each.key}",
     {
@@ -162,7 +162,7 @@ resource "github_repository_file" "overlays-payment-svc" {
 resource "github_repository_file" "np-payment" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/payment-service/base/network-policy.yaml"
+  file                = "services/payment-service/base/network-policy.yaml"
   content = templatefile(
     "../../../../kubernetes/network-policies/payment.yaml",{
       PROJECT_NAME  = var.project_name
