@@ -107,10 +107,10 @@ jobs:
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_SVC_UPDATED.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/run-terraform-template.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     with: 
       AWS_REGION: ${{ env.AWS_REGION }}
-      ENVIRONMENT: 'develop'
+      ENVIRONMENT: ${{ env.ENVIRONMENT }}
       PROJECT_NAME: ${{ env.PROJECT_NAME }}
       TERRAFORM_VERSION: '1.4.6'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
