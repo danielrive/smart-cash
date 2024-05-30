@@ -37,11 +37,13 @@ jobs:
           fetch-depth: 0
      - name: Get modified services
        id: get_folders_changed
-       env:
-         RUN_ALL: ${{ github.event.inputs.run-all }}
        run: |
           echo "input $RUN_ALL dispatch"
-          ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
+          if [[ ${{ github.event.inputs.run-all }} == 'false' ]]; then
+            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
+          else
+            . detect-folders-updated.sh  empty empty ${{ github.event.inputs.run-all }} 
+          fi
           echo "getting file"
        working-directory: .github/jobs
 
