@@ -66,6 +66,7 @@ jobs:
        id: get_folders_changed
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
+          echo "workflow dispatch ${{ github.event.inputs.run-all }} is te value"
           tempVar=${{ github.event.inputs.run-all }}
           if [[ -z "$temVar" || "$temVar" == "false" ]]; then
             RUN_ALL=false
