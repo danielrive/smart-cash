@@ -39,7 +39,7 @@ jobs:
        id: get_folders_changed
        run: |
           echo "input ${{ github.event.inputs.run-all }} dispatch"
-          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} "${{ github.event.inputs.run-all }}"
+          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} false
           echo "getting file"
        working-directory: .github/jobs
 
