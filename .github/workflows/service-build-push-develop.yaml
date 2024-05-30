@@ -41,7 +41,7 @@ jobs:
          RUN_ALL: ${{ github.event.inputs.run-all }}
        run: |
           echo "input $RUN_ALL dispatch"
-          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} test33
+          ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
           echo "getting file"
        working-directory: .github/jobs
 
