@@ -2,9 +2,8 @@
 
 ## Validate if the workflow is running manually 
 CHANGED_FOLDERS=""
-
-
-if [[ $3 -eq "true" ]]; then
+echo " this is the input $3 gh"
+if [[ "$3" == "true" ]]; then
     echo "using static array for services updated" 
     CHANGED_FOLDERS_MANUAL=("bank-service" "expenses-service" "payment-service" "user-service")
 
