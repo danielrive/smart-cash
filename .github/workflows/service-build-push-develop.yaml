@@ -7,7 +7,7 @@ on:
       run-all:
         description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
         required: false
-        default: "false"
+        default: false
   push:
     branches:
       - develop
@@ -38,6 +38,7 @@ jobs:
      - name: Get modified services
        id: get_folders_changed
        run: |
+          echo "input ${{ github.event.inputs.run-all }} dispatch"
           . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
           echo "getting file"
        working-directory: .github/jobs
