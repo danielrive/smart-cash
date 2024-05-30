@@ -3,7 +3,7 @@
 
 locals {
   path_tf_repo_services = "../../../../kubernetes/services"
-  brach_gitops_repo = "main"
+  brach_gitops_repo = var.environment
 }
 
 #######################
@@ -139,7 +139,7 @@ resource "github_repository_file" "base-manifests-expenses-svc" {
   for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/expenses-service/base/${each.key}"
+  file                = "services/expenses-service/base/${each.key}"
   content = templatefile(
     "../../../../kubernetes/microservices-templates/${each.key}",
     {
@@ -164,7 +164,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
   for_each            = fileset("${local.path_tf_repo_services}/expenses-service/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/expenses-service/overlays/${var.environment}/${each.key}"
+  file                = "services/expenses-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/expenses-service/overlays/${var.environment}/${each.key}",
     {
@@ -188,7 +188,7 @@ resource "github_repository_file" "overlays-expenses-svc" {
 resource "github_repository_file" "np-expenses" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "manifests/expenses-service/base/network-policy.yaml"
+  file                = "services/expenses-service/base/network-policy.yaml"
   content = templatefile(
     "../../../../kubernetes/network-policies/expenses.yaml",{
       PROJECT_NAME  = var.project_name
