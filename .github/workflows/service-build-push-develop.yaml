@@ -22,7 +22,6 @@ permissions:
   id-token: write
   contents: read
   security-events: write
-  
 
 defaults:
   run:

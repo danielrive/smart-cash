@@ -64,11 +64,7 @@ jobs:
         id: build-and-push
         working-directory: 'app/'
         run: |
-
-            COMMIT_ID=${{ github.sha}}
-
-            SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
-            
+           
             echo "${{ github.ref }}"
 
             docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --load --platform linux/amd64 .
@@ -93,7 +89,24 @@ jobs:
           echo " ---> Validate vulnerabilities"
           SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
           echo " ---> Summary: $SUMMARY"
-          if [[ $SUMMARY != *"Critical: 0"* ]]; then
-            echo " IMAGE Contains CRITICAL VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
+          if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] ; then
+            echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
+            exit 5
           fi
+      - name: push image to ECR
+        run: | 
+          COMMIT_ID=${{ github.sha}}
+
+          SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
+
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID
+
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID
+
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}
+
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}
+          
+
+
       
