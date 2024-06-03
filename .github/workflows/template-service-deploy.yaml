@@ -82,16 +82,18 @@ jobs:
 
           echo " ---> Scaning the image ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}"
           trivy image --no-progress --format json -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} 
-      - name: validate vulneravility
-        run: | 
-          echo " ---> Validate vulnerabilities"
-          SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
-          echo " ---> Summary: $SUMMARY"
-
-          if [[ $SUMMARY != *"Critical: 0"* ]]; then
       - name: convert to sarif
         run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: '${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif'
+      - name: validate vulnerability
+        run: | 
+          echo " ---> Validate vulnerabilities"
+          SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
+          echo " ---> Summary: $SUMMARY"
+          if [[ $SUMMARY != *"Critical: 0"* ]]; then
+            echo " IMAGE Contains CRITICAL VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
+          fi
+      
