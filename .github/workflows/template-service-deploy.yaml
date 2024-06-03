@@ -38,9 +38,6 @@ env:
 jobs:
   docker-build:
     runs-on: ubuntu-latest
-    permissions:
-      # required for all workflows
-      security-events: write
     outputs:
       IMAGE_TAG: ${{ steps.build-and-push.outputs.IMAGE_TAG }}
     steps:
