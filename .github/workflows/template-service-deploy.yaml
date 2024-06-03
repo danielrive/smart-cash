@@ -86,12 +86,8 @@ jobs:
           #trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
           #echo " ---> Generate Sarif file"
           # trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
-      - name: List files in workspace
-        run: ls -al
-      - name: Show result.json
-        run: cat ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
       - name: convert to sarif
-        run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif ./${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
+        run: trivy convert --format sarif --output "${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif" "${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json"
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
