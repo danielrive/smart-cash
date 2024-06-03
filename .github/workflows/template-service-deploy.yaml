@@ -89,9 +89,9 @@ jobs:
       - name: List files in workspace
         run: ls -al
       - name: Show result.json
-        run: cat result.json
+        run: cat ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
       - name: convert to sarif
-        run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
+        run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif ./${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
