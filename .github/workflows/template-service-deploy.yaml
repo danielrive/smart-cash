@@ -20,6 +20,10 @@ on:
       SERVICE_NAME:
         required: true 
         type: string
+      TRIVY_VERSION:
+        required: false
+        type: string
+        default: '0.18.3'
     secrets:
       AWS_ACCOUNT_NUMBER:
         required: true
@@ -67,8 +71,24 @@ jobs:
             
             echo "${{ github.ref }}"
 
-            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --push --platform linux/amd64 .
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --push --platform linux/amd64 .
 
-            #docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID --push --platform linux/amd64 .
+      - name: Image security scanning
+        id: image-scanning
+        run: | 
+          wget https://github.com/aquasecurity/trivy/releases/download/v${{ inputs.TRIVY_VERSION }}/trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb
+          sudo dpkg -i trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb
+          trivy --version
 
-            #echo "Tag the image with the env name" 
+          echo " ---> Scaning the image ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}"
+          trivy image  --format json -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}
+          echo " ---> Formating output"
+          SUMMARY="$(trivy convert ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}')"
+          echo $SUMMARY
+          echo " ---> Generate Sarif file"
+          trivy convert ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json --template trivy-template.tpl --output ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif 
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: '${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif'
