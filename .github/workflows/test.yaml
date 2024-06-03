@@ -1,16 +1,8 @@
-name: Microservice deploy DEVELOP
-run-name: Dev-Microservice-deploy
+name: test
+run-name: TEST-deploy
 
 on:
-  workflow_dispatch:
-    inputs:
-      run-all:
-        description: Set to true if you want to ran all the steps, otherwise the
-          workflow will detect the files that have change and run terraform
-          those specific folders
-        required: false
-        default: 'false'
-  push:
+   push:
     branches:
       - develop
       - feat/*
@@ -22,6 +14,8 @@ permissions:
   id-token: write
   contents: read
   security-events: write
+  
+
 
 defaults:
   run:
@@ -41,12 +35,8 @@ jobs:
       - name: Get modified services
         id: get_folders_changed
         run: |
-          echo "input $RUN_ALL dispatch"
-          if [[ ${{ github.event.inputs.run-all }} == 'false' ]]; then
-            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
-          else
-            . detect-folders-updated.sh  empty empty ${{ github.event.inputs.run-all }}
-          fi
+          . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
+        
           echo "getting file"
         working-directory: .github/jobs
 
