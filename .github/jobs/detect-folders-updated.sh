@@ -39,10 +39,8 @@ else
         fi
     done
 
-    # Remove duplicate entries from the list
 
     CHANGED_FOLDERS=$(echo "$CHANGED_FOLDERS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
-
 
     # Create an array for the folders changed to then move to json  
             
@@ -55,7 +53,6 @@ else
     for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
     FOLDERS_MODIFIED_JSON+="\"$item\","
     done
-
 
     FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
             
