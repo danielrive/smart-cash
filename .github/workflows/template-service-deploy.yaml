@@ -83,8 +83,7 @@ jobs:
           echo " ---> Scaning the image ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}"
           trivy image --no-progress --format json -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} 
           echo " ---> Formating output"
-          SUMMARY="$(trivy convert ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}')"
-          echo $SUMMARY
+          trivy convert ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}'
           echo " ---> Generate Sarif file"
           trivy convert ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json --format sarif -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif 
 
