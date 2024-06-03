@@ -38,3 +38,4 @@ EXPOSE 8282
 
 # Set the command to run the application when the container starts
 ENTRYPOINT ["/bin/payment_service"]
+
