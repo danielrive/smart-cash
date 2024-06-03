@@ -71,7 +71,7 @@ jobs:
             
             echo "${{ github.ref }}"
 
-            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --push --platform linux/amd64 .
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --platform linux/amd64 .
 
       - name: Image security scanning
         id: image-scanning
