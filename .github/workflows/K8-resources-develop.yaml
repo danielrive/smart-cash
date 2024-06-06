@@ -80,7 +80,7 @@ jobs:
           if [[ "$RUN_ALL" == "true" ]]; then
 
             echo "Run all"
-            FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
+            FOLDERS_UPDATED_ARRAY=["bank-service" "expenses-service" "payment-service" "user-service"]
           
             FOLDERS_MODIFIED_JSON="{\"folders\":["
             
