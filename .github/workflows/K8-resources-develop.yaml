@@ -69,10 +69,10 @@ jobs:
           echo "workflow dispatch ${{ github.event.inputs.run-all }} is te value"
           tempVar="${{ github.event.inputs.run-all }}"
           echo $tempVar
-          if [[ -z "$temVar" || "$temVar" == "false" ]]; then
+          if [[ -z $temVar || $temVar == "false" ]]; then
             RUN_ALL=false
             echo "NOT Run all"
-          elif [[  "$temVar" == "true" ]]; then
+          elif [[  $temVar == "true" ]]; then
             RUN_ALL="$tempVar"
             echo "TRUE run all"
           fi
