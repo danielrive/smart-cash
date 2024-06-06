@@ -92,6 +92,8 @@ jobs:
           if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] ; then
             echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
             exit 5
+          else 
+            echo " ---> No CRITICAL OR HIGH VULNERABILITIES"
           fi
       - name: push image to ECR
         run: | 
