@@ -7,6 +7,7 @@ resources:
 - helm-opa-gatekeeper.yaml
 - storage-class-aws-ebs.yaml
 - helm-nginx-ingress.yaml
+- ingress.yaml
 #- helm-prometheus.yaml
 #- helm-prometheus.yaml
 #- crd-cert-manager.yaml

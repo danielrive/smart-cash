@@ -16,16 +16,14 @@ spec:
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       securityContext:
-        allowPrivilegeEscalation: false
         runAsNonRoot: false
-        readOnlyRootFilesystem: true
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
         imagePullPolicy: Always
-      #  securityContext:
-      #    runAsNonRoot: false
-      #    readOnlyRootFilesystem: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:
