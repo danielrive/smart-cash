@@ -17,6 +17,7 @@ spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
