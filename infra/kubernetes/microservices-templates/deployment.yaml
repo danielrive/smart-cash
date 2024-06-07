@@ -18,7 +18,7 @@ spec:
       securityContext:
         allowPrivilegeEscalation: false
         runAsNonRoot: false
-        eadOnlyRootFilesystem: true
+        readOnlyRootFilesystem: true
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
