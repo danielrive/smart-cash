@@ -114,7 +114,7 @@ jobs:
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.4.6'
+      TERRAFORM_VERSION: '1.9.2'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       FOLDER: 'workloads/services/${{ matrix.folders }}'
       STAGE: '${{ matrix.folders }}'
