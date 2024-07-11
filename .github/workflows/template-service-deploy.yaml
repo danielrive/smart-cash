@@ -84,6 +84,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: '${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif'
+          category: '${{ inputs.SERVICE_NAME }}'
       - name: validate vulnerability
         run: | 
           echo " ---> Validate vulnerabilities"
@@ -92,6 +93,8 @@ jobs:
           if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] ; then
             echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
             exit 5
+          else 
+            echo " ---> No CRITICAL OR HIGH VULNERABILITIES"
           fi
       - name: push image to ECR
         run: | 

@@ -19,7 +19,7 @@ env:
   ENVIRONMENT: "develop"
   AWS_REGION: "us-west-2"
   PROJECT_NAME: "smart-cash"
-  TERRAFORM_VERSION: '1.4.6'
+  TERRAFORM_VERSION: '1.9.2'
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
   WORKING_DIRECTORY: './infra/terraform'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'

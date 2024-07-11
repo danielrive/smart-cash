@@ -67,11 +67,12 @@ jobs:
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
           echo "workflow dispatch ${{ github.event.inputs.run-all }} is te value"
-          tempVar=${{ github.event.inputs.run-all }}
-          if [[ -z "$temVar" || "$temVar" == "false" ]]; then
+          tempVar="${{ github.event.inputs.run-all }}"
+          echo $tempVar
+          if [[ -z $tempVar || $tempVar == "false" ]]; then
             RUN_ALL=false
             echo "NOT Run all"
-          elif [[  "$temVar" == "true" ]]; then
+          elif [[  $tempVar == "true" ]]; then
             RUN_ALL="$tempVar"
             echo "TRUE run all"
           fi
@@ -79,7 +80,7 @@ jobs:
           if [[ "$RUN_ALL" == "true" ]]; then
 
             echo "Run all"
-            FOLDERS_UPDATED_ARRAY=["bank-service","expenses-service","payment-service","user-service"]
+            FOLDERS_UPDATED_ARRAY=(bank-service expenses-service payment-service user-service)
           
             FOLDERS_MODIFIED_JSON="{\"folders\":["
             
@@ -113,7 +114,7 @@ jobs:
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.4.6'
+      TERRAFORM_VERSION: '1.9.2'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       FOLDER: 'workloads/services/${{ matrix.folders }}'
       STAGE: '${{ matrix.folders }}'

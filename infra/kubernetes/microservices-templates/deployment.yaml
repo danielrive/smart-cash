@@ -15,10 +15,16 @@ spec:
         app: ${SERVICE_NAME}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:
