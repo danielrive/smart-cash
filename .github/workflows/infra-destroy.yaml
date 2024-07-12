@@ -1,10 +1,13 @@
 name: DESTROY INFRASTRUCTURE
 run-name: DESTROY-INFRASTRUCTURE
 
-on: 
-  push:
-    branches:
-      - delete-infra
+on:
+  workflow_dispatch:
+    inputs:
+      branch-to-destroy:
+        description: 'branch name where is the tf code what will be used to destroy all the infra'
+        required: true
+        default: develop
 
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -28,20 +31,24 @@ env:
 jobs:
   destroy-process:
    runs-on: ubuntu-latest
+   strategy:
+      matrix:
+        folders: [ user-service, payment-service, expenses-service, bank-service, eks-cluster, base]
+      fail-fast: false
    steps:
      - name: checkout-repo
        id: checkout
        uses: actions/checkout@v4
        with:
           fetch-depth: 0
-          ref: ${{ env.ENVIRONMENT }}
+          ref: ${{ github.event.inputs.branch-to-destroy }}
      - name: Terraform install
        id: 'install-terraform'
-       uses: hashicorp/setup-terraform@v2
+       uses: hashicorp/setup-terraform@v3
        with: 
          terraform_version: '${{ env.TERRAFORM_VERSION }}'
      - name: configure aws credentials
-       uses: aws-actions/configure-aws-credentials@v2
+       uses: aws-actions/configure-aws-credentials@v4
        with:
           role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}:role/${{ env.AWS_IAM_ROLE_GH }}' 
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
@@ -54,10 +61,10 @@ jobs:
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key='state' \
+              -backend-config=key='stage/${{ matrix.folders }}/${{ matrix.folders }}.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
-       working-directory: '${{ env.WORKING_DIRECTORY }}'
+       working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
      - name: Run terraform destroy
        id: terraform-destroy
        run: | 
@@ -67,4 +74,4 @@ jobs:
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' 
        shell: bash
-       working-directory:  '${{ env.WORKING_DIRECTORY }}'
+       working-directory:  '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
