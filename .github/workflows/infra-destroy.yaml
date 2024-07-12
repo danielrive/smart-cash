@@ -64,7 +64,7 @@ jobs:
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key="stage/${STAGE_NAME}/${STAGE_NAME}.tfstate" \
+              -backend-config=key='stage/${STAGE_NAME}/${STAGE_NAME}.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
        working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
