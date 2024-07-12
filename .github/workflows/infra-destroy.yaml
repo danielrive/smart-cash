@@ -32,8 +32,9 @@ jobs:
   destroy-process:
    runs-on: ubuntu-latest
    strategy:
+      max-parallel: 1
       matrix:
-        folders: [ user-service, payment-service, expenses-service, bank-service, eks-cluster, base]
+        folders: [ workloads/services/user-service, workloads/services/payment-service, workloads/services/expenses-service, workloads/services/bank-service, eks-cluster, base]
       fail-fast: false
    steps:
      - name: checkout-repo
@@ -56,12 +57,13 @@ jobs:
      - name: Run terraform init
        id: 'tf-init'
        run: |
+              STAGE_NAME=$(echo "${{ matrix.folders }}" | awk -F'/' '{print $3}')
               BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
               DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key='stage/${{ matrix.folders }}/${{ matrix.folders }}.tfstate' \
+              -backend-config=key='stage/$STAGE_NAME/$STAGE_NAME.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
        working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
