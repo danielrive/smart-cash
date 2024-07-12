@@ -58,12 +58,13 @@ jobs:
        id: 'tf-init'
        run: |
               STAGE_NAME=$(echo "${{ matrix.folders }}" | awk -F'/' '{print $3}')
+              echo "STAGE_NAME: $STAGE_NAME"
               BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
               DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key="stage/$STAGE_NAME/$STAGE_NAME.tfstate" \
+              -backend-config=key="stage/${STAGE_NAME}/${STAGE_NAME}.tfstate" \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
        working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
