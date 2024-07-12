@@ -37,7 +37,7 @@ env:
 jobs:
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   BASE_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@main
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
@@ -52,7 +52,7 @@ jobs:
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
 
   EKS_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@main
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     needs: BASE_STAGE_DEPLOY
     with: 
       AWS_REGION: 'us-west-2'
