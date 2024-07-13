@@ -79,6 +79,11 @@ jobs:
      - name: Run terraform destroy
        id: terraform-destroy
        run: | 
+            if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
+                cd workloads/services/${{ github.event.inputs.stage }}
+            else
+                cd ${{ github.event.inputs.stage }}
+            fi
             terraform destroy \
             -auto-approve \
             -var 'region=${{ env.AWS_REGION }}' \
