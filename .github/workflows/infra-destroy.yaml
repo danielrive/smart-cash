@@ -8,7 +8,17 @@ on:
         description: 'branch name where is the tf code what will be used to destroy all the infra'
         required: true
         default: develop
-
+      stage:
+        description: 'branch name where is the tf code what will be used to destroy all the infra'
+        required: true
+        type: choice
+        options:
+          -  workloads/services/user-service
+          -  workloads/services/payment-service
+          -  workloads/services/expenses-service
+          -  workloads/services/bank-service
+          -  eks-cluster
+          -  base
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
@@ -26,7 +36,6 @@ env:
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
   WORKING_DIRECTORY: './infra/terraform'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-
 
 jobs:
   destroy-process:
@@ -57,17 +66,21 @@ jobs:
      - name: Run terraform init
        id: 'tf-init'
        run: |
-              STAGE_NAME=$(echo "${{ matrix.folders }}" | awk -F'/' '{print $3}')
-              echo "STAGE_NAME: $STAGE_NAME"
+              if [[ "${{ github.event.stage }}" == *"workloads/services/"* ]]; then
+                cd workloads/services/${{ github.event.stage }}
+              else
+                cd ${{ github.event.stage }}
+              fi
+              pwd
               BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
               DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key="stage/${STAGE_NAME}/${STAGE_NAME}.tfstate" \
+              -backend-config=key="stage/${{ github.event.stage }}/${{ github.event.stage }}.tfstate" \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
-       working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
+       working-directory: '${{ env.WORKING_DIRECTORY }}'
      - name: Run terraform destroy
        id: terraform-destroy
        run: | 
@@ -77,4 +90,4 @@ jobs:
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' 
        shell: bash
-       working-directory:  '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
+       working-directory:  '${{ env.WORKING_DIRECTORY }}'
