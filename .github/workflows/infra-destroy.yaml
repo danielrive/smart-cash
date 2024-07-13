@@ -61,7 +61,7 @@ jobs:
      - name: Run terraform init
        id: 'tf-init'
        run: |
-              if [[ "${{ github.event.inputs.stage }}" == *"workloads/services/"* ]]; then
+              if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
                 cd workloads/services/${{ github.event.inputs.stage }}
               else
                 cd ${{ github.event.inputs.stage }}
