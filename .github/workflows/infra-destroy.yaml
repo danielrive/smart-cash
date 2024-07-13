@@ -9,14 +9,14 @@ on:
         required: true
         default: develop
       stage:
-        description: 'branch name where is the tf code what will be used to destroy all the infra'
+        description: 'stage name to destroy'
         required: true
         type: choice
         options:
-          -  workloads/services/user-service
-          -  workloads/services/payment-service
-          -  workloads/services/expenses-service
-          -  workloads/services/bank-service
+          -  user-service
+          -  payment-service
+          -  expenses-service
+          -  bank-service
           -  eks-cluster
           -  base
 permissions:
@@ -40,11 +40,6 @@ env:
 jobs:
   destroy-process:
    runs-on: ubuntu-latest
-   strategy:
-      max-parallel: 1
-      matrix:
-        folders: [ workloads/services/user-service, workloads/services/payment-service, workloads/services/expenses-service, workloads/services/bank-service, eks-cluster, base]
-      fail-fast: false
    steps:
      - name: checkout-repo
        id: checkout
@@ -66,10 +61,10 @@ jobs:
      - name: Run terraform init
        id: 'tf-init'
        run: |
-              if [[ "${{ github.event.stage }}" == *"workloads/services/"* ]]; then
-                cd workloads/services/${{ github.event.stage }}
+              if [[ "${{ github.event.inputs.stage }}"" == *"workloads/services/"* ]]; then
+                cd workloads/services/${{ github.event.inputs.stage }}
               else
-                cd ${{ github.event.stage }}
+                cd ${{ github.event.inputs.stage }}
               fi
               pwd
               BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
@@ -77,7 +72,7 @@ jobs:
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key="stage/${{ github.event.stage }}/${{ github.event.stage }}.tfstate" \
+              -backend-config=key="stage/${{ github.event.inputs.stage }}/${{ github.event.inputs.stage }}.tfstate" \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
        working-directory: '${{ env.WORKING_DIRECTORY }}'
