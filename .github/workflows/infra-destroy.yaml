@@ -8,7 +8,17 @@ on:
         description: 'branch name where is the tf code what will be used to destroy all the infra'
         required: true
         default: develop
-
+      stage:
+        description: 'stage name to destroy'
+        required: true
+        type: choice
+        options:
+          -  user-service
+          -  payment-service
+          -  expenses-service
+          -  bank-service
+          -  eks-cluster
+          -  base
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
@@ -27,15 +37,9 @@ env:
   WORKING_DIRECTORY: './infra/terraform'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
 
-
 jobs:
   destroy-process:
    runs-on: ubuntu-latest
-   strategy:
-      max-parallel: 1
-      matrix:
-        folders: [ workloads/services/user-service, workloads/services/payment-service, workloads/services/expenses-service, workloads/services/bank-service, eks-cluster, base]
-      fail-fast: false
    steps:
      - name: checkout-repo
        id: checkout
@@ -57,23 +61,33 @@ jobs:
      - name: Run terraform init
        id: 'tf-init'
        run: |
-              STAGE_NAME=$(echo "${{ matrix.folders }}" | awk -F'/' '{print $3}')
+              if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
+                cd workloads/services/${{ github.event.inputs.stage }}
+              else
+                cd ${{ github.event.inputs.stage }}
+              fi
+              pwd
               BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
               DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
               terraform init \
               -backend-config=bucket="$BUCKET_NAME" \
               -backend-config=region='${{ env.AWS_REGION }}' \
-              -backend-config=key="stage/$STAGE_NAME/$STAGE_NAME.tfstate" \
+              -backend-config=key="stage/${{ github.event.inputs.stage }}/${{ github.event.inputs.stage }}.tfstate" \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
        shell: bash
-       working-directory: '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
+       working-directory: '${{ env.WORKING_DIRECTORY }}'
      - name: Run terraform destroy
        id: terraform-destroy
        run: | 
+            if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
+                cd workloads/services/${{ github.event.inputs.stage }}
+            else
+                cd ${{ github.event.inputs.stage }}
+            fi
             terraform destroy \
             -auto-approve \
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' 
        shell: bash
-       working-directory:  '${{ env.WORKING_DIRECTORY }}/${{ matrix.folders }}'
+       working-directory:  '${{ env.WORKING_DIRECTORY }}'
