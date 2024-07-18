@@ -54,7 +54,7 @@ jobs:
        id: get_folders_changed
        run: |
             if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
-              echo "FOLDERS_UPDATED="{"folders":["1-base-stage"]}""
+              echo "FOLDERS_UPDATED="{"folders":["1-base-stage","2-eks-cluster-stage","3-k8-common-stage"]}"" >> $GITHUB_OUTPUT
             else
               . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
