@@ -17,7 +17,6 @@ module "networking" {
   enable_auto_public_ip = true
 }
 
-
 ######################################################
 ### KMS Key to encrypt kubernetes resources
 
