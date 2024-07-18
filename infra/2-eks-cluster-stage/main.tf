@@ -75,7 +75,6 @@ resource "aws_iam_role_policy_attachment" "cert-manager-role" {
   role       = aws_iam_role.cert-manager-iam-role.name
 }
 
-
 ###############################################
 #######    Flux Bootstrap 
 
