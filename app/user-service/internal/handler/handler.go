@@ -18,40 +18,49 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-func (h *UserHandler) GetUser(c *gin.Context) {
-
-	uri := c.Request.URL.Query()
-
-	if _, isMapContainsKey := uri["userId"]; isMapContainsKey {
-		user, err := h.userService.GetUserById(uri["userId"][0])
-		if err != nil {
-			if err == common.ErrUserNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
-				return
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-				return
-			}
-		}
-		c.JSON(http.StatusOK, user)
-	} else if _, isMapContainsKey := uri["email"]; isMapContainsKey {
-		user, err := h.userService.GetUserByEmailorUsername("email", uri["email"][0])
-		if err != nil {
+func (h *UserHandler) GetUserById(c *gin.Context) {
+	userId := c.Param("userId")
+	user, err := h.userService.GetUserById(userId)
+	if err != nil {
+		if err == common.ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 			return
-		}
-		c.JSON(http.StatusOK, user)
-	} else if _, isMapContainsKey := uri["username"]; isMapContainsKey {
-		user, err := h.userService.GetUserByEmailorUsername("username", uri["email"][0])
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, user)
+	}
+	c.JSON(http.StatusOK, user)
+}
+
+// Handler for Get user by email or username
+
+func (h *UserHandler) GetUserByQuery(c *gin.Context) {
+
+	query := c.Request.URL.Query()
+	var key, value string
+	// Check and store the query in the request
+	if email, ok := query["email"]; ok {
+		key, value = "email", email[0]
+	} else if username, ok := query["username"]; ok {
+		key, value = "username", username[0]
 	} else {
-		c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
 		return
 	}
+	// Get user info by the query
+	user, err := h.userService.GetUserByEmailorUsername(key, value)
+	if err != nil {
+		if err == common.ErrUserNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound.Error()})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, user)
+
 }
 
 // Handler for creating new user
@@ -60,34 +69,17 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	user := models.User{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	// create the user
-	if err := h.userService.CreateUser(user); err != nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": err})
+	response, err := h.userService.CreateUser(user)
+	if err != nil {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, "ok")
-}
-
-// Handler for login
-
-func (h *UserHandler) Login(c *gin.Context) {
-	// extract the email and user from request
-
-	user := models.User{}
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
-		return
-	}
-	if _, token, err := h.userService.Login(user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
-		return
-	} else {
-		c.JSON(http.StatusOK, gin.H{"token": token})
-		return
-	}
+	c.Header("Location", "/user/"+response.UserId)
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": response})
 }
 
 /// Health check
@@ -105,7 +97,7 @@ func (h *UserHandler) ConnectToOtherSvc(c *gin.Context) {
 	err := h.userService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, "ok")

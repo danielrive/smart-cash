@@ -46,31 +46,25 @@ func main() {
 	// new UUID helper
 	uuidHelper := utils.NewUUIDHelper()
 
-	// // Initialize user repository
+	// Initialize user repository
 	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper)
+
 	// Initialize user service
 	userService := service.NewUserService(userRepo)
 
 	// Init user handler
 	userHandler := handler.NewUserHandler(userService)
 
-	// GET api/v1[?userID=0&email(optinal)]
-	router.GET("/", userHandler.GetUser)
+	// GET user/userID
+	router.GET("/user/:userId", userHandler.GetUserById)
+	// GET user?username=username user?email=email
+	router.GET("/user/", userHandler.GetUserByQuery)
 
 	// GET api/v1/[controller]/user[?userID=0]
-	router.POST("/", userHandler.CreateUser)
-
-	// login method, will return a token and userId
-	router.POST("/login", userHandler.Login)
+	router.POST("/user/", userHandler.CreateUser)
 
 	// Health check
-	router.GET("/health", userHandler.HealthCheck)
+	router.GET("/user/health", userHandler.HealthCheck)
 
-	// test connect to other services
-
-	router.GET("/connectToSvc", userHandler.ConnectToOtherSvc)
-
-	// GET api/v1/[controller]/user[?userID=0]
 	router.Run(":8181")
-	// Find User by email, userId and username
 }

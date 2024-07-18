@@ -1,16 +1,9 @@
 package service
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
-	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
-
-	"fmt"
-	"net/http"
-	"net/url"
 )
 
 // Define service interface
@@ -24,107 +17,44 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 	return &ExpensesService{expensesRepository: expensesRepository}
 }
 
-func (exps *ExpensesService) CreateExpense(expense models.Expense) error {
+func (exps *ExpensesService) CreateExpense(expense models.Expense) (models.ExpensesReturn, error) {
 
-	_, err := exps.expensesRepository.CreateExpense(expense)
-
-	if err != nil {
-		log.Println("error", err)
-		return err
-	}
-	// validate if the expense has automatic pay
-	if expense.AutomaticPay {
-		// Call the internal function to validate the user token
-		err := createOrder(expense)
-		if err != nil {
-			log.Println("error", err)
-		}
-	}
-	return nil
-}
-
-// Function to get expenses by tag
-
-func (exps *ExpensesService) GetExpensesByCategory(tag string, userId string) ([]models.Expense, error) {
-	if validateUserToken(userId) == 200 {
-		expenses, err := exps.expensesRepository.GetExpensesByCategory(tag, userId)
-
-		if err != nil {
-			log.Println("error", err)
-			return nil, err
-		}
-
-		return expenses, nil
-	} else {
-		return nil, common.ErrWrongCredentials
-	}
-}
-
-// Get expenses by userId
-
-func (exps *ExpensesService) GetExpensesByUserId(userId string) ([]models.Expense, error) {
-
-	expenses, err := exps.expensesRepository.GetExpensesByUserId(userId)
+	response, err := exps.expensesRepository.CreateExpense(expense)
 
 	if err != nil {
 		log.Println("error", err)
-		return nil, err
+		return models.ExpensesReturn{}, err
+	}
+	return response, nil
+}
+
+// Function to get expenses by Id
+
+func (exps *ExpensesService) GetExpenseById(expenseId string) (models.Expense, error) {
+	expense, err := exps.expensesRepository.GetExpenseById(expenseId)
+	if err != nil {
+		log.Println("error", err)
+		return models.Expense{}, err
+	}
+
+	return expense, nil
+
+}
+
+// Function to get expenses by userId or category
+
+func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]models.Expense, error) {
+	expenses, err := exps.expensesRepository.GetExpByUserIdorCat(key, value)
+
+	if err != nil {
+		log.Println("error", err)
+		return expenses, err
 	}
 
 	return expenses, nil
 }
 
-// Function to calculate the cost of expenses by tag
-
-func (exps *ExpensesService) CalculateCostByCategory(category string, userId string) (float64, error) {
-
-	expenses, err := exps.expensesRepository.GetExpensesByCategory(category, userId)
-
-	if err != nil {
-		log.Println("error", err)
-		return 0, err
-	}
-
-	var cost float64
-	for _, expense := range expenses {
-		cost += expense.Amount
-	}
-
-	return cost, nil
-}
-
-// Internal function to validate user token
-func validateUserToken(userId string) int {
-	// Define the base URL of the service
-	baseURL := "http://user:8181/login"
-
-	// Create a map to hold query parameters
-	queryParams := map[string]string{
-		"id": userId,
-	}
-
-	// Encode the query parameters and append them to the base URL
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		log.Println("Error parsing URL ", err)
-		return 500
-	}
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, value)
-	}
-	u.RawQuery = q.Encode()
-	// Make a GET request with the constructed URL
-	resp, err := http.Get(u.String())
-	if err != nil {
-		log.Println("error", err)
-		return 500
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode
-}
-
+/*
 // Create order to automatic pay an expense
 
 func createOrder(expense models.Expense) error {
@@ -191,3 +121,4 @@ func (us *ExpensesService) ConnectOtherSVC(svc_name string, port string) error {
 	return nil
 
 }
+*/

@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: ${ENVIRONMENT}.danielrive.site
+  - host: ${ENVIRONMENT}.smartcash.danielrive.site
     http:
       paths:
       - path: /user
