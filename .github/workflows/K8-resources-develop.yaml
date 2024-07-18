@@ -14,8 +14,7 @@ on:
       - develop
       - feat/*
     paths:
-      - "infra/kubernetes/**"
-      - "infra/terraform/workloads/**"
+      - "infra/**"
   pull_request:
     branches:
       - develop

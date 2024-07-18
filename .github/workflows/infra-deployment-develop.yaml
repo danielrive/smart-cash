@@ -19,8 +19,7 @@ on:
       - develop
       - feat/*
     paths:
-      - "infra/terraform/base"
-      - "infra/terraform/eks-cluster"
+      - "infra/**"
   pull_request:
     branches:
       - develop
