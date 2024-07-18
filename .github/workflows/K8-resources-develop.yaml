@@ -7,7 +7,7 @@ on:
       run-all:
         description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
         required: false
-        default: false
+        default: "false"
 
   push:
     branches:
@@ -66,7 +66,7 @@ jobs:
        id: get_folders_changed
        run: |
           ## Validate if input is set to true to skip running bash script for folders updated
-          echo "workflow dispatch ${{ github.event.inputs.run-all }} is te value"
+          echo "workflow dispatch ${{ github.event.inputs.run-all }} is the value"
           tempVar="${{ github.event.inputs.run-all }}"
           echo $tempVar
           if [[ -z $tempVar || $tempVar == "false" ]]; then

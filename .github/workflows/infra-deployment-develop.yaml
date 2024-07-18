@@ -4,10 +4,16 @@ run-name: Dev-TF-Base-and-EKS
 on: 
   workflow_dispatch:
     inputs:
-      run-all:
-        description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
-        required: false
-        default: false
+      stage_to_run:
+        description: 'stage name to destroy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - 1-base
+          - 2-eks-cluster
+          - 3-k8-common
   push:
     branches:
       - develop
@@ -35,8 +41,33 @@ env:
   ENVIRONMENT: develop
 
 jobs:
+  VALIDATE_STAGE_UPDATED:
+   runs-on: ubuntu-latest
+   outputs:
+      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v4
+       with:
+          fetch-depth: 0
+     - name: Get modified services
+       id: get_folders_changed
+       run: |
+            if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
+              echo "FOLDERS_UPDATED="{"folders":["1-base-stage"]}""
+            else
+              . detect-folder-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
+            fi
+            echo "FOLDERS_UPDATED=$FOLDERS_UPDATED"
+       working-directory: .github/jobs
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
-  BASE_STAGE_DEPLOY:
+  RUN_TERRAFORM:
+    needs: VALIDATE_STAGE_UPDATED
+    strategy: 
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.VALIDATE_STAGE_UPDATED.outputs.FOLDERS_UPDATED) }}
+      fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     with: 
       AWS_REGION: 'us-west-2'
@@ -47,22 +78,6 @@ jobs:
       STAGE: 'base'
       FOLDER: 'base'
       ARTIFAC_ID: 'base'
-    secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
-      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
-
-  EKS_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
-    needs: BASE_STAGE_DEPLOY
-    with: 
-      AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.9.2'
-      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'eks-cluster'
-      FOLDER: 'eks-cluster'
-      ARTIFAC_ID: 'eks'
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

@@ -42,7 +42,7 @@ jobs:
         id: get_folders_changed
         run: |
           echo "input $RUN_ALL dispatch"
-          if [[ ${{ github.event.inputs.run-all }} == 'false' ]]; then
+          if [[ "${{ github.event.inputs.run-all }}" == 'false' ]]; then
             . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
           else
             . detect-folders-updated.sh  empty empty ${{ github.event.inputs.run-all }}
