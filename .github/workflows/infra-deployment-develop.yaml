@@ -56,7 +56,7 @@ jobs:
             if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
               echo "FOLDERS_UPDATED="{"folders":["1-base-stage"]}""
             else
-              . detect-folder-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
+              . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
             echo "FOLDERS_UPDATED=$FOLDERS_UPDATED"
        working-directory: .github/jobs

@@ -14,7 +14,7 @@ on:
       - develop
       - feat/*
     paths:
-      - "infra/**"
+      - "infra/kubernetes/**"
   pull_request:
     branches:
       - develop
