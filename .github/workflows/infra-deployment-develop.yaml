@@ -54,11 +54,12 @@ jobs:
        id: get_folders_changed
        run: |
             if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
-              echo "FOLDERS_UPDATED="{"folders":["1-base-stage","2-eks-cluster-stage","3-k8-common-stage"]}"" >> $GITHUB_OUTPUT
+              echo "FOLDERS_UPDATED="{"folders":["1-base-stage","2-eks-cluster-stage","3-k8-common-stage"]}"" 
+              echo $FOLDERS_UPDATED
             else
               . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
-            echo "FOLDERS_UPDATED=$FOLDERS_UPDATED"
+            echo $FOLDERS_UPDATED
        working-directory: .github/jobs
   ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
   RUN_TERRAFORM:
