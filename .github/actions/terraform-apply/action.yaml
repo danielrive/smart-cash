@@ -25,7 +25,7 @@ runs:
       id: download-tf-plan
       uses: actions/download-artifact@v4
       with:
-        name: tf-plan-${{ inputs.ARTIFAC_ID}}
+        name: tf-plan-${{ inputs.STAGE}}
         path: '${{ github.workspace }}/infra/${{ inputs.STAGE}}''
     - name: Run terraform init
       id: 'tf-init'
@@ -38,13 +38,13 @@ runs:
             -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
            -backend-config=dynamodb_table="$DYNAMODB_TABLE"
       shell: bash
-      working-directory: '/infra/${{ inputs.STAGE}}'
+      working-directory: './infra/${{ inputs.STAGE}}'
     - name: Run terraform apply
       run: |
            terraform apply \
            -input=false \
            ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
       shell: bash
-      working-directory: '/infra/${{ inputs.STAGE}}'
+      working-directory: './infra/${{ inputs.STAGE}}'
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}

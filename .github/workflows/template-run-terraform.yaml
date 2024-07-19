@@ -25,7 +25,7 @@ on:
         required: true
         type: string
       AWS_IAM_ROLE_GH:
-        description: 'folder name corresponding to the stage to deploy, this must follow an order, starting from base'
+        description: 'AWS IAM role used to deploy'
         required: true
         type: string
     secrets: 
@@ -84,7 +84,6 @@ jobs:
         uses: ./.github/actions/terraform-plan
         with:
           STAGE: ${{ inputs.STAGE }}
-          ARTIFAC_ID: ${{ inputs.ARTIFAC_ID }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:

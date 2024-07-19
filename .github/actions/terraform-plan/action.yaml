@@ -33,7 +33,7 @@ runs:
               -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
         shell: bash
-        working-directory: '/infra/${{ inputs.STAGE}}'
+        working-directory: './infra/${{ inputs.STAGE}}'
       - name: Run terraform validate
         id: 'tf-validate'
         run: terraform validate
@@ -65,7 +65,7 @@ runs:
             fi
 
         shell: bash
-        working-directory: '/infra/${{ inputs.STAGE}}'
+        working-directory: './infra/${{ inputs.STAGE}}'
 
       - name: Publish Artifact
         uses: actions/upload-artifact@v4
