@@ -177,7 +177,6 @@ resource "github_repository_file" "overlays-user-svc" {
   overwrite_on_create = true
 }
 
-
 ###########################
 ##### Network Policies
 
