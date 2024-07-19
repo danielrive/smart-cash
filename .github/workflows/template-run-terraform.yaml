@@ -77,6 +77,7 @@ jobs:
               echo "WORKING_DIR="./4-workloads-stage/${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
             else
               echo "WORKING_DIR="./${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
+            fi
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
     runs-on: ubuntu-latest
