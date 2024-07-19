@@ -66,6 +66,7 @@ jobs:
         working-directory: .github/jobs/
   validate-working-dir:
     runs-on: ubuntu-latest
+    needs: set-up-tf-backend
     outputs:
       WORKING_DIR: ${{ steps.validate-working-dir.outputs.WORKING_DIR }}
     steps:
@@ -81,7 +82,7 @@ jobs:
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
     runs-on: ubuntu-latest
-    needs: set-up-tf-backend
+    needs: validate-working-dir
     outputs:
       PLAN_EXIT_CODE: ${{ steps.terraform-plan.outputs.PLAN_EXIT_CODE }}
     steps:
