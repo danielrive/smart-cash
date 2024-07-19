@@ -3,7 +3,7 @@
 locals {
   this_service_name = "user"
   this_service_port = 8181
-  path_tf_repo_services = "../../../../kubernetes/services"
+  path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo = var.environment
 }
 
@@ -120,7 +120,7 @@ resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
 ####  ECR Repo
 
 module "ecr_registry_user_service" {
-  source       = "../../../modules/ecr"
+  source       = "../modules/ecr"
   name         = "user-service"
   project_name = var.project_name
   environment  = var.environment
@@ -133,12 +133,12 @@ module "ecr_registry_user_service" {
 ##### Base manifests
 
 resource "github_repository_file" "base-manifests" {
-  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
+  for_each            = fileset("../microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "services/user-service/base/${each.key}"
   content = templatefile(
-    "../../../../kubernetes/microservices-templates/${each.key}",
+    "../microservices-templates/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
@@ -157,12 +157,12 @@ resource "github_repository_file" "base-manifests" {
 ##### overlays
 
 resource "github_repository_file" "overlays-user-svc" {
-  for_each            = fileset("${local.path_tf_repo_services}/user-service/overlays/${var.environment}", "*.yaml")
+  for_each            = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "services/user-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/user-service/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry_user_service.repo_url
@@ -186,7 +186,7 @@ resource "github_repository_file" "np-user" {
   branch              = local.brach_gitops_repo
   file                = "services/user-service/base/network-policy.yaml"
   content = templatefile(
-    "../../../../kubernetes/network-policies/user.yaml",
+    "${local.path_tf_repo_services}/network-policies/user.yaml",
     {
       PROJECT_NAME  = var.project_name
     }
