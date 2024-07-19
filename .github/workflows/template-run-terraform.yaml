@@ -21,15 +21,7 @@ on:
         type: string
         default: '1.4.6'
       STAGE:
-        description: 'name of the stage to run, this name will be used to create the state file'
-        required: true
-        type: string
-      FOLDER:
-        description: 'folder name corresponding to the stage to deploy, this must follow an order, starting from base'
-        required: true
-        type: string
-      ARTIFAC_ID:
-        description: 'unique ID to named the artifacts'
+        description: 'The name of the stage to deploy'
         required: true
         type: string
       AWS_IAM_ROLE_GH:
@@ -91,7 +83,6 @@ jobs:
         id: terraform-plan
         uses: ./.github/actions/terraform-plan
         with:
-          WORKING_DIRECTORY: '/infra/terraform/${{ inputs.FOLDER}}'
           STAGE: ${{ inputs.STAGE }}
           ARTIFAC_ID: ${{ inputs.ARTIFAC_ID }}
 
@@ -118,7 +109,6 @@ jobs:
         id: tf-apply
         uses: ./.github/actions/terraform-apply
         with:
-          WORKING_DIRECTORY: '/infra/terraform/${{ inputs.FOLDER}}'
           STAGE: ${{ inputs.STAGE }}
           ARTIFAC_ID: ${{ inputs.ARTIFAC_ID }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}

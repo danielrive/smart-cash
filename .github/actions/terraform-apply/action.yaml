@@ -2,20 +2,12 @@ name: 'Terraform apply'
 description: 'Running Terraform apply'
 
 inputs:
-  WORKING_DIRECTORY:
-    description: 'directory where the tf code is'
-    required: false
-    default: '/infra/terraform'
   GITHUB_TOKEN:
     description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
     required: true
   STAGE:
     description: 'terraform stage to deploy, start from base'
-    required: true
-  ARTIFAC_ID:
-    description: 'unique ID to named the artifacts'
-    required: true
-   
+    required: true   
 
 runs:
   using: "composite"
@@ -34,7 +26,7 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: tf-plan-${{ inputs.ARTIFAC_ID}}
-        path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}'
+        path: '${{ github.workspace }}/infra/${{ inputs.STAGE}}''
     - name: Run terraform init
       id: 'tf-init'
       run: |
@@ -46,13 +38,13 @@ runs:
             -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
            -backend-config=dynamodb_table="$DYNAMODB_TABLE"
       shell: bash
-      working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      working-directory: '/infra/${{ inputs.STAGE}}'
     - name: Run terraform apply
       run: |
            terraform apply \
            -input=false \
-           ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan
+           ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
       shell: bash
-      working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      working-directory: '/infra/${{ inputs.STAGE}}'
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}

@@ -90,9 +90,7 @@ jobs:
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.9.2'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'base'
-      FOLDER: 'base'
-      ARTIFAC_ID: 'base'
+      STAGE: ${{ matrix.folders }}
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

@@ -2,15 +2,8 @@ name: 'Terraform Plan'
 description: 'Running Terraform plan'
 
 inputs:
-  WORKING_DIRECTORY:
-    description: 'directory where the tf code is'
-    required: false
-    default: '/infra/terraform'
   STAGE:
     description: 'terraform stage to deploy, start from base'
-    required: true
-  ARTIFAC_ID:
-    description: 'unique ID to named the artifacts'
     required: true
 outputs:
   PLAN_EXIT_CODE:
@@ -40,12 +33,12 @@ runs:
               -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
               -backend-config=dynamodb_table="$DYNAMODB_TABLE"
         shell: bash
-        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+        working-directory: '/infra/${{ inputs.STAGE}}'
       - name: Run terraform validate
         id: 'tf-validate'
         run: terraform validate
         shell: bash
-        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+        working-directory: '/infra/${{ inputs.STAGE}}'
       - name: Run terraform plan
         id: terraform-plan
         run: |
@@ -55,7 +48,7 @@ runs:
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
-            -out ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan \
+            -out ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan \
             -detailed-exitcode
             exitcode="$?"
             echo "tf-plan-code=$exitcode" >> $GITHUB_OUTPUT
@@ -72,10 +65,10 @@ runs:
             fi
 
         shell: bash
-        working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+        working-directory: '/infra/${{ inputs.STAGE}}'
 
       - name: Publish Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tf-plan-${{ inputs.ARTIFAC_ID}}
-          path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}/${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan'
+          name: tf-plan-${{ inputs.STAGE}}
+          path: '${{ github.workspace }}/infra/${{ inputs.STAGE}}/${{ github.run_id }}-${{ inputs.STAGE}}.tfplan'

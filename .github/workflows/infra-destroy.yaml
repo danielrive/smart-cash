@@ -17,8 +17,10 @@ on:
           -  payment-service
           -  expenses-service
           -  bank-service
-          -  eks-cluster
-          -  base
+          -  4-workloads-stage
+          -  3-k8-common-stage
+          -  2-eks-cluster-stage
+          -  1-base-stage
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
