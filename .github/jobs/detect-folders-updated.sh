@@ -10,22 +10,22 @@ CHANGED_FOLDERS=""
 echo "Detecting folders updated automatically"
 GIT_FOLDERS_UPDATED="$(git diff --name-only $1 $2 )"
 
-
-if [[  "$3" == "app" ]]; then
-    filter="-service"
-else 
-    filter="-stage"
-fi
+add_folder() {
+    echo "--> adding the folder $root_folder"
+    CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
+    echo "--> updating the the variable"
+    echo $CHANGED_FOLDERS 
+}
 
 for file in $GIT_FOLDERS_UPDATED; do
     folder_name=$(dirname "$file")
     echo "--> checking the folder $folder_name"
-    if [[ "$folder_name" == *"$filter"* ]]; then
-       root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
-       echo "--> adding the folder $root_folder"
-       CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
-       echo "--> updating the the variable"
-       echo $CHANGED_FOLDERS        
+    if [[ "$folder_name" == *"-service"* ]]; then
+            root_folder=$(echo "$folder_name" | awk -F'/' '{print $3}')
+            add_folder       
+    elif [[ "$folder_name" == *"-stage"* ]]; then
+            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
+            add_folder    
     else
        echo "--> ignoring the folder $folder_name"
     fi
@@ -52,3 +52,5 @@ FOLDERS_MODIFIED_JSON+="]}"
 echo $FOLDERS_MODIFIED_JSON
 
 echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
+
+
