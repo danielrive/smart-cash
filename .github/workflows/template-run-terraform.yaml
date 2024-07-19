@@ -64,6 +64,19 @@ jobs:
           ENVIRONMENT: ${{ env.ENVIRONMENT }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: .github/jobs/
+  validate-working-dir:
+    runs-on: ubuntu-latest
+    outputs:
+      WORKING_DIR: ${{ steps.validate-working-dir.outputs.WORKING_DIR }}
+    steps:
+      - name: validate-working-dir
+        id: validate-working-dir
+        shell: bash
+        run: |
+            if [[ "${{ inputs.STAGE }}"" ==  *"-service"* ]]; then
+              echo "WORKING_DIR="./4-workloads-stage/${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
+            else
+              echo "WORKING_DIR="./${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
     runs-on: ubuntu-latest
@@ -84,6 +97,7 @@ jobs:
         uses: ./.github/actions/terraform-plan
         with:
           STAGE: ${{ inputs.STAGE }}
+          WORKING_DIR: ${{ needs.VALIDATE_STAGE_UPDATED.outputs.WORKING_DIR }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:
@@ -109,5 +123,5 @@ jobs:
         uses: ./.github/actions/terraform-apply
         with:
           STAGE: ${{ inputs.STAGE }}
-          ARTIFAC_ID: ${{ inputs.ARTIFAC_ID }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
+          WORKING_DIR: ${{ needs.VALIDATE_STAGE_UPDATED.outputs.WORKING_DIR }}

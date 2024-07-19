@@ -55,7 +55,7 @@ jobs:
        run: |
             if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
 
-              FOLDERS_UPDATED_ARRAY=("1-base-stage" "2-eks-cluster-stage" "3-k8-common-stage" "4-workloads-stage") 
+              FOLDERS_UPDATED_ARRAY=("1-base-stage" "2-eks-cluster-stage" "3-k8-common-stage") 
 
               FOLDERS_MODIFIED_JSON="{\"folders\":["
             
