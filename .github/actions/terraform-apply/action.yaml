@@ -26,9 +26,9 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: tf-plan-${{ inputs.STAGE}}
-        path: '${{ github.workspace }}/infra/${{ inputs.STAGE}}''
+        path: '${{ github.workspace }}/infra/${{ inputs.STAGE}}'
     - name: Run terraform init
-      id: 'tf-init'
+      id: tf-init
       run: |
            BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
            DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
