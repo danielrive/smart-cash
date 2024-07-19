@@ -5,6 +5,9 @@ inputs:
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
+  WORKING_DIR:
+    description: 'workign directory where terraform will run'
+    required: true
 outputs:
   PLAN_EXIT_CODE:
     description: "exit code generate after tf plan, 0= no changes, 2=changes, 1=error"
