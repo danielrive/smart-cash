@@ -1,5 +1,5 @@
-name: Develop Terraform Base-and-EKS
-run-name: Dev-TF-Base-and-EKS
+name: Develop Deploy Infra
+run-name: Develop-Deploy-Infra
 
 on: 
   workflow_dispatch:
