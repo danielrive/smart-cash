@@ -38,7 +38,7 @@ runs:
         id: 'tf-validate'
         run: terraform validate
         shell: bash
-        working-directory: '/infra/${{ inputs.STAGE}}'
+        working-directory: './infra/${{ inputs.STAGE}}'
       - name: Run terraform plan
         id: terraform-plan
         run: |
