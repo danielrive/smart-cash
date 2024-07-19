@@ -73,7 +73,7 @@ jobs:
         id: validate-working-dir
         shell: bash
         run: |
-            if [[ "${{ inputs.STAGE }}"" ==  *"-service"* ]]; then
+            if [[ "${{ inputs.STAGE }}" ==  *"-service"* ]]; then
               echo "WORKING_DIR="./4-workloads-stage/${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
             else
               echo "WORKING_DIR="./${{ inputs.STAGE }}"" >> $GITHUB_OUTPUT
