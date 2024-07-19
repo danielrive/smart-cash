@@ -82,7 +82,7 @@ jobs:
     strategy: 
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_STAGE_UPDATED.outputs.FOLDERS_UPDATED) }}
-      fail-fast: false
+      fail-fast: true
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@feat/open-api
     with: 
       AWS_REGION: 'us-west-2'

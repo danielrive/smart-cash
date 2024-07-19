@@ -36,7 +36,7 @@ env:
   PROJECT_NAME: "smart-cash"
   TERRAFORM_VERSION: '1.9.2'
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
-  WORKING_DIRECTORY: './infra/terraform'
+  WORKING_DIRECTORY: './infra'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
 
 jobs:
