@@ -8,6 +8,10 @@ on:
         description: 'branch name where is the tf code what will be used to destroy all the infra'
         required: true
         default: develop
+        type: choice
+        options:
+          -  develop
+          -  main
       stage:
         description: 'stage name to destroy'
         required: true
@@ -36,7 +40,7 @@ env:
   PROJECT_NAME: "smart-cash"
   TERRAFORM_VERSION: '1.9.2'
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
-  WORKING_DIRECTORY: './infra'
+  WORKING_DIRECTORY: './infra/'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
 
 jobs:
@@ -62,7 +66,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
      - name: Run terraform init
        id: 'tf-init'
-       run: |
+       run: | 
+              pwd
               if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
                 cd workloads/services/${{ github.event.inputs.stage }}
               else
