@@ -42,6 +42,7 @@ runs:
       - name: Run terraform plan
         id: terraform-plan
         run: |
+            echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
             set +e 
             terraform plan \
             -input=false \
