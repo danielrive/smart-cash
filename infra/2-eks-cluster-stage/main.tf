@@ -88,7 +88,7 @@ resource "null_resource" "bootstrap-flux" {
   depends_on          = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    ../scripts/bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name} ${var.environment}
+    ./bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name} ${var.environment}
     EOF
   }
   triggers = {
