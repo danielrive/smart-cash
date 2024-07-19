@@ -40,7 +40,7 @@ env:
   PROJECT_NAME: "smart-cash"
   TERRAFORM_VERSION: '1.9.2'
   FLUX_REPO_NAME: 'smart-cash-gitops-flux'
-  WORKING_DIRECTORY: './infra/'
+  WORKING_DIRECTORY: './infra'
   AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
        uses: actions/checkout@v4
        with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.branch-to-destroy }}
+          ref: feat/open-api  #${{ github.event.inputs.branch-to-destroy }}
      - name: Terraform install
        id: 'install-terraform'
        uses: hashicorp/setup-terraform@v3
