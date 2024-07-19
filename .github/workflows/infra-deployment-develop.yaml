@@ -54,8 +54,23 @@ jobs:
        id: get_folders_changed
        run: |
             if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
-              echo "FOLDERS_UPDATED="{"folders":["1-base-stage","2-eks-cluster-stage","3-k8-common-stage"]}"" 
-              echo $FOLDERS_UPDATED
+
+              FOLDERS_UPDATED_ARRAY=("1-base-stage" "2-eks-cluster-stage" "3-k8-common-stage" "4-workloads-stage") 
+
+              FOLDERS_MODIFIED_JSON="{\"folders\":["
+            
+              for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
+                FOLDERS_MODIFIED_JSON+="\"$item\","
+              done
+
+              FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
+                          
+              FOLDERS_MODIFIED_JSON+="]}"
+
+              echo $FOLDERS_MODIFIED_JSON
+
+              echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
+
             else
               . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
