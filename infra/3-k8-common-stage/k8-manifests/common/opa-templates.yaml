@@ -29,7 +29,7 @@ spec:
           count(missing) > 0
           msg := sprintf("you must provide labels: %v", [missing])
         }
-
+        
 ---
 
 #########################################################
