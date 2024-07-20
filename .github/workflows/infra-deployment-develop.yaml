@@ -7,13 +7,12 @@ on:
       stage_to_run:
         description: 'stage name to destroy'
         required: true
-        default: 'all'
+        default: 'none'
         type: choice
         options:
-          - all
-          - 1-base
-          - 2-eks-cluster
-          - 3-k8-common
+          - 1-base-stage
+          - 2-eks-cluster-stage
+          - 3-k8-common-stage
   push:
     branches:
       - develop
@@ -52,10 +51,11 @@ jobs:
           fetch-depth: 0
      - name: Get modified services
        id: get_folders_changed
-       run: |
-            if [[ "${{ github.event.inputs.stage_to_run }}" == "all" ]]; then
+       run: |  ## IMPROVE THIS PART, BASH DOESNT FOLLOW A GOOD LOGIC
+            FOLDERS_UPDATED="{}"
+            if [[ "${{ github.event.inputs.stage_to_run }}" != "none" ]]; then    
 
-              FOLDERS_UPDATED_ARRAY=("1-base-stage" "2-eks-cluster-stage" "3-k8-common-stage") 
+              FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.stage_to_run }} ) 
 
               FOLDERS_MODIFIED_JSON="{\"folders\":["
             
