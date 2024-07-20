@@ -82,7 +82,7 @@ jobs:
 ## Execute the terraform Plan, this is a call to a composite action.
   terraform-plan:
     runs-on: ubuntu-latest
-    needs: [validate-working-dir,validate-working-dir]
+    needs: validate-working-dir
     outputs:
       PLAN_EXIT_CODE: ${{ steps.terraform-plan.outputs.PLAN_EXIT_CODE }}
     steps:
@@ -105,7 +105,7 @@ jobs:
   terraform-apply:
     if: needs.terraform-plan.outputs.PLAN_EXIT_CODE != 0
     runs-on: ubuntu-latest
-    needs: terraform-plan
+    needs: [validate-working-dir,terraform-plan]
     steps:
       - name: check-output
         id: check-output
