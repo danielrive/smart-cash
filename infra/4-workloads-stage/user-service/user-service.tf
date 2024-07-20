@@ -120,7 +120,7 @@ resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
 ####  ECR Repo
 
 module "ecr_registry_user_service" {
-  source       = "../modules/ecr"
+  source       = "../../modules/ecr"
   name         = "user-service"
   project_name = var.project_name
   environment  = var.environment
