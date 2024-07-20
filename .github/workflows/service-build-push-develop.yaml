@@ -10,9 +10,6 @@ on:
         default: 'none'
         type: choice
         options:
-          - 1-base-stage
-          - 2-eks-cluster-stage
-          - 3-k8-common-stage
           - user-service
           - expenses-service
   push:
@@ -50,7 +47,7 @@ jobs:
           if [[ "${{ github.event.inputs.service_to_deploy }}" != '' ]]; then
             echo "an input was passed"
             
-            FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.stage_to_run }} ) 
+            FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.service_to_deploy }} ) 
 
             FOLDERS_MODIFIED_JSON="{\"folders\":["
             
