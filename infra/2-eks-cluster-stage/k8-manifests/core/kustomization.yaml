@@ -8,9 +8,3 @@ resources:
 - storage-class-aws-ebs.yaml
 - helm-nginx-ingress.yaml
 - ingress.yaml
-#- helm-prometheus.yaml
-#- helm-prometheus.yaml
-#- crd-cert-manager.yaml
-#- helm-cert-manager.yaml
-#- grafana.yaml
-#- cluster-issuer-cert-manager.yaml

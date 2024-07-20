@@ -4,6 +4,3 @@ kind: Kustomization
 resources:
 - opa-templates.yaml
 - ingress.yaml
-#- grafana-ingress.yaml
-#- issuer-cert-manager
-#- cluster-issuer-cert-manager.yaml

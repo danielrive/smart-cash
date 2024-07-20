@@ -13,6 +13,8 @@ on:
           - 1-base-stage
           - 2-eks-cluster-stage
           - 3-k8-common-stage
+          - user-service
+          - expenses-service
   push:
     branches:
       - develop
