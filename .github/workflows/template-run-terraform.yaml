@@ -126,4 +126,4 @@ jobs:
         with:
           STAGE: ${{ inputs.STAGE }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
-          WORKING_DIR: ${{ needs.validate-working-dir.outputs.WORKING_DIR }}
+          WORKING_DIR: "${{ needs.validate-working-dir.outputs.WORKING_DIR }}"

@@ -33,6 +33,7 @@ runs:
     - name: Run terraform init
       id: tf-init
       run: |
+           echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
            BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
            DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
            terraform init \
@@ -44,6 +45,7 @@ runs:
       working-directory: './infra/${{ inputs.WORKING_DIR}}'
     - name: Run terraform apply
       run: |
+           echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
            terraform apply \
            -input=false \
            ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
