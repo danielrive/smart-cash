@@ -52,9 +52,11 @@ jobs:
      - name: Get modified services
        id: get_folders_changed
        run: |  ## IMPROVE THIS PART, BASH DOESNT FOLLOW A GOOD LOGIC
+            echo "checking if an input was passed in the workflow"
             FOLDERS_UPDATED="{}"
             if [[ "${{ github.event.inputs.stage_to_run }}" != "none" ]]; then    
-
+              echo "an input was passed"
+            
               FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.stage_to_run }} ) 
 
               FOLDERS_MODIFIED_JSON="{\"folders\":["
@@ -72,6 +74,7 @@ jobs:
               echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
 
             else
+              echo "running script to detect changes automatically"
               . ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
             echo $FOLDERS_UPDATED

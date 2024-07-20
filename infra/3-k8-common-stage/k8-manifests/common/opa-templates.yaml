@@ -30,7 +30,6 @@ spec:
           msg := sprintf("you must provide labels: %v", [missing])
         }
 
-
 ---
 
 #########################################################
