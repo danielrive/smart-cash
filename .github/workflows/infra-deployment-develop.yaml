@@ -53,7 +53,6 @@ jobs:
        id: get_folders_changed
        run: |  ## IMPROVE THIS PART, BASH DOESNT FOLLOW A GOOD LOGIC
             echo "checking if an input was passed in the workflow"
-            echo "input is ${{ github.event.inputs.stage_to_run }}"
             FOLDERS_UPDATED="{}"
             if [[ "${{ github.event.inputs.stage_to_run }}" != "" ]]; then    
               echo "an input was passed"
