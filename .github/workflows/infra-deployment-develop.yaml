@@ -72,7 +72,7 @@ jobs:
               echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
 
             else
-              . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
+              . ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
             fi
             echo $FOLDERS_UPDATED
        working-directory: .github/jobs

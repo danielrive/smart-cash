@@ -23,4 +23,3 @@ spec:
             name: expenses-service
             port:
               number: 8282
-              
