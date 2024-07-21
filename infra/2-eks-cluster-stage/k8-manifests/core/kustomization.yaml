@@ -7,4 +7,3 @@ resources:
 - helm-opa-gatekeeper.yaml
 - storage-class-aws-ebs.yaml
 - helm-nginx-ingress.yaml
-- ingress.yaml
