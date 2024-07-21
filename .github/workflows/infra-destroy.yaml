@@ -69,7 +69,7 @@ jobs:
        run: | 
               pwd
               if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
-                cd workloads/services/${{ github.event.inputs.stage }}
+                cd 4-workloads-stage/${{ github.event.inputs.stage }}
               else
                 cd ${{ github.event.inputs.stage }}
               fi
@@ -87,7 +87,7 @@ jobs:
        id: terraform-destroy
        run: | 
             if [[ "${{ github.event.inputs.stage }}" == *"service"* ]]; then
-                cd workloads/services/${{ github.event.inputs.stage }}
+                cd 4-workloads-stage/${{ github.event.inputs.stage }}
             else
                 cd ${{ github.event.inputs.stage }}
             fi

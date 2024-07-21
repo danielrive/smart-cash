@@ -19,7 +19,7 @@ on:
         description: 'The terraform version to use, this is downloaded during the installation in the GH runner'
         required: false
         type: string
-        default: '1.4.6'
+        default: '1.9.2'
       STAGE:
         description: 'The name of the stage to deploy'
         required: true
