@@ -20,7 +20,7 @@ runs:
         uses: hashicorp/setup-terraform@v3
         with: 
          terraform_version: '${{ env.TERRAFORM_VERSION }}'
-         terraform_wrapper: false
+         terraform_wrapper: true
       - name: Validate terraform version
         id: validate-tf-version
         run: | 
