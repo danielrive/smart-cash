@@ -195,4 +195,4 @@ resource "github_repository_file" "np-user" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-*
+*/
