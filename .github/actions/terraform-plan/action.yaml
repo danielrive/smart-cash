@@ -23,7 +23,11 @@ runs:
          terraform_wrapper: false
       - name: Validate terraform version
         id: validate-tf-version
-        run: terraform version
+        run: | 
+             echo " -------- TERRAFORM VERSION ---------"
+             terraform version
+             echo " -------- GOLANG VERSION ---------"
+             go version
         shell: bash
       - name: Run terraform init
         id: 'tf-init'
