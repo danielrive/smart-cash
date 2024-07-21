@@ -176,7 +176,7 @@ resource "github_repository_file" "overlays-user-svc" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
+/*
 ###########################
 ##### Network Policies
 
@@ -195,3 +195,4 @@ resource "github_repository_file" "np-user" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+*/
