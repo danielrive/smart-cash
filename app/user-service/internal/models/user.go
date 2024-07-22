@@ -8,10 +8,8 @@ type User struct {
 	Username   string `json:"username" dynamodbav:"username"`
 	Email      string `json:"email" dynamodbav:"email"` // global secondary index
 	Password   string `json:"password" dynamodbav:"password"`
-	//BankName          string `json:"bankName" dynamodbav:"bankName"`
-	//BankAccountNumber int    `json:"bankAccountNumber" dynamodbav:"bankAccountNumber"`
-	Active bool   `json:"active" dynamodbav:"active"`
-	Token  string `json:"token" dynamodbav:"token"`
+	Active     bool   `json:"active" dynamodbav:"active"`
+	Token      string `json:"token" dynamodbav:"token"`
 }
 
 type UserResponse struct {

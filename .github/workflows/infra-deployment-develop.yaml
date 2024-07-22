@@ -15,6 +15,7 @@ on:
           - 3-k8-common-stage
           - user-service
           - expenses-service
+          - frontend-service
   push:
     branches:
       - develop

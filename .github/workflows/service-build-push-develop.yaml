@@ -12,6 +12,7 @@ on:
         options:
           - user-service
           - expenses-service
+          - frontend-service
   push:
     branches:
       - develop
