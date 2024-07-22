@@ -20,19 +20,10 @@ runs:
   steps:
       - name: Terraform install
         id: 'install-terraform'
-        shell: bash
-        run: |
-              sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-              wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-              echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-              sudo apt update && sudo apt install -y terraform
-              export TF_LOG="TRACE"
-        #uses: hashicorp/setup-terraform@v2 
-
-        #uses: hashicorp/setup-terraform@v3
-        #with: 
-        # terraform_version: '${{ env.TERRAFORM_VERSION }}'
-        # terraform_wrapper: true
+        uses: hashicorp/setup-terraform@v3
+        with: 
+         terraform_version: '${{ env.TERRAFORM_VERSION }}'
+         terraform_wrapper: true
       - name: Validate terraform version
         id: validate-tf-version
         run: | 
