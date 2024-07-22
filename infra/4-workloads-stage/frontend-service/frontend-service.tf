@@ -13,7 +13,7 @@ locals {
 ##### ECR Repo
 
 module "ecr_registry_payment_service" {
-  source       = "../../../modules/ecr"
+  source       = "../../modules/ecr"
   name         = "frontend-service"
   project_name = var.project_name
   environment  = var.environment
@@ -78,7 +78,7 @@ resource "github_repository_file" "np-payment" {
   branch              = local.brach_gitops_repo
   file                = "services/payment-service/base/network-policy.yaml"
   content = templatefile(
-    "../../../../kubernetes/network-policies/payment.yaml",{
+    "${local.path_tf_repo_services}/network-policies/frontend.yaml",{
       PROJECT_NAME  = var.project_name
     })
   commit_message      = "Managed by Terraform"
