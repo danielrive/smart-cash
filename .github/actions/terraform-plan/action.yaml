@@ -2,6 +2,9 @@ name: 'Terraform Plan'
 description: 'Running Terraform plan'
 
 inputs:
+  GITHUB_TOKEN:
+    description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
+    required: true
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
@@ -83,6 +86,8 @@ runs:
 
         shell: bash
         working-directory: './infra/${{ inputs.WORKING_DIR}}'
+        env:
+          GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
 
       - name: Publish Artifact
         uses: actions/upload-artifact@v4

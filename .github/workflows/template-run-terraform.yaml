@@ -100,6 +100,7 @@ jobs:
         with:
           STAGE: ${{ inputs.STAGE }}
           WORKING_DIR: "${{ needs.validate-working-dir.outputs.WORKING_DIR }}"
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:
