@@ -28,7 +28,7 @@ resource "github_repository_file" "common_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-/*
+
 ############################
 ##### OPA constraints
 
@@ -47,4 +47,3 @@ resource "github_repository_file" "opa_constraints" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-*/

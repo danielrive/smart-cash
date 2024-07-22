@@ -1,48 +1,3 @@
-## Allow communication FROM user service TO expenses service in the port specified
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ingress-user-to-expenses
-spec:
-  podSelector:
-    matchLabels:
-      app: expenses
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: user
-    ports:
-    - protocol: TCP
-      port: 8282
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: egress-user-to-expenses
-spec:
-  podSelector:
-    matchLabels:
-      app: user
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: expenses
-    ports:
-    - protocol: TCP
-      port: 8282
-
-## from nginx to user service
-
----
-
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -54,7 +9,7 @@ spec:
   policyTypes:
   - Ingress
   ingress:
-  - to:
+  - from:
     - namespaceSelector:
         matchLabels:
           ingress: nginx
