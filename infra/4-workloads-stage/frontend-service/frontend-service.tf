@@ -1,5 +1,5 @@
 ################################################
-########## Resources for payment-service
+########## Resources for frontend-service
 
 locals {
   this_service_name = "frontend"
@@ -12,7 +12,7 @@ locals {
 #############################
 ##### ECR Repo
 
-module "ecr_registry_payment_service" {
+module "ecr_registry_frontend_service" {
   source       = "../../modules/ecr"
   name         = "frontend-service"
   project_name = var.project_name
@@ -26,11 +26,11 @@ module "ecr_registry_payment_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests-payment-svc" {
+resource "github_repository_file" "base-manifests-frontend-svc" {
   for_each            = fileset("../microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/user-service/base/${each.key}"
+  file                = "services/frontend-service/base/${each.key}"
   content = templatefile(
     "../microservices-templates/${each.key}",
     {
@@ -50,16 +50,16 @@ resource "github_repository_file" "base-manifests-payment-svc" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-payment-svc" {
+resource "github_repository_file" "overlays-frontend-svc" {
   for_each            = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/user-service/overlays/${var.environment}/${each.key}"
+  file                = "services/frontend-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
-      ECR_REPO = module.ecr_registry_user_service.repo_url
+      ECR_REPO = module.ecr_registry_frontend_service.repo_url
       AWS_REGION  = var.region
     }
   )
@@ -73,10 +73,10 @@ resource "github_repository_file" "overlays-payment-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-payment" {
+resource "github_repository_file" "np-frontend" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/payment-service/base/network-policy.yaml"
+  file                = "services/frontend-service/base/network-policy.yaml"
   content = templatefile(
     "${local.path_tf_repo_services}/network-policies/frontend.yaml",{
       PROJECT_NAME  = var.project_name
