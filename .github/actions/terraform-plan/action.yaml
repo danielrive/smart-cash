@@ -11,10 +11,7 @@ inputs:
   WORKING_DIR:
     description: 'workign directory where terraform will run'
     required: true
-outputs:
-  PLAN_EXIT_CODE:
-    description: "exit code generate after tf plan, 0= no changes, 2=changes, 1=error"
-    value: ${{ steps.terraform-plan.outputs.tf-plan-code }}
+
 runs:
   using: "composite"
   steps:
@@ -53,28 +50,12 @@ runs:
         id: terraform-plan
         run: |
             echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
-            set +e 
             terraform plan \
             -input=false \
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
-            -out ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan \
-            -detailed-exitcode
-            exitcode="$?"
-            echo "tf-plan-code=$exitcode" >> $GITHUB_OUTPUT
- 
-            if [ "$exitcode" -eq 0 ]; then
-              echo "No changes"
-              exit $exitcode
-            elif [ "$exitcode" -eq 2 ]; then
-              echo "changes"
-              exit 0
-            else
-              echo "Error"
-              exit $exitcode
-            fi
-
+            -out ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
         shell: bash
         working-directory: './infra/${{ inputs.WORKING_DIR}}'
         env:
