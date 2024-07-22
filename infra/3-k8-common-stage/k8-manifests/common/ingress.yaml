@@ -13,13 +13,13 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: user-service
+            name: user
             port: 
               number: 8181
       - path: /expenses
         pathType: Prefix
         backend:
           service:
-            name: expenses-service
+            name: expenses
             port:
               number: 8282
