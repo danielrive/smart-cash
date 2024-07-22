@@ -4,6 +4,6 @@ kind: Kustomization
 resources:
 - namespaces.yaml
 #- np-default-deny.yaml
-- helm-opa-gatekeeper.yaml
+#- helm-opa-gatekeeper.yaml
 - storage-class-aws-ebs.yaml
 - helm-nginx-ingress.yaml
