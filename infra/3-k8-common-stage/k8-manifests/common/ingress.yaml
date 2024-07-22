@@ -23,3 +23,10 @@ spec:
             name: expenses
             port:
               number: 8282
+      - path: /main
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 8080
