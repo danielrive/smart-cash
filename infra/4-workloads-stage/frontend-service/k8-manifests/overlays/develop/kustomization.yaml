@@ -5,3 +5,6 @@ images:
   - name: service-image
     newName: ${ECR_REPO}
     newTag: develop
+
+patches:
+  - path: patch-deployment.yaml
