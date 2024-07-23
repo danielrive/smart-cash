@@ -3,7 +3,7 @@
 
 locals {
   this_service_name = "frontend"
-  this_service_port = 8080
+  this_service_port = 9090
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo = var.environment
 }
