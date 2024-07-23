@@ -12,7 +12,7 @@ spec:
           mountPath: /var/log/nginx/
         - name: nginx-cache
           mountPath: /var/cache/nginx/
-    volumes:
+      volumes:
       - name: nginx-logs
         volumeMounts:
           - name: nginx-logs
