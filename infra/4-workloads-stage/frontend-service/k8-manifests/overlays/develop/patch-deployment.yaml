@@ -10,14 +10,14 @@ spec:
         volumeMounts:
         - name: nginx-logs
           mountPath: /var/log/nginx/
-        - name: nginx-cache
-          mountPath: /var/cache/nginx/
+        - name: nginx-temp
+          mountPath: /temp/
       volumes:
       - name: nginx-logs
         volumeMounts:
           - name: nginx-logs
             emptyDir: {}
-      - name: nginx-cache
+      - name: nginx-temp
         volumeMounts:
-          - name: nginx-cache
+          - name: nginx-temp
             emptyDir: {}
