@@ -23,7 +23,7 @@ spec:
             name: expenses
             port:
               number: 8282
-      - path: /main
+      - path: /
         pathType: Prefix
         backend:
           service:
