@@ -14,7 +14,7 @@ spec:
           mountPath: /tmp/
         livenessProbe:
           httpGet:
-            port: ${SERVICE_PORT}  
+            port: 9090  
             path: / 
           initialDelaySeconds: 1
           periodSeconds: 10
