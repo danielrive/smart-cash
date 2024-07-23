@@ -20,14 +20,14 @@ add_folder() {
 for file in $GIT_FOLDERS_UPDATED; do
     folder_name=$(dirname "$file")
     echo "-----> checking the folder $folder_name"
-    if [[ "$folder_name" == *"-service"* ]] ; then
-            echo "word service detected"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $3}')
+    if [[ "$folder_name" == *"app"* && "$folder_name" == *"-service"* ]] ; then
+            echo "Code update for service"
+            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
             echo $root_folder
             add_folder       
-    elif [[ "$folder_name" == *"-stage"* || "$folder_name" == *"app/"* ]]; then
-            echo "word stage or app detected"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
+    elif [[ "$folder_name" == *"-stage"* && "$folder_name" == *"-service"* ]]; then
+            echo "Infra update for service"
+            root_folder=$(echo "$folder_name" | awk -F'/' '{print $3}')
             echo $root_folder
             add_folder    
     else
