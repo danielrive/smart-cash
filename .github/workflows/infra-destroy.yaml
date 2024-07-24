@@ -52,7 +52,7 @@ jobs:
        uses: actions/checkout@v4
        with:
           fetch-depth: 0
-          ref: feat/open-api  #${{ github.event.inputs.branch-to-destroy }}
+          ref: ${{ github.event.inputs.branch-to-destroy }}
      - name: Terraform install
        id: 'install-terraform'
        uses: hashicorp/setup-terraform@v3
