@@ -33,9 +33,9 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid
 	}
 }
 
-// function to Get user by ID
-func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
-	output := models.User{}
+// Function to Get user by ID
+func (c *DynamoDBUsersRepository) GetUserById(id string) (models.UserResponse, error) {
+	output := models.UserResponse{}
 
 	// create input for get item
 	input := &dynamodb.GetItemInput{
@@ -46,59 +46,67 @@ func (c *DynamoDBUsersRepository) GetUserById(id string) (models.User, error) {
 			},
 		},
 	}
-	// call getItem
+	// call dynamoDB GetItem
 	response, err := c.client.GetItem(context.TODO(), input)
 
 	if err != nil {
-		log.Println(err)
+		log.Println(common.ErrInternalError, err)
 		return output, err
 	}
 	if len(response.Item) == 0 {
 		log.Println(common.ErrUserNotFound, err)
-		return models.User{}, common.ErrUserNotFound
+		return output, common.ErrUserNotFound
 	}
 	// unmarshal item to models.user struct
 	err2 := attributevalue.UnmarshalMap(response.Item, &output)
 	if err2 != nil {
-		log.Println(err2)
-		return output, err2
+		log.Println(common.ErrInternalError, err2)
+		return output, common.ErrInternalError
 	}
 	return output, nil
 }
 
-// function to Create user
+// Function to Create user
 
-func (c *DynamoDBUsersRepository) CreateUser(u models.User) error {
+func (c *DynamoDBUsersRepository) CreateUser(u models.User) (models.UserResponse, error) {
 
+	output := models.UserResponse{}
 	u.UserId = c.uuid.New()
 
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
-		log.Println(err)
-		return err
+		log.Println(common.ErrInternalError, err)
+		return output, err
 	}
 	input := &dynamodb.PutItemInput{
 		TableName:           aws.String(c.tableUsers),
 		Item:                item,
-		ConditionExpression: aws.String("attribute_not_exists(email)"),
+		ConditionExpression: aws.String("attribute_not_exists(userId)"),
 	}
 	// call dynamodb put item
 	_, err = c.client.PutItem(context.TODO(), input)
 
 	if err != nil {
 		log.Println(common.ErrUserNoCreated, err)
-		return common.ErrUserNoCreated
+		return output, common.ErrUserNoCreated
 	}
-	return nil
+	// create output response
+	output.UserId = u.UserId
+	output.Username = u.Username
+	output.Email = u.Email
+	output.Active = u.Active
+	return output, nil
 }
 
-// function to Update user
+// Function to Update User
 
-func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
+func (c *DynamoDBUsersRepository) UpdateUser(u models.User) (models.UserResponse, error) {
+	output := models.UserResponse{}
+
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
 		log.Println(err)
-		return err
+		return output, err
 	}
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(c.tableUsers),
@@ -109,14 +117,19 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) error {
 
 	if err != nil {
 		log.Println(common.ErrUserNoCreated, err)
-		return common.ErrUserNoCreated
+		return output, common.ErrUserNoCreated
 	}
-	return nil
+	// create output response
+	output.UserId = u.UserId
+	output.Username = u.Username
+	output.Active = u.Active
+
+	return output, nil
 }
 
-// function to get user by email
-func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (models.User, error) {
-	output := models.User{}
+// Function to Get user by email
+func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (models.UserResponse, error) {
+	output := models.UserResponse{}
 
 	// create keycondition dynamodb expression for the query
 	keyCondition := expression.Key(k).Equal(expression.Value(v))
@@ -125,8 +138,8 @@ func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 
 	if err != nil {
-		log.Println(err)
-		return models.User{}, err
+		log.Println(common.ErrInternalError, err)
+		return output, common.ErrInternalError
 	}
 
 	// Create the input for the dynamodb query
@@ -140,20 +153,21 @@ func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (
 	// Execute the query
 
 	response, err := c.client.Query(context.TODO(), queryInput)
+
 	if err != nil {
-		log.Println(err)
-		return models.User{}, err
+		log.Println(common.ErrInternalError, err)
+		return output, common.ErrInternalError
 	}
 
 	if len(response.Items) == 0 {
 		log.Println(common.ErrUserNotFound, err)
-		return models.User{}, common.ErrUserNotFound
+		return output, common.ErrUserNotFound
 	}
 	//unmarshall dynamodb output
 	err2 := attributevalue.UnmarshalMap(response.Items[0], &output)
 	if err2 != nil {
-		log.Println(err2)
-		return output, err2
+		log.Println(common.ErrInternalError, err2)
+		return models.UserResponse{}, common.ErrInternalError
 	}
 	return output, nil
 

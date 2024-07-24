@@ -1,20 +1,27 @@
-name: Develop Terraform Base-and-EKS
-run-name: Dev-TF-Base-and-EKS
+name: Develop Deploy Infra
+run-name: Develop-Deploy-Infra
 
 on: 
   workflow_dispatch:
     inputs:
-      run-all:
-        description: 'Set to true if you want to ran all the steps, otherwise the workflow will detect the files that have change and run terraform those specific folders'
-        required: false
-        default: false
+      stage_to_run:
+        description: 'stage name to destroy'
+        required: true
+        default: 'none'
+        type: choice
+        options:
+          - 1-base-stage
+          - 2-eks-cluster-stage
+          - 3-k8-common-stage
+          - user-service
+          - expenses-service
+          - frontend-service
   push:
     branches:
       - develop
       - feat/*
     paths:
-      - "infra/terraform/base"
-      - "infra/terraform/eks-cluster"
+      - "infra/**"
   pull_request:
     branches:
       - develop
@@ -35,34 +42,61 @@ env:
   ENVIRONMENT: develop
 
 jobs:
-  ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
-  BASE_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
-    with: 
-      AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.9.2'
-      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'base'
-      FOLDER: 'base'
-      ARTIFAC_ID: 'base'
-    secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
-      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
+  VALIDATE_STAGE_UPDATED:
+   runs-on: ubuntu-latest
+   outputs:
+      FOLDERS_UPDATED: ${{ steps.get_folders_changed.outputs.FOLDERS_UPDATED }}
+   steps:
+     - name: checkout-repo
+       id: checkout
+       uses: actions/checkout@v4
+       with:
+          fetch-depth: 0
+     - name: Get modified services
+       id: get_folders_changed
+       run: |  ## IMPROVE THIS PART, BASH DOESNT FOLLOW A GOOD LOGIC
+            echo "checking if an input was passed in the workflow"
+            FOLDERS_UPDATED="{}"
+            if [[ "${{ github.event.inputs.stage_to_run }}" != "" ]]; then    
+              echo "an input was passed"
+            
+              FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.stage_to_run }} ) 
 
-  EKS_STAGE_DEPLOY:
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
-    needs: BASE_STAGE_DEPLOY
+              FOLDERS_MODIFIED_JSON="{\"folders\":["
+            
+              for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
+                FOLDERS_MODIFIED_JSON+="\"$item\","
+              done
+
+              FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
+                          
+              FOLDERS_MODIFIED_JSON+="]}"
+
+              echo $FOLDERS_MODIFIED_JSON
+
+              echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
+
+            else
+              echo "running script to detect changes automatically"
+              . ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
+            fi
+            echo $FOLDERS_UPDATED
+       working-directory: .github/jobs
+  ### Makes a call to the workflow template defined to execute terraform, in this case the variables define the develop environment
+  RUN_TERRAFORM:
+    needs: VALIDATE_STAGE_UPDATED
+    strategy: 
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.VALIDATE_STAGE_UPDATED.outputs.FOLDERS_UPDATED) }}
+      fail-fast: true
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@feat/open-api
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
       PROJECT_NAME: 'smart-cash'
       TERRAFORM_VERSION: '1.9.2'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: 'eks-cluster'
-      FOLDER: 'eks-cluster'
-      ARTIFAC_ID: 'eks'
+      STAGE: ${{ matrix.folders }}
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

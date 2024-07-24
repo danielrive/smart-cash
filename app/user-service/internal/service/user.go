@@ -1,12 +1,8 @@
 package service
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
 	"log"
 	"net/http"
-	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/models"
 	"smart-cash/user-service/internal/repositories"
 )
@@ -20,7 +16,7 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository) *UserS
 }
 
 // Function to generate random string
-
+/**
 func generateRandomToken(length int) (string, error) {
 	// Calculate the byte length required for the given token length
 	byteLength := length / 2 // Each byte encodes 2 hexadecimal characters
@@ -40,71 +36,42 @@ func generateRandomToken(length int) (string, error) {
 
 	return token, nil
 }
-
-func (us *UserService) GetUserById(userId string) (models.User, error) {
+**/
+func (us *UserService) GetUserById(userId string) (models.UserResponse, error) {
 
 	user, err := us.userRepository.GetUserById(userId)
 
 	if err != nil {
-		log.Println("error", err)
-		return models.User{}, err
+		log.Println("error ", err)
+		return models.UserResponse{}, err
 	}
 
 	return user, nil
 }
 
-func (us *UserService) GetUserByEmailorUsername(key string, value string) (models.User, error) {
+func (us *UserService) GetUserByEmailorUsername(key string, value string) (models.UserResponse, error) {
 	// Find user
 	user, err := us.userRepository.GetUserByEmailorUsername(key, value)
 
 	if err != nil {
-		log.Println("error", err)
-		return models.User{}, err
+		log.Println("error ", err)
+		return models.UserResponse{}, err
 	}
 
 	return user, err
 }
 
-func (us *UserService) CreateUser(u models.User) error {
+func (us *UserService) CreateUser(u models.User) (models.UserResponse, error) {
 	// generate UUID for the user
 
-	err := us.userRepository.CreateUser(u)
+	user, err := us.userRepository.CreateUser(u)
 
 	if err != nil {
-		log.Println("error", err)
-		return err
+		log.Println("error ", err)
+		return models.UserResponse{}, err
 	}
 
-	return nil
-}
-
-/// login service
-
-// funct that return user id
-
-func (us *UserService) Login(u models.User) (string, string, error) {
-	// Find user
-	user, err := us.userRepository.GetUserByEmailorUsername("email", u.Email)
-	if err != nil {
-		log.Println("error", err)
-		return "", "", err
-	}
-
-	fmt.Println("enter to valdiate pass")
-	if user.Password == u.Password {
-		token, err := generateRandomToken(32)
-		user.Token = token
-		if err != nil {
-			log.Println("error", err)
-			return "", "", err
-		} else {
-			log.Println("User validated")
-			us.userRepository.UpdateUser(user)
-			return user.UserId, token, nil
-		}
-	}
-	log.Println("error", common.ErrWrongCredentials)
-	return "", "", common.ErrWrongCredentials
+	return user, nil
 }
 
 // communicate with another service

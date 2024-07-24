@@ -2,20 +2,15 @@ name: 'Terraform apply'
 description: 'Running Terraform apply'
 
 inputs:
-  WORKING_DIRECTORY:
-    description: 'directory where the tf code is'
-    required: false
-    default: '/infra/terraform'
   GITHUB_TOKEN:
     description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
     required: true
   STAGE:
     description: 'terraform stage to deploy, start from base'
     required: true
-  ARTIFAC_ID:
-    description: 'unique ID to named the artifacts'
+  WORKING_DIR:
+    description: 'workign directory where terraform will run'
     required: true
-   
 
 runs:
   using: "composite"
@@ -33,11 +28,12 @@ runs:
       id: download-tf-plan
       uses: actions/download-artifact@v4
       with:
-        name: tf-plan-${{ inputs.ARTIFAC_ID}}
-        path: '${{ github.workspace }}${{ inputs.WORKING_DIRECTORY }}'
+        name: tf-plan-${{ inputs.STAGE}}
+        path: '${{ github.workspace }}/infra/${{ inputs.WORKING_DIR}}'
     - name: Run terraform init
-      id: 'tf-init'
+      id: tf-init
       run: |
+           echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
            BUCKET_NAME="${{ env.PROJECT_NAME }}-tf-state-lock-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}" 
            DYNAMODB_TABLE="${{ env.PROJECT_NAME }}-tf-state-${{ env.ENVIRONMENT }}-${{ env.AWS_REGION }}"
            terraform init \
@@ -46,13 +42,14 @@ runs:
             -backend-config=key='stage/${{ inputs.STAGE }}/${{ inputs.STAGE }}.tfstate' \
            -backend-config=dynamodb_table="$DYNAMODB_TABLE"
       shell: bash
-      working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      working-directory: './infra/${{ inputs.WORKING_DIR}}'
     - name: Run terraform apply
       run: |
+           echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
            terraform apply \
            -input=false \
-           ${{ github.run_id }}-${{ inputs.ARTIFAC_ID}}.tfplan
+           ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
       shell: bash
-      working-directory: '.${{ inputs.WORKING_DIRECTORY }}'
+      working-directory: './infra/${{ inputs.WORKING_DIR}}'
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
