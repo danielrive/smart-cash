@@ -7,5 +7,5 @@ spec:
   selector:
     app: ${SERVICE_NAME}
   ports:
-    - port: ${SERVICE_PORT}
+    - port: 80
       targetPort: ${SERVICE_PORT}
