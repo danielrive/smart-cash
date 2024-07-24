@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-nginx-to-expenses
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          ingress: nginx
+    ports:
+    - protocol: TCP
+      port: 8282

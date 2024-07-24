@@ -13,4 +13,12 @@ type Expense struct {
 	UserId       string  `json:"userId" dynamodbav:"userId"`     // global secondary index
 	Category     string  `json:"category" dynamodbav:"category"` // global secondary index
 	AutomaticPay bool    `json:"automaticPay" dynamodbav:"automaticPay"`
+	Priority     int     `json:"priority" dynamodbav:"priority"`
+	ScheduledTo  string  `json:"scheduledTo" dynamodbav:"scheduledTo"`
+}
+
+type ExpensesReturn struct {
+	ExpenseId string `json:"expenseId" dynamodbav:"expenseId"` // primary key
+	Date      string `json:"date" dynamodbav:"date"`
+	Name      string `json:"name" dynamodbav:"name"`
 }

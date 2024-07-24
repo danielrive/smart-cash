@@ -1,15 +1,18 @@
-name: Microservice deploy DEVELOP
-run-name: Dev-Microservice-deploy
+name: DEVELOP Microservice deploy 
+run-name: Devevelop-services-deploy
 
 on:
   workflow_dispatch:
     inputs:
-      run-all:
-        description: Set to true if you want to ran all the steps, otherwise the
-          workflow will detect the files that have change and run terraform
-          those specific folders
-        required: false
-        default: 'false'
+      service_to_deploy:
+        description: 'service name to deploy'
+        required: true
+        default: 'none'
+        type: choice
+        options:
+          - user-service
+          - expenses-service
+          - frontend-service
   push:
     branches:
       - develop
@@ -42,10 +45,27 @@ jobs:
         id: get_folders_changed
         run: |
           echo "input $RUN_ALL dispatch"
-          if [[ ${{ github.event.inputs.run-all }} == 'false' ]]; then
-            . detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} ${{ github.event.inputs.run-all }}
+          if [[ "${{ github.event.inputs.service_to_deploy }}" != '' ]]; then
+            echo "an input was passed"
+            
+            FOLDERS_UPDATED_ARRAY=( ${{ github.event.inputs.service_to_deploy }} ) 
+
+            FOLDERS_MODIFIED_JSON="{\"folders\":["
+            
+            for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
+                FOLDERS_MODIFIED_JSON+="\"$item\","
+            done
+
+            FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
+                          
+            FOLDERS_MODIFIED_JSON+="]}"
+
+            echo $FOLDERS_MODIFIED_JSON
+
+            echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
           else
-            . detect-folders-updated.sh  empty empty ${{ github.event.inputs.run-all }}
+            echo "running script to detect changes automatically"
+              . ./detect-folders-updated.sh  ${{ github.event.before }} ${{ github.sha }} infra
           fi
           echo "getting file"
         working-directory: .github/jobs
@@ -55,7 +75,7 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@feat/open-api
     with:
       AWS_REGION: us-west-2
       ENVIRONMENT: develop

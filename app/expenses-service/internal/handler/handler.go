@@ -28,55 +28,61 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 	// create the expense
-	if err := h.expensesService.CreateExpense(expense); err != nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": "expenses not created"})
+	response, err := h.expensesService.CreateExpense(expense)
+
+	if err != nil {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, "ok")
+	c.Header("Location", "/expense/"+response.ExpenseId)
+	c.JSON(http.StatusCreated, gin.H{"message": "Expense created successfully", "expense": response})
 
 }
 
-// Handler for Get method
+// Handler for Get expense by expenseID
 
-func (h *ExpensesHandler) GetExpenses(c *gin.Context) {
-	// validate the query in the url to see with what attribute filter
-	uri := c.Request.URL.Query()
+func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
+	expenseId := c.Param("expenseId")
 
-	// if userId is not present, then we need to return an error
-	// if tag is present, then we need to get expenses by category, otherwise get all expenses by userId
-
-	if _, isMapContainsKey := uri["userId"]; !isMapContainsKey {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
-		return
-	} else if _, isMapContainsKey := uri["category"]; isMapContainsKey {
-		expenses, err := h.expensesService.GetExpensesByCategory(uri["category"][0], uri["userId"][0])
-		if err != nil {
-			if err == common.ErrExpenseNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
-				return
-			} else if err == common.ErrWrongCredentials {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials})
-				return
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-				return
-			}
+	expenses, err := h.expensesService.GetExpenseById(expenseId)
+	if err != nil {
+		if err == common.ErrExpenseNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrExpenseNotFound})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
-		c.JSON(http.StatusOK, expenses)
-		return
-	} else {
-		expenses, err := h.expensesService.GetExpensesByUserId(uri["userId"][0])
-		if err != nil {
-			if err == common.ErrExpenseNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
-				return
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-				return
-			}
-		}
-		c.JSON(http.StatusOK, expenses)
 	}
+	c.JSON(http.StatusOK, expenses)
+}
+
+func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
+	// validate the query in the url to see with what attribute filter
+	query := c.Request.URL.Query()
+	var key, value string
+	if userId, ok := query["userId"]; ok {
+		key, value = "userId", userId[0]
+	} else if category, ok := query["category"]; ok {
+		key, value = "category", category[0]
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
+		return
+	}
+	expenses, err := h.expensesService.GetExpByUserIdorCat(key, value)
+	if err != nil {
+		if err == common.ErrExpenseNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
+			return
+		} else if err == common.ErrWrongCredentials {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, expenses)
 }
 
 /// Health check
@@ -85,6 +91,7 @@ func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }
 
+/*
 func (h *ExpensesHandler) ConnectToOtherSvc(c *gin.Context) {
 
 	uri := c.Request.URL.Query()
@@ -98,3 +105,4 @@ func (h *ExpensesHandler) ConnectToOtherSvc(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 
 }
+*/

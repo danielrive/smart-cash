@@ -2,14 +2,19 @@
 package models
 
 type User struct {
-	UserId            string `json:"userId" dynamodbav:"userId"` // primary key
-	FirstsName        string `json:"firstsName" dynamodbav:"firstsName"`
-	LastName          string `json:"lastName" dynamodbav:"lastName"`
-	Email             string `json:"email" dynamodbav:"email"` // global secondary index
-	Password          string `json:"password" dynamodbav:"password"`
-	Username          string `json:"username" dynamodbav:"username"`
-	BankName          string `json:"bankName" dynamodbav:"bankName"`
-	BankAccountNumber int    `json:"bankAccountNumber" dynamodbav:"bankAccountNumber"`
-	Active            bool   `json:"active" dynamodbav:"active"`
-	Token             string `json:"token" dynamodbav:"token"`
+	UserId     string `json:"userId" dynamodbav:"userId"` // primary key
+	FirstsName string `json:"firstsName" dynamodbav:"firstsName"`
+	LastName   string `json:"lastName" dynamodbav:"lastName"`
+	Username   string `json:"username" dynamodbav:"username"`
+	Email      string `json:"email" dynamodbav:"email"` // global secondary index
+	Password   string `json:"password" dynamodbav:"password"`
+	Active     bool   `json:"active" dynamodbav:"active"`
+	Token      string `json:"token" dynamodbav:"token"`
+}
+
+type UserResponse struct {
+	UserId   string `json:"userId" dynamodbav:"userId"` // primary key
+	Username string `json:"username" dynamodbav:"username"`
+	Email    string `json:"email" dynamodbav:"email"` // global secondary index
+	Active   bool   `json:"active" dynamodbav:"active"`
 }

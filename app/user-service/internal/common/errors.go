@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	ErrUserNotFound     = errors.New("User not found")
-	ErrUserNoCreated    = errors.New("ERROR : operation failed")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrUserNoCreated    = errors.New("user not created")
+	ErrInternalError    = errors.New("internal error")
 	ErrUnespectedError  = errors.New("unespected error")
-	ErrWrongCredentials = errors.New("ERROR : wrong credentials")
+	ErrWrongCredentials = errors.New("wrong credentials")
 )
