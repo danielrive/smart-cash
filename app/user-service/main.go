@@ -40,7 +40,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
 		gin.Recovery(),
 	)
 	// new UUID helper
