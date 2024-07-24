@@ -3,26 +3,11 @@ kind: Ingress
 metadata:
   name: core-ingress
   namespace: ${ENVIRONMENT}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-  - host: ${ENVIRONMENT}.smartcash.danielrive.site
-    http:
-      paths:
-      - path: /user
-        pathType: Prefix
-        backend:
-          service:
-            name: user
-            port: 
-              number: 8181
-      - path: /expenses
-        pathType: Prefix
-        backend:
-          service:
-            name: expenses
-            port:
-              number: 8282
       - path: /
         pathType: Prefix
         backend:
