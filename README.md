@@ -20,32 +20,20 @@ The subfoler utils contains Go packages used by microservice code.
 
 ### infra folder
 
-Contains the terraform code and the YAML manifest to deploy AWS and Kubernetes resources.
+Contains the terraform code divided by different stages:
 
-* The **_Kubernetes_** folder contains the YAML files sorted in different subfolders. For more information about how this works,check the blog post [Implementing GitOps using FluxCD](https://dev.to/aws-builders/smartcash-project-gitops-with-fluxcd-3aep).
-
-* The **_terraform_** folder contains the Terraform code to create the AWS resources and push YAML manifest to GitOps repository.
+1. **1-base-stage:** This stage deploys the AWS networking needed for the project(VPC,subnets,endpoints, etc) and some resources like KMS keys and IAM roles.
+2. **2-eks-cluster-stage:** This stage creates the EKS cluster and deploy the first kubernetes resources like, flux CRD, namespaces, nginx-ingress. This stage should contains core resources for the project.
+3. **3-k8-common-stage:** This stage deploys k8 and AWS resources that are used for the whole environment.
+4. **4-workloads-stage:** This stage contains the different microservices to deploy, inside this folder you can find subfolders that contains the k8 and AWS resources that each microservice need.
 
 ## Infrastructure Deployment
 
-Deployment is devided in two main stages:
+Deployment is done per stage, all the stages uses a GitHub workflow template that executes terrafrom.
 
-1. **base**: This stage deploys the AWS networking needed for the project(VPC,subnets,endpoints, etc) and some resources like KMS keys and IAM roles.
-2. **eks-cluster**: This stage deploys the K8 cluster, performs the Flux bootstrap and push the first YAML manifests to GitOps repository to create the core K8 resources needed like, namespaces, FluxCD CRD, etc.
+This template define the jobs used to deploy the infrastructure AWS and K8 resources, this can be found in **_./github/workflows/template-run-terraform_**.
 
-### General workflow
-
-The following diagram shows the general GitHub workflow for infrastructure deployment.This is located in **_./github/workflows/infra-deployment-${ENVIRONMENT}_**.
-
-<img src=".github/images-readme/General-workflow.png" alt="general-workflow" width="300" />
-
-This is triggered when changes are made in the paths **_infra/terraform/base_** and **_infra/terraform/eks-cluster_**
-
-### Terraform workflow
-
-<img src=".github/images-readme/TF-workflow.png" alt="general-workflow" width="300" />
-
-This executes jobs that run TF Plan and apply, a workflow template has been created to avoid repeating code, this can be found in **_./github/workflows/template-run-terraform_**.
+The main steps done by the workflow are:
 
 1. **Configure Terraform Backend**: This job executes a bash script located in  **_.github/jobs/terraform-backend.sh_**. This script checks if there is a S3 bucket and a DynamoDB table, if not, it is created, the name of the table depends on the variables passed on the action.
 
@@ -56,10 +44,6 @@ This executes jobs that run TF Plan and apply, a workflow template has been crea
 3. **Terraform Apply**: This executes a composite action created to avoid repeating code because these steps are needed in other workflows. This can be found in **_./github/actions/terraform-apply/action.yaml_**.The following diagram shows the steps execute by the composite action:
 
     <img src=".github/images-readme/Composite-action-tf-apply.png" alt="general-workflow" width="400" />
-
-## Kubernetes resources creation
-
-GitOps is used to create K8 resources, [Implementing GitOps using FluxCD](https://dev.to/aws-builders/smartcash-project-gitops-with-fluxcd-3aep) explains more details about implementation.
 
 ## CI/CD app
 
