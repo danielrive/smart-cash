@@ -13,8 +13,8 @@ locals {
 
 ### Users Table
 
-resource "aws_dynamodb_table" "user_table" {
-  name         = "user-table"
+resource "aws_dynamodb_table" "dynamo_table" {
+  name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "userId"
 
@@ -47,7 +47,7 @@ resource "aws_dynamodb_table" "user_table" {
     non_key_attributes = ["userId","email","status","username"]
   }
   tags = {
-    Name = "users_${var.environment}"
+    Name = "${local.this_service_name}_${var.environment}"
   }
 }
 
@@ -55,8 +55,8 @@ resource "aws_dynamodb_table" "user_table" {
 ########################
 ###### IAM Role
 
-resource "aws_iam_role" "user-role" {
-  name = "role-user-${var.environment}"
+resource "aws_iam_role" "iam_sa_role" {
+  name = "role-${local.this_service_name}-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -70,7 +70,7 @@ resource "aws_iam_role" "user-role" {
       Condition={
         StringEquals= {
           "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-user-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
         }
       }
     }
@@ -78,10 +78,10 @@ resource "aws_iam_role" "user-role" {
 })
 }
 
-####### IAM policy for SA user
+####### IAM policy for SA 
 
-resource "aws_iam_policy" "dynamodb-user-policy" {
-  name        = "policy-dynamodb-user-${var.environment}"
+resource "aws_iam_policy" "dynamodb_iam_policy" {
+  name        = "policy-dynamodb-${local.this_service_name}-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -102,26 +102,26 @@ resource "aws_iam_policy" "dynamodb-user-policy" {
         ]
         Effect   = "Allow"
         Resource = [
-                    aws_dynamodb_table.user_table.arn,
-                    "${aws_dynamodb_table.user_table.arn}/index/by_email",
-                    "${aws_dynamodb_table.user_table.arn}/index/by_username"
+                    aws_dynamodb_table.dynamo_table.arn,
+                    "${aws_dynamodb_table.dynamo_table.arn}/index/by_email",
+                    "${aws_dynamodb_table.dynamo_table.arn}/index/by_username"
         ]
       },
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachment-user-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-user-policy.arn
-  role       = aws_iam_role.user-role.name
+resource "aws_iam_role_policy_attachment" "attachment-policy-role1" {
+  policy_arn = aws_iam_policy.dynamodb_iam_policy.arn
+  role       = aws_iam_role.iam_sa_role.name
 }
 
 #######################
 ####  ECR Repo
 
-module "ecr_registry_user_service" {
+module "ecr_registry" {
   source       = "../../modules/ecr"
-  name         = "user-service"
+  name         = "${local.this_service_name}-service"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -132,11 +132,11 @@ module "ecr_registry_user_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests" {
+resource "github_repository_file" "base_manifests" {
   for_each            = fileset("../microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/user-service/base/${each.key}"
+  file                = "services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
     "../microservices-templates/${each.key}",
     {
@@ -156,18 +156,18 @@ resource "github_repository_file" "base-manifests" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-user-svc" {
+resource "github_repository_file" "overlays_svc" {
   for_each            = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/user-service/overlays/${var.environment}/${each.key}"
+  file                = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
-      ECR_REPO = module.ecr_registry_user_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.user-role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.user_table.name
+      ECR_REPO = module.ecr_registry.repo_url
+      ARN_ROLE_SERVICE = aws_iam_role.iam_sa_role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
       AWS_REGION  = var.region
     }
   )
@@ -180,14 +180,34 @@ resource "github_repository_file" "overlays-user-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-user" {
+resource "github_repository_file" "network_policy" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/user-service/base/network-policy.yaml"
+  file                = "services/${local.this_service_name}-service/base/network-policy.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/network-policies/user.yaml",
+    "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
       PROJECT_NAME  = var.project_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+###########################
+##### Images Updates automation
+
+resource "github_repository_file" "image_updates" {
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "services/${local.this_service_name}-service/base/image-repo.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_services}/flux-image-update/${local.this_service_name}.yaml",
+    {
+      SERVICE_NAME = local.this_service_name
+      ECR_REPO = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"
