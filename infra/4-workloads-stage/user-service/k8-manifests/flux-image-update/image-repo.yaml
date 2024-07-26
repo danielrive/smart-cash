@@ -3,7 +3,7 @@ kind: ImageRepository
 metadata:
   name: ${SERVICE_NAME}
 spec:
-  image: ${ECR_URL}
+  image: ${ECR_REPO}
   interval: 1m0s
-  timeout: 10
+  timeout: 10m0s
   provider: aws
