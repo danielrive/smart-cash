@@ -204,7 +204,7 @@ resource "github_repository_file" "image_updates" {
   branch              = local.brach_gitops_repo
   file                = "services/${local.this_service_name}-service/base/image-repo.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/flux-image-update/${local.this_service_name}.yaml",
+    "${local.path_tf_repo_services}/flux-image-update/image-repo.yaml",
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry.repo_url
