@@ -17,8 +17,11 @@ metadata:
 spec:
   imageRepositoryRef:
     name: ${SERVICE_NAME}
+  filterTags:
+    pattern: '^${ENVIRONMENT}-[a-fA-F0-9]+-(?P<ts>.*)'
+    extract: '$ts'
   policy:
-    alphabetical:
+    numerical:
       order: asc
 
 ---
@@ -32,6 +35,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+    namespace: flux-system
   git:
     commit:
       author:
