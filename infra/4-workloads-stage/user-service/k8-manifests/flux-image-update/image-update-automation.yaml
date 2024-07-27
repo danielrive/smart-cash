@@ -4,7 +4,7 @@ metadata:
   name: ${SERVICE_NAME}
 spec:
   image: ${ECR_REPO}
-  interval: 1m0s
+  interval: 10m0s
   timeout: 10m0s
   provider: aws
 
@@ -30,7 +30,7 @@ kind: ImageUpdateAutomation
 metadata:
   name: img-upd-${SERVICE_NAME}
 spec:
-  interval: 10m0s
+  interval: 1m0s
   sourceRef:
     kind: GitRepository
     name: flux-system
