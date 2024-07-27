@@ -6,5 +6,5 @@ spec:
   imageRepositoryRef:
     name: ${SERVICE_NAME}
   policy:
-    semver:
-      range: 5.1.x
+    alphabetical:
+      order: asc
