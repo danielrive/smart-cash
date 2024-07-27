@@ -20,7 +20,7 @@ spec:
   filterTags:
     pattern: '^${ENVIRONMENT}-[a-fA-F0-9]'
   policy:
-    numerical:
+    alphabetical:
       order: asc
 
 ---
