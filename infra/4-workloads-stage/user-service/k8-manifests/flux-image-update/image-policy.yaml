@@ -1,0 +1,10 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: ${SERVICE_NAME}
+spec:
+  imageRepositoryRef:
+    name: ${SERVICE_NAME}
+  policy:
+    semver:
+      range: 5.1.x

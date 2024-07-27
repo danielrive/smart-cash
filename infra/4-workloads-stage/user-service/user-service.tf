@@ -47,7 +47,7 @@ resource "aws_dynamodb_table" "dynamo_table" {
     non_key_attributes = ["userId","email","status","username"]
   }
   tags = {
-    Name = "${local.this_service_name}_${var.environment}"
+    Name = "${local.this_service_name}-table"
   }
 }
 
