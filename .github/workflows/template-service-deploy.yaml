@@ -98,11 +98,11 @@ jobs:
 
           SHORT_COMMIT_ID="${COMMIT_ID:0:6}"
 
-          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID
 
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID
 
-          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$SHORT_COMMIT_ID ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}
 
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}
           

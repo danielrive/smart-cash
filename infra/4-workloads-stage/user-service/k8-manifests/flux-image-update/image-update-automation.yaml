@@ -18,7 +18,7 @@ spec:
   imageRepositoryRef:
     name: ${SERVICE_NAME}
   filterTags:
-    pattern: '^${ENVIRONMENT}-[a-fA-F0-9]+-(?P<ts>.*)'
+    pattern: '^${ENVIRONMENT}-[a-fA-F0-9]'
     extract: '$ts'
   policy:
     numerical:
