@@ -19,7 +19,6 @@ spec:
     name: ${SERVICE_NAME}
   filterTags:
     pattern: '^${ENVIRONMENT}-[a-fA-F0-9]'
-    extract: '$ts'
   policy:
     numerical:
       order: asc
