@@ -200,11 +200,12 @@ resource "github_repository_file" "network_policy" {
 ##### Images Updates automation
 
 resource "github_repository_file" "image_updates" {
+  for_each            = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/${local.this_service_name}-service/base/image-repo.yaml"
+  file                = "services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/flux-image-update/image-repo.yaml",
+    "${local.path_tf_repo_services}/flux-image-update/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry.repo_url
