@@ -35,6 +35,7 @@ if [ -z "$flux_installed" ]; then
     --path="clusters/$1/bootstrap" \
     --branch=$BRANCH \
     --components-extra=image-reflector-controller,image-automation-controller \
+    --read-write-key \
     --personal
 else
   echo "---------->  flux is installed"
