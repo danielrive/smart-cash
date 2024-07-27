@@ -18,9 +18,10 @@ spec:
   imageRepositoryRef:
     name: ${SERVICE_NAME}
   filterTags:
-    pattern: '^${ENVIRONMENT}-[a-fA-F0-9]'
+    pattern: '^${ENVIRONMENT}-(?P<timestamp>\d+)$'
+    extract: '$timestamp'
   policy:
-    alphabetical:
+    numerical:
       order: asc
 
 ---

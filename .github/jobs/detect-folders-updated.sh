@@ -24,18 +24,17 @@ for file in $GIT_FOLDERS_UPDATED; do
             echo "Code update for service"
             root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
             echo $root_folder
-            add_folder       
-    elif [[ "$folder_name" == *"-stage"*  ]] ; then
-            echo "Infra update for service"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
-            echo $root_folder
-            add_folder    
+            add_folder        
     elif [[ "$folder_name" == *"4-workloads-stage"* && "$folder_name" == *"-service"* ]] ; then
             echo "Infra update for infra service"
             root_folder=$(echo "$folder_name" | awk -F'/' '{print $3}')
             echo $root_folder
-            add_folder    
-
+            add_folder   
+    elif [[ "$folder_name" == *"-stage"*  ]] ; then
+            echo "Infra update for service"
+            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
+            echo $root_folder
+            add_folder 
     else
        echo "----> ignoring the folder $folder_name"
     fi
