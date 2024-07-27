@@ -6,4 +6,5 @@ resources:
 - service.yaml
 - service-account.yaml
 - image-repo.yaml
+- image-policy.yaml
 #- network-policy.yaml
