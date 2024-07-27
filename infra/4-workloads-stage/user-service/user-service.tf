@@ -143,7 +143,6 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "health"      ## don't include the / at the beginning
-      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -170,6 +169,7 @@ resource "github_repository_file" "overlays_svc" {
       ARN_ROLE_SERVICE = aws_iam_role.iam_sa_role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
       AWS_REGION  = var.region
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
