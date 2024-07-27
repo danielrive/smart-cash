@@ -3,8 +3,8 @@ resources:
 namespace: develop
 images:
   - name: service-image
-    newName: ${ECR_REPO}
-    newTag: develop
+    newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
+    newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:{SERVICE_NAME}:tag"}
 
 patches:
   - path: patch-service-account.yaml

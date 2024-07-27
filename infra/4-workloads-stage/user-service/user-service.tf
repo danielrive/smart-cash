@@ -143,6 +143,7 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_NAME = local.this_service_name
       SERVICE_PORT = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "health"      ## don't include the / at the beginning
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -209,6 +210,8 @@ resource "github_repository_file" "image_updates" {
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry.repo_url
+      ENVIRONMENT = var.environment
+      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
     }
   )
   commit_message      = "Managed by Terraform"
