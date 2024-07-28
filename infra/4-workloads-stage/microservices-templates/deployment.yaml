@@ -6,6 +6,11 @@ metadata:
     app: ${SERVICE_NAME}
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: ${SERVICE_NAME}
@@ -25,6 +30,11 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
+        resources:
+          requests:
+            memory: "50Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+          limits:
+            memory: "100Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:
