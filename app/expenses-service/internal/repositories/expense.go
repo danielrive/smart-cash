@@ -61,6 +61,44 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	return output, nil
 }
 
+// Function to update expense
+func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense) (models.ExpensesReturn, error) {
+
+	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		log.Printf("DynamoDB udpate expression couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Define the key of the item to update
+	expId, err := attributevalue.Marshal(expense.ExpenseId)
+	if err != nil {
+		log.Printf("DynamoDB udpate key couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+
+	inputUpdate := &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.expensesTable),
+		Key:                       map[string]types.AttributeValue{"expenseId": expId},
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+		ReturnValues:              types.ReturnValueUpdatedNew,
+	}
+	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+
+	// Update bank item
+	if err != nil {
+		log.Printf("Saving for user %v couldn't be updated:", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Unmarshal the updated bank item
+	// Unmarshal the bank item
+	log.Println(response)
+	return models.ExpensesReturn{}, nil
+
+}
+
 // Function to get a expense by id
 
 func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, error) {

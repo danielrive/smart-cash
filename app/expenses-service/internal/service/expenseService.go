@@ -1,7 +1,11 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"log"
+	"net/http"
 	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
 )
@@ -54,71 +58,54 @@ func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]mo
 	return expenses, nil
 }
 
-/*
-// Create order to automatic pay an expense
+// Function to process expenses
 
-func createOrder(expense models.Expense) error {
-	// create order format input
-	baseURL := "http://payment:8383"
-	//baseURL := "http://payment:8383"
+func (exps *ExpensesService) PayExpenses(expenses []models.Expense) []models.Expense {
+	// send the expenses to payment services sync proccess
+	// create payment request per expenses
+	baseURL := "http://127.0.0.1:8585/bank/pay"
+	for _, exp := range expenses {
+		paymentRequest := models.PaymentRequest{
+			ExpenseId: exp.ExpenseId,
+			Date:      "11-11-2024", // HARDCODED FOR TESTING
+			UserId:    exp.UserId,
+			Amount:    exp.Amount,
+			Status:    exp.Status,
+		}
+		jsonData, err := json.Marshal(paymentRequest)
+		if err != nil {
+			log.Printf("Error marshalling data to JSON %v:", err)
+			continue
+		}
+		// Prepare the request for bank service
+		req, err := http.NewRequest(http.MethodPost, baseURL, bytes.NewBuffer(jsonData))
+		if err != nil {
+			log.Printf("Error creating request %v:", err)
+			continue
+		}
+		// set headers
+		req.Header.Set("Content-Type", "application/json")
+		// send the request
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Printf("Error sending request %v:", err)
+			continue
+		}
+		// update the state in the expense
 
-	// Create a map to hold query parameters
-	data := map[string]interface{}{
-		"expensesId": expense.ExpenseId,
-		"amount":     expense.Amount,
-		"userId":     expense.UserId,
-		"currency":   expense.Currency,
+		resBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("client: could not read response body: %v", err)
+			continue
+		}
+		err = json.Unmarshal(resBody, &paymentRequest)
+		if err != nil {
+			log.Printf("client: could not parse response body: %v", err)
+			continue
+		}
+		exp.Status = paymentRequest.Status
+
+		exps.expensesRepository.UpdateExpenseStatus(exp)
 	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println("Error marshalling data to JSON:", err)
-		return err
-	}
-
-	// Create a new HTTP request object
-	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Println("Error creating request:", err)
-		return err
-	}
-
-	// Set the Content-Type header to indicate JSON data (optional, depends on API requirement)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request and get the response
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error sending request:", err)
-		return err
-	}
-
-	// Close the response body after reading
-	defer resp.Body.Close()
-
-	// Call the internal function to validate the user token
-	log.Println("Scheduled to pay ", resp.Body)
-
-	return nil
+	return expenses
 }
-
-func (us *ExpensesService) ConnectOtherSVC(svc_name string, port string) error {
-	baseURL := "http://" + svc_name + ":" + port + "/health"
-	log.Println(baseURL)
-	resp, err := http.Get(baseURL)
-	log.Println("response from http call ", resp)
-	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return err
-	}
-
-	// Close the response body after reading
-	defer resp.Body.Close()
-
-	// Call the internal function to validate the user token
-	log.Println("response from http call ", resp)
-	return nil
-
-}
-*/
