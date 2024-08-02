@@ -2,12 +2,6 @@
 
 This is a personal project to practice some concepts that I have learned during my professional life and to use some tools that I want to learn in a hands-on manner.
 
-A series of blog posts have been published in Dev.to. You can read them and follow the steps outlined:
-
-1. [Infrastructure - Terraform and GitHub Actions](https://dev.to/aws-builders/smartcash-project-infrastructure-terraform-and-github-actions-2bo3)
-2. [Implementing GitOps using FluxCD](https://dev.to/aws-builders/smartcash-project-gitops-with-fluxcd-3aep)
-3. [Monitoring EKS cluster using Prometheus operator](https://dev.to/aws-builders/adding-monitoring-to-eks-using-prometheus-operator-3ke1)
-
 ## Folder structure
 
 This project contains two main folders:
