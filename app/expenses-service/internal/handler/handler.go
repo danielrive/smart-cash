@@ -39,6 +39,18 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 
 }
 
+// Handler to pay expenses
+
+func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
+	expenses := []models.Expense{}
+	if err := c.ShouldBindJSON(&expenses); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	response := h.expensesService.PayExpenses(expenses)
+	c.JSON(http.StatusCreated, gin.H{"message": "paymentok", "expense": response})
+}
+
 // Handler for Get expense by expenseID
 
 func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
