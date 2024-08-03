@@ -2,7 +2,7 @@
 ########## Resources for expenses-service
 
 locals {
-  this_service_name = "user"
+  this_service_name = "expenses"
   this_service_port = 8282
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo = var.environment
