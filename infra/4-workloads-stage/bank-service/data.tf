@@ -2,7 +2,7 @@ data "terraform_remote_state" "eks" {
   backend = "s3"
   config = {
     bucket = "${var.project_name}-tf-state-lock-${var.environment}-${var.region}" 
-    key    = "stage/eks-cluster/eks-cluster.tfstate"
+    key    = "stage/2-eks-cluster-stage/2-eks-cluster-stage.tfstate"
     region  = var.region
   }
 }
