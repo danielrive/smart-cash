@@ -63,7 +63,7 @@ func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]mo
 func (exps *ExpensesService) PayExpenses(expenses []models.Expense) []models.Expense {
 	// send the expenses to payment services sync proccess
 	// create payment request per expenses
-	baseURL := "http://127.0.0.1:8585/bank/pay"
+	baseURL := "http://bank:8585/bank/pay"
 	for _, exp := range expenses {
 		paymentRequest := models.PaymentRequest{
 			ExpenseId: exp.ExpenseId,

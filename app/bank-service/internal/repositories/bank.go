@@ -38,18 +38,18 @@ func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
 		},
 	})
 	if err != nil {
-		log.Printf("Internal error while getting item from DynamoDB: %v", err)
+		log.Printf("internal error while getting item from DynamoDB: %v", err)
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		log.Printf("User with id %s not found in DynamoDB", id)
-		return output, common.ErrTransactionFailed
+		log.Printf("user with id %s not found in DynamoDB", id)
+		return output, common.ErrUserNotFound
 	}
 
 	// Unmarshal the bank item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		log.Printf("Internal error while unmarshaling DynamoDB item: %v", err)
+		log.Printf("internal error while unmarshaling DynamoDB item: %v", err)
 		return output, common.ErrInternalError
 	}
 
@@ -58,19 +58,19 @@ func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
 
 // Func to update user
 
-func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) (models.BankUser, error) {
+func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) error {
 	// Marshal the bank item
 	update := expression.Set(expression.Name("savings"), expression.Value(user.Savings))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
-		log.Printf("DynamoDB udpate expression couldn't be created: %v", err)
-		return models.BankUser{}, common.ErrInternalError
+		log.Printf("dynamoDB udpate expression couldn't be created: %v", err)
+		return common.ErrInternalError
 	}
 	// Define the key of the item to update
 	userId, err := attributevalue.Marshal(user.UserId)
 	if err != nil {
-		log.Printf("DynamoDB udpate key couldn't be created: %v", err)
-		return models.BankUser{}, common.ErrInternalError
+		log.Printf("dynamoDB udpate key couldn't be created: %v", err)
+		return common.ErrInternalError
 	}
 
 	inputUpdate := &dynamodb.UpdateItemInput{
@@ -81,15 +81,12 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) (models
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+	_, err = r.client.UpdateItem(context.TODO(), inputUpdate)
 
 	// Update bank item
 	if err != nil {
-		log.Printf("Saving for user %v couldn't be updated:", err)
-		return models.BankUser{}, common.ErrInternalError
+		log.Printf("saving for user %v couldn't be updated:", err)
+		return common.ErrInternalError
 	}
-	// Unmarshal the updated bank item
-	// Unmarshal the bank item
-	log.Println(response)
-	return models.BankUser{}, nil
+	return nil
 }
