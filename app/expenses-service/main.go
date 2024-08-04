@@ -40,7 +40,7 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
 		gin.Recovery(),
 	)
 	// // Initialize expenses repository

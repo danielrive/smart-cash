@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle expense registration
     const registerExpensesForm = document.getElementById('registerExpensesForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (event) => {
+    if (registerExpensesForm) {
+        registerExpensesForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const name = document.getElementById('name').value;
             const description = document.getElementById('description').value;
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (response.ok) {
                     alert('Registration successful');
-                    registerForm.reset();
+                    registerExpensesForm.reset();
                 } else {
                     const errorData = await response.json();
                     alert(`Registration failed: ${errorData.message}`);
@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle expense registration
     const payExpense = document.getElementById('payExpense');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (event) => {
+    if (payExpense) {
+        payExpense.addEventListener('submit', async (event) => {
             event.preventDefault();
             const name = document.getElementById('expenseId').value;
             try {
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (response.ok) {
                     alert('Payment successful');
-                    registerForm.reset();
+                    payExpense.reset();
                 } else {
                     const errorData = await response.json();
                     alert(`Payment failed: ${errorData.message}`);
