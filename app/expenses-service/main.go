@@ -63,7 +63,7 @@ func main() {
 	router.POST("/expenses/pay", expensesHandler.PayExpenses)
 
 	// Endpoint to test health check
-	router.GET("/health", expensesHandler.HealthCheck)
+	router.GET("/expenses/health", expensesHandler.HealthCheck)
 
 	router.Run(":8282")
 
