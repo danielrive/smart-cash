@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const name = document.getElementById('name').value;
             const description = document.getElementById('description').value;
-            const amount = document.getElementById('amount').value;
+            const amount = parseFloat(document.getElementById('amount').value);
             const category = document.getElementById('category').value;
 
             try {
