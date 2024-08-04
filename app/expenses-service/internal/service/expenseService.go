@@ -60,7 +60,14 @@ func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]mo
 
 // Function to process expenses
 
-func (exps *ExpensesService) PayExpenses(expenses []models.Expense) []models.Expense {
+func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) []models.Expense {
+	// get the expense from DB
+	expense, err := exps.expensesRepository.GetExpenseById(expensesId.ExpenseId)
+	if err != nil {
+		log.Printf("Error getting expense from DB %v:", err)
+		return []models.Expense{}
+	}
+	expenses := []models.Expense{expense}
 	// send the expenses to payment services sync proccess
 	// create payment request per expenses
 	baseURL := "http://bank:8585/bank/pay"

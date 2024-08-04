@@ -42,7 +42,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 // Handler to pay expenses
 
 func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
-	expenses := []models.Expense{}
+	expenses := models.ExpensesPay{}
 	if err := c.ShouldBindJSON(&expenses); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
