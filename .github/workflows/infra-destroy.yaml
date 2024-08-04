@@ -12,6 +12,7 @@ on:
         options:
           -  develop
           -  main
+          - feat/refactor-golang
       stage:
         description: 'stage name to destroy'
         required: true
