@@ -59,7 +59,7 @@ resource "github_repository_file" "overlays_svc" {
     "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
-      ECR_REPO = module.ecr_registry_frontend_service.repo_url
+      ECR_REPO = module.ecr_registry.repo_url
       AWS_REGION  = var.region
       ENVIRONMENT = var.environment
     }
