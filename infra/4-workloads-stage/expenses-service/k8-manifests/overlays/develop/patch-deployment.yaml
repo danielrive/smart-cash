@@ -8,7 +8,7 @@ spec:
       containers:
       - name: ${SERVICE_NAME}-container
         env:
-        - name: DYNAMODB_USER_TABLE
+        - name: DYNAMODB_EXPENSES_TABLE
           value: ${DYNAMODB_TABLE_NAME}
         - name: AWS_REGION
           value: ${AWS_REGION}
