@@ -12,7 +12,7 @@ locals {
 #############################
 ##### ECR Repo
 
-module "ecr_registry_frontend_service" {
+module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "frontend-service"
   project_name = var.project_name
@@ -26,11 +26,11 @@ module "ecr_registry_frontend_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests-frontend-svc" {
+resource "github_repository_file" "base_manifests" {
   for_each            = fileset("../microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/frontend-service/base/${each.key}"
+  file                = "services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
     "../microservices-templates/${each.key}",
     {
@@ -50,17 +50,18 @@ resource "github_repository_file" "base-manifests-frontend-svc" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-frontend-svc" {
+resource "github_repository_file" "overlays_svc" {
   for_each            = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/frontend-service/overlays/${var.environment}/${each.key}"
+  file                = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
       SERVICE_NAME = local.this_service_name
       ECR_REPO = module.ecr_registry_frontend_service.repo_url
       AWS_REGION  = var.region
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -73,7 +74,7 @@ resource "github_repository_file" "overlays-frontend-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-frontend" {
+resource "github_repository_file" "network_policy" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
   file                = "services/frontend-service/base/network-policy.yaml"
