@@ -60,7 +60,6 @@ func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]mo
 }
 
 // Function to process expenses
-
 func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
 	// get the expense from DB
 	expense, err := exps.expensesRepository.GetExpenseById(expensesId.ExpenseId)
@@ -117,7 +116,6 @@ func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.
 		expense.Status = paymentRequest.Status
 	}
 	// Process response
-
 	exps.expensesRepository.UpdateExpenseStatus(expense)
 
 	return expense, nil

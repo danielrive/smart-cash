@@ -50,7 +50,6 @@ func (bank *BankService) ProcessPayment(transaction models.PaymentRequest) (mode
 }
 
 // Function to get bank by Id
-
 func (bank *BankService) GetUser(userId string) (models.BankUser, error) {
 	user, err := bank.bankRepository.GetUser(userId)
 	if err != nil {

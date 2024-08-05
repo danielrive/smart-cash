@@ -57,7 +57,6 @@ func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
 }
 
 // Func to update user
-
 func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) error {
 	// Marshal the bank item
 	update := expression.Set(expression.Name("savings"), expression.Value(user.Savings))
