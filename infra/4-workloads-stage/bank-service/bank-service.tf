@@ -1,28 +1,52 @@
 ################################################
-########## Resources for bank-service
+########## Resources for expenses-service
 
 locals {
-  path_tf_repo_services = "../../../../kubernetes/services"
+  this_service_name = "bank"
+  this_service_port = 8585
+  path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo = var.environment
 }
+
 #######################
 #### DynamoDB tables
 
-### bank Table
-
-resource "aws_dynamodb_table" "transactions_table" {
-  name         = "transactions-table"
+resource "aws_dynamodb_table" "dynamo_table" {
+  name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "transactionId"
+  hash_key     = "expenseId"
 
   attribute {
-    name = "transactionId"
+    name = "expenseId"
     type = "S"
   }
 
+  attribute {
+    name = "category"
+    type = "S"
+  }
 
+  attribute {
+
+    name = "userId"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name               = "by_userId"
+    hash_key           = "userId"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["expenseId","currency","date","amount"]
+  }
+
+  global_secondary_index {
+    name               = "by_category"
+    hash_key           = "userId"
+    range_key           = "category"
+    projection_type    = "ALL"
+  }
   tags = {
-    ENVIRONMENT = "${var.environment}"
+    Name = "${local.this_service_name}-table"
   }
   
 }
@@ -31,8 +55,8 @@ resource "aws_dynamodb_table" "transactions_table" {
 ##############################
 ###### IAM Role K8 SA
 
-resource "aws_iam_role" "bank-role" {
-  name = "role-bank-${var.environment}"
+resource "aws_iam_role" "iam_sa_role" {
+  name = "role-${local.this_service_name}-${var.environment}"
   path = "/"
   assume_role_policy = jsonencode({
   Version="2012-10-17"
@@ -46,7 +70,7 @@ resource "aws_iam_role" "bank-role" {
       Condition={
         StringEquals= {
           "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-bank-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
         }
       }
     }
@@ -54,10 +78,10 @@ resource "aws_iam_role" "bank-role" {
 })
 }
 
-####### IAM policy for SA bank
+####### IAM policy for SA 
 
-resource "aws_iam_policy" "dynamodb-bank-policy" {
-  name        = "policy-dynamodb-bank-${var.environment}"
+resource "aws_iam_policy" "dynamodb_iam_policy" {
+  name        = "policy-dynamodb-${local.this_service_name}-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
 
@@ -78,16 +102,18 @@ resource "aws_iam_policy" "dynamodb-bank-policy" {
         ]
         Effect   = "Allow"
         Resource = [
-                    aws_dynamodb_table.transactions_table.arn,
+                    aws_dynamodb_table.dynamo_table.arn,
+                    "${aws_dynamodb_table.dynamo_table.arn}/index/by_userId",
+                    "${aws_dynamodb_table.dynamo_table.arn}/index/by_category"
         ]
       },
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
-  policy_arn = aws_iam_policy.dynamodb-bank-policy.arn
-  role       = aws_iam_role.bank-role.name
+resource "aws_iam_role_policy_attachment" "att_policy_role1" {
+  policy_arn = aws_iam_policy.dynamodb_iam_policy.arn
+  role       = aws_iam_role.iam_sa_role.name
 }
 
 
@@ -95,9 +121,9 @@ resource "aws_iam_role_policy_attachment" "attachment-bank-policy-role1" {
 #############################
 ##### ECR Repo
 
-module "ecr_registry_bank_service" {
-  source       = "../../../modules/ecr"
-  name         = "bank-service"
+module "ecr_registry" {
+  source       = "../../modules/ecr"
+  name         = "${local.this_service_name}-service"
   project_name = var.project_name
   environment  = var.environment
 }
@@ -109,18 +135,17 @@ module "ecr_registry_bank_service" {
 ###########################
 ##### Base manifests
 
-resource "github_repository_file" "base-manifests-bank-svc" {
-  for_each            = fileset("../../../../kubernetes/microservices-templates", "*.yaml")
+resource "github_repository_file" "base_manifests" {
+  for_each            = fileset("../microservices-templates", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/bank-service/base/${each.key}"
+  file                = "services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
-    "../../../../kubernetes/microservices-templates/${each.key}",
+    "../microservices-templates/${each.key}",
     {
-      SERVICE_NAME = "bank"
-      SERVICE_PORT = "8282"
-      SERVICE_PATH_HEALTH_CHECKS = "/health"     
-      SERVICE_PORT_HEALTH_CHECKS = "8282"
+      SERVICE_NAME = local.this_service_name
+      SERVICE_PORT = local.this_service_port
+      SERVICE_PATH_HEALTH_CHECKS = "health"
     }
   )
   commit_message      = "Managed by Terraform"
@@ -134,19 +159,20 @@ resource "github_repository_file" "base-manifests-bank-svc" {
 ###########################
 ##### overlays
 
-resource "github_repository_file" "overlays-bank-svc" {
-  for_each            = fileset("${local.path_tf_repo_services}/bank-service/overlays/${var.environment}", "*.yaml")
+resource "github_repository_file" "overlays_svc" {
+  for_each            = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/bank-service/overlays/${var.environment}/${each.key}"
+  file                = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
   content = templatefile(
-    "${local.path_tf_repo_services}/bank-service/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
-      SERVICE_NAME = "bank"
-      ECR_REPO = module.ecr_registry_bank_service.repo_url
-      ARN_ROLE_SERVICE = aws_iam_role.bank-role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.transactions_table.name
+      SERVICE_NAME = local.this_service_name
+      ECR_REPO = module.ecr_registry.repo_url
+      ARN_ROLE_SERVICE = aws_iam_role.iam_sa_role.arn
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
       AWS_REGION  = var.region
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -159,14 +185,39 @@ resource "github_repository_file" "overlays-bank-svc" {
 ###########################
 ##### Network Policies
 
-resource "github_repository_file" "np-bank" {
+resource "github_repository_file" "network_policy" {
   repository          = data.github_repository.flux-gitops.name
   branch              = local.brach_gitops_repo
-  file                = "services/bank-service/base/network-policy.yaml"
+  file                = "services/${local.this_service_name}-service/base/network-policy.yaml"
   content = templatefile(
-    "../../../../kubernetes/network-policies/bank.yaml",{
+    "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
+    {
       PROJECT_NAME  = var.project_name
-    })
+    }
+    )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+###########################
+##### Images Updates automation
+
+resource "github_repository_file" "image_updates" {
+  for_each            = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
+  repository          = data.github_repository.flux-gitops.name
+  branch              = local.brach_gitops_repo
+  file                = "services/${local.this_service_name}-service/base/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_services}/flux-image-update/${each.key}",
+    {
+      SERVICE_NAME = local.this_service_name
+      ECR_REPO = module.ecr_registry.repo_url
+      ENVIRONMENT = var.environment
+      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+    }
+  )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
 )
@@ -59,53 +60,63 @@ func (exps *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]mo
 }
 
 // Function to process expenses
-
-func (exps *ExpensesService) PayExpenses(expenses []models.Expense) []models.Expense {
+func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
+	// get the expense from DB
+	expense, err := exps.expensesRepository.GetExpenseById(expensesId.ExpenseId)
+	if err != nil {
+		log.Printf("Error getting expense from DB %v:", err)
+		return models.Expense{}, common.ErrInternalError
+	}
 	// send the expenses to payment services sync proccess
 	// create payment request per expenses
-	baseURL := "http://127.0.0.1:8585/bank/pay"
-	for _, exp := range expenses {
-		paymentRequest := models.PaymentRequest{
-			ExpenseId: exp.ExpenseId,
-			Date:      "11-11-2024", // HARDCODED FOR TESTING
-			UserId:    exp.UserId,
-			Amount:    exp.Amount,
-			Status:    exp.Status,
-		}
-		jsonData, err := json.Marshal(paymentRequest)
-		if err != nil {
-			log.Printf("Error marshalling data to JSON %v:", err)
-			continue
-		}
-		// Prepare the request for bank service
-		req, err := http.NewRequest(http.MethodPost, baseURL, bytes.NewBuffer(jsonData))
-		if err != nil {
-			log.Printf("Error creating request %v:", err)
-			continue
-		}
-		// set headers
-		req.Header.Set("Content-Type", "application/json")
-		// send the request
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Printf("Error sending request %v:", err)
-			continue
-		}
-		// update the state in the expense
+	baseURL := "http://bank/bank/pay"
+	paymentRequest := models.PaymentRequest{
+		ExpenseId: expense.ExpenseId,
+		Date:      "11-11-2024", // HARDCODED FOR TESTING
+		UserId:    expense.UserId,
+		Amount:    expense.Amount,
+		Status:    expense.Status,
+	}
+	jsonData, err := json.Marshal(paymentRequest)
+	if err != nil {
+		log.Printf("Error marshalling data to JSON %v:", err)
+		return models.Expense{}, common.ErrInternalError
 
+	}
+	// Prepare the request for bank service
+	req, err := http.NewRequest(http.MethodPost, baseURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("Error creating request %v:", err)
+		return models.Expense{}, common.ErrInternalError
+	}
+	// set headers
+	req.Header.Set("Content-Type", "application/json")
+	// send the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Printf("Error sending request %v:", err)
+		return models.Expense{}, common.ErrInternalError
+	}
+
+	// validate response code
+	if resp.StatusCode != http.StatusCreated {
+		log.Printf("expense  %v not paid %v:", expense.ExpenseId, resp.StatusCode)
+		return models.Expense{}, common.ErrExpenseNotPaid
+	} else {
 		resBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("client: could not read response body: %v", err)
-			continue
+			log.Printf("client: could not read response body: %v", err) //// HOW to manage this kind of errors when the request already was procesed by another service but
+			return models.Expense{}, common.ErrInternalError            // for some situation like server error faild in the service that caalled
 		}
 		err = json.Unmarshal(resBody, &paymentRequest)
 		if err != nil {
 			log.Printf("client: could not parse response body: %v", err)
-			continue
+			return models.Expense{}, common.ErrInternalError
 		}
-		exp.Status = paymentRequest.Status
-
-		exps.expensesRepository.UpdateExpenseStatus(exp)
+		expense.Status = paymentRequest.Status
 	}
-	return expenses
+	// Process response
+	exps.expensesRepository.UpdateExpenseStatus(expense)
+
+	return expense, nil
 }

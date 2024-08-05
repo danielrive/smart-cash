@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // Handle user registration
-    const registerForm = document.getElementById('registerForm');
+    const registerForm = document.getElementById('registerUserForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -30,63 +30,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle user login
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
 
-            const user = users.find(user => user.username === username && user.password === password);
-            if (user) {
-                alert('Login successful');
-                localStorage.setItem('loggedInUser', username);
-                window.location.href = 'expenses.html';
-            } else {
-                alert('Invalid username or password');
+    // Handle expense registration
+    const registerExpensesForm = document.getElementById('registerExpensesForm');
+    if (registerExpensesForm) {
+        registerExpensesForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const userId = document.getElementById('userId').value;
+            
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+
+            try {
+                const response = await fetch('/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name,description,amount,userId, category })
+                });
+                if (response.ok) {
+                    alert('Registration successful');
+                    registerExpensesForm.reset();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Registration failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                alert('An error occurred during registration');
             }
         });
     }
 
+    // Pay expense
+
     // Handle expense registration
-    const expenseForm = document.getElementById('expenseForm');
-    const expensesList = document.getElementById('expensesList');
-    if (expenseForm) {
-        const displayExpenses = () => {
-            expensesList.innerHTML = '';
-            expenses.forEach((expense, index) => {
-                const expenseItem = document.createElement('li');
-                expenseItem.innerHTML = `
-                    ${expense.name} - ${expense.date} - ${expense.value} ${expense.currency}
-                    <button onclick="removeExpense(${index})">Remove</button>
-                `;
-                expensesList.appendChild(expenseItem);
-            });
-        };
-
-        expenseForm.addEventListener('submit', (event) => {
+    const payExpense = document.getElementById('payExpense');
+    if (payExpense) {
+        payExpense.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const name = document.getElementById('name').value;
-            const date = document.getElementById('date').value;
-            const value = document.getElementById('value').value;
-            const currency = document.getElementById('currency').value;
-
-            const expense = { name, date, value, currency };
-            expenses.push(expense);
-
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            displayExpenses();
-
-            expenseForm.reset();
+            const expenseId = document.getElementById('expenseId').value;
+            try {
+                const response = await fetch('/expenses/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expenseId })
+                });
+                if (response.ok) {
+                    alert('Payment successful');
+                    payExpense.reset();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Payment failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                alert('An error occurred during registration');
+            }
         });
-
-        window.removeExpense = (index) => {
-            expenses.splice(index, 1);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            displayExpenses();
-        };
-
-        displayExpenses();
     }
+    
 });

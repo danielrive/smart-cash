@@ -20,3 +20,7 @@ type ExpensesReturn struct {
 	Amount    float64 `json:"amount" dynamodbav:"amount"`
 	Status    string  `json:"priority" dynamodbav:"priority"`
 }
+
+type ExpensesPay struct {
+	ExpenseId string `json:"expenseId" dynamodbav:"expenseId"` // primary key
+}

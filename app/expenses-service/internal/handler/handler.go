@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"smart-cash/expenses-service/internal/common"
@@ -24,6 +25,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	expense := models.Expense{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
+		log.Printf("error binding body to json %v:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -31,24 +33,31 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	response, err := h.expensesService.CreateExpense(expense)
 
 	if err != nil {
+		log.Printf("error processing the expense  %v:", err)
 		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
 	}
 	c.Header("Location", "/expense/"+response.ExpenseId)
-	c.JSON(http.StatusCreated, gin.H{"message": "Expense created successfully", "expense": response})
+	c.JSON(http.StatusCreated, response)
 
 }
 
 // Handler to pay expenses
 
 func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
-	expenses := []models.Expense{}
+	expenses := models.ExpensesPay{}
 	if err := c.ShouldBindJSON(&expenses); err != nil {
+		log.Printf("error binding body to json %v:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	response := h.expensesService.PayExpenses(expenses)
-	c.JSON(http.StatusCreated, gin.H{"message": "paymentok", "expense": response})
+	response, err := h.expensesService.PayExpenses(expenses)
+	if err != nil {
+		log.Printf("error processing the expense  %v:", err)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, response)
 }
 
 // Handler for Get expense by expenseID
