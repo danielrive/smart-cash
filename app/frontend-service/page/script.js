@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (payExpense) {
         payExpense.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const name = document.getElementById('expenseId').value;
+            const expenseId = document.getElementById('expenseId').value;
             try {
                 const response = await fetch('/expenses/pay', {
                     method: 'POST',
