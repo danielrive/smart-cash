@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"smart-cash/expenses-service/internal/common"
 
 	"log"
@@ -41,7 +42,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	expense.ExpenseId = r.uuid.New()
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		log.Printf("internal error while unmarshaling DynamoDB item %v:", err)
 		return output, common.ErrInternalError
 	}
 
@@ -51,14 +52,99 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 		Item:      item,
 	})
 	if err != nil {
-		log.Println(common.ErrExpenseNoCreated, err)
+		log.Printf("dynamodb error while putting item %v:", err)
 		return output, common.ErrExpenseNoCreated
 	}
-	output.Date = expense.Date
-	output.ExpenseId = expense.ExpenseId
-	output.Name = expense.Name
+	return createExpenserReturn(expense), nil
+}
 
-	return output, nil
+// Function to update expense
+func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense) (models.ExpensesReturn, error) {
+
+	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		log.Printf("dynamodb udpate expression couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Define the key of the item to update
+	expId, err := attributevalue.Marshal(expense.ExpenseId)
+	if err != nil {
+		log.Printf("dynamodb udpate key couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+
+	inputUpdate := &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.expensesTable),
+		Key:                       map[string]types.AttributeValue{"expenseId": expId},
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+		ReturnValues:              types.ReturnValueUpdatedNew,
+	}
+	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+
+	if err != nil {
+		log.Printf("status for expense %v couldn't be updated %v:", expense.ExpenseId, err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Unmarshal the response
+	if response.Attributes != nil {
+		for _, value := range response.Attributes {
+			// Declare a variable to hold the unmarshaled value
+			var readableValue interface{}
+			// Unmarshal the AttributeValue into a generic interface{}
+			err := attributevalue.Unmarshal(value, &readableValue)
+			if err != nil {
+				log.Printf("failed to unmarshal attribute value: %s", err)
+			}
+			expense.Status = readableValue.(string)
+			// Print the attribute name and its readable value
+		}
+	} else {
+		fmt.Println("No attributes returned.")
+	}
+
+	return createExpenserReturn(expense), nil
+
+}
+
+// Function to update expense
+func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense) (models.ExpensesReturn, error) {
+
+	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		log.Printf("DynamoDB udpate expression couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Define the key of the item to update
+	expId, err := attributevalue.Marshal(expense.ExpenseId)
+	if err != nil {
+		log.Printf("DynamoDB udpate key couldn't be created: %v", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+
+	inputUpdate := &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.expensesTable),
+		Key:                       map[string]types.AttributeValue{"expenseId": expId},
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+		ReturnValues:              types.ReturnValueUpdatedNew,
+	}
+	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+
+	// Update bank item
+	if err != nil {
+		log.Printf("Saving for user %v couldn't be updated:", err)
+		return models.ExpensesReturn{}, common.ErrInternalError
+	}
+	// Unmarshal the updated bank item
+	// Unmarshal the bank item
+	log.Println(response)
+	return models.ExpensesReturn{}, nil
+
 }
 
 // Function to update expense
@@ -189,4 +275,14 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
 	}
 
 	return nil
+}
+
+func createExpenserReturn(expense models.Expense) models.ExpensesReturn {
+	return models.ExpensesReturn{
+		Date:      expense.Date,
+		ExpenseId: expense.ExpenseId,
+		Name:      expense.Name,
+		Status:    expense.Status,
+		Amount:    expense.Amount,
+	}
 }

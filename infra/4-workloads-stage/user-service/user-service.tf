@@ -111,7 +111,7 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachment-policy-role1" {
+resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   policy_arn = aws_iam_policy.dynamodb_iam_policy.arn
   role       = aws_iam_role.iam_sa_role.name
 }

@@ -35,8 +35,7 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "Transaction successfully", "transaction": response})
-
+	c.JSON(http.StatusCreated, response)
 }
 
 func (h *BankHandler) HealthCheck(c *gin.Context) {

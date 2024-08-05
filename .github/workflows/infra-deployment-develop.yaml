@@ -14,6 +14,7 @@ on:
           - 2-eks-cluster-stage
           - 3-k8-common-stage
           - user-service
+          - bank-service
           - expenses-service
           - frontend-service
   push:

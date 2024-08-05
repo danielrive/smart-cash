@@ -12,6 +12,7 @@ on:
         options:
           -  develop
           -  main
+          - feat/refactor-golang
       stage:
         description: 'stage name to destroy'
         required: true
@@ -21,7 +22,6 @@ on:
           -  payment-service
           -  expenses-service
           -  bank-service
-          -  4-workloads-stage
           -  3-k8-common-stage
           -  2-eks-cluster-stage
           -  1-base-stage

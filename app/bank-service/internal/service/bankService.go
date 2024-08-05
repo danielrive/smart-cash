@@ -27,27 +27,28 @@ func (bank *BankService) ProcessPayment(transaction models.PaymentRequest) (mode
 		transaction.Status = "NotPaid"
 		return transaction, err
 	}
-	log.Printf("Processing the expense %v", transaction.ExpenseId)
+	log.Printf("Processing the expense %v for user %v", transaction.ExpenseId, user.UserId)
 	newSaldo, err := processPayment(transaction.Amount, user.Savings)
 	if err != nil {
 		log.Printf("Transaction failed: %v", err)
 		transaction.Status = "NotPaid"
+		return transaction, err
 	}
 	// update saving in user account
 	user.Savings = newSaldo
-	_, err = bank.bankRepository.UpdateSavingsUser(user)
+	err = bank.bankRepository.UpdateSavingsUser(user)
 	if err != nil {
 		log.Printf("Transaction failed: %v", err)
 		transaction.Status = "NotPaid"
+		return transaction, err
 	}
-	log.Printf("Transaction processed for expense: %v", transaction.ExpenseId)
+	transaction.Status = "Paid"
+	log.Printf("Transaction processed for expense %v", transaction.ExpenseId)
 
 	return transaction, nil
-
 }
 
 // Function to get bank by Id
-
 func (bank *BankService) GetUser(userId string) (models.BankUser, error) {
 	user, err := bank.bankRepository.GetUser(userId)
 	if err != nil {

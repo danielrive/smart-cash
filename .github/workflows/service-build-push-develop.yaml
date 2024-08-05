@@ -12,6 +12,7 @@ on:
         options:
           - user-service
           - expenses-service
+          - bank-service
           - frontend-service
   push:
     branches:
