@@ -70,7 +70,7 @@ func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) []models
 	expenses := []models.Expense{expense}
 	// send the expenses to payment services sync proccess
 	// create payment request per expenses
-	baseURL := "http://bank:8585/bank/pay"
+	baseURL := "http://bank/bank/pay"
 	for _, exp := range expenses {
 		paymentRequest := models.PaymentRequest{
 			ExpenseId: exp.ExpenseId,
