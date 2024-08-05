@@ -51,7 +51,12 @@ func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	response := h.expensesService.PayExpenses(expenses)
+	response, err := h.expensesService.PayExpenses(expenses)
+	if err != nil {
+		log.Printf("error processing the expense  %v:", err)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusCreated, response)
 }
 

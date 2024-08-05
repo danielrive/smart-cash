@@ -11,8 +11,6 @@ locals {
 #######################
 #### DynamoDB tables
 
-### expenses Table
-
 resource "aws_dynamodb_table" "dynamo_table" {
   name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
@@ -72,7 +70,7 @@ resource "aws_iam_role" "iam_sa_role" {
       Condition={
         StringEquals= {
           "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-expenses-service"
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub": "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
         }
       }
     }
@@ -80,7 +78,7 @@ resource "aws_iam_role" "iam_sa_role" {
 })
 }
 
-####### IAM policy for SA expenses
+####### IAM policy for SA 
 
 resource "aws_iam_policy" "dynamodb_iam_policy" {
   name        = "policy-dynamodb-${local.this_service_name}-${var.environment}"
