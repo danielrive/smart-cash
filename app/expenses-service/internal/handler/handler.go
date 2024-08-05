@@ -38,7 +38,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 	c.Header("Location", "/expense/"+response.ExpenseId)
-	c.JSON(http.StatusCreated, gin.H{"message": "Expense created successfully", "expense": response})
+	c.JSON(http.StatusCreated, response)
 
 }
 
@@ -52,7 +52,7 @@ func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
 		return
 	}
 	response := h.expensesService.PayExpenses(expenses)
-	c.JSON(http.StatusCreated, gin.H{"message": "paymentok", "expense": response})
+	c.JSON(http.StatusCreated, response)
 }
 
 // Handler for Get expense by expenseID

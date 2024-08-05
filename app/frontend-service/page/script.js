@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const name = document.getElementById('name').value;
             const description = document.getElementById('description').value;
+            const userId = document.getElementById('userId').value;
+            
             const amount = parseFloat(document.getElementById('amount').value);
             const category = document.getElementById('category').value;
 
@@ -45,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/expenses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name,description,amount, category })
+                    body: JSON.stringify({ name,description,amount,userId, category })
                 });
                 if (response.ok) {
                     alert('Registration successful');

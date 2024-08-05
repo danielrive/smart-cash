@@ -22,7 +22,6 @@ on:
           -  payment-service
           -  expenses-service
           -  bank-service
-          -  4-workloads-stage
           -  3-k8-common-stage
           -  2-eks-cluster-stage
           -  1-base-stage
