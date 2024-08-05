@@ -117,6 +117,6 @@ func (exps *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.
 	}
 	// Process response
 	exps.expensesRepository.UpdateExpenseStatus(expense)
-
+  
 	return expense, nil
 }

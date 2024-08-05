@@ -46,7 +46,6 @@ func (bank *BankService) ProcessPayment(transaction models.PaymentRequest) (mode
 	log.Printf("Transaction processed for expense %v", transaction.ExpenseId)
 
 	return transaction, nil
-
 }
 
 // Function to get bank by Id

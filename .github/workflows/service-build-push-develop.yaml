@@ -17,7 +17,7 @@ on:
   push:
     branches:
       - develop
-      - feat/*
+      - feature/*
     paths-ignore:
       - .github/**
       - infra/**
