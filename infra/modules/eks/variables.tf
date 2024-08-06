@@ -11,7 +11,7 @@ variable "project_name" {
   type = string
 }
 
-variable "userRoleARN" {
+variable "role_admin_cluster" {
   type = string
 }
 

@@ -14,7 +14,7 @@ create security groups, etcs
 This role must be created before the cluster creation 
 */
 
-resource "aws_iam_role" "eks-iam-role" {
+resource "aws_iam_role" "eks_iam_role" {
   name = "role-eks-${local.eks_cluster_name}-${var.region}"
 
   path = "/"
@@ -38,12 +38,12 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks-iam-role.name
+  role       = aws_iam_role.eks_iam_role.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly-EKS" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks-iam-role.name
+  role       = aws_iam_role.eks_iam_role.name
 }
 
 #############################
@@ -63,7 +63,7 @@ resource "aws_cloudwatch_log_group" "log_groups_eks" {
 resource "aws_eks_cluster" "kube_cluster" {
   depends_on = [aws_cloudwatch_log_group.log_groups_eks]
   name       = local.eks_cluster_name
-  role_arn   = aws_iam_role.eks-iam-role.arn
+  role_arn   = aws_iam_role.eks_iam_role.arn
   version    = var.cluster_version
   encryption_config {
     provider {
@@ -72,12 +72,56 @@ resource "aws_eks_cluster" "kube_cluster" {
     resources = ["secrets"]
   }
   enabled_cluster_log_types = var.cluster_enabled_log_types
+  access_config {
+    authentication_mode = "API"
+  }
   vpc_config {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = var.private_endpoint_api
     endpoint_public_access  = var.public_endpoint_api
   }
 }
+
+// Enable access to eks cluster to iam role for cluster management
+
+################################
+#### IAM ROLE CLUSTER ADMIN 
+
+resource "aws_iam_role" "eks_admin_iam_role" {
+  name = "admin-role-eks-${local.eks_cluster_name}-${var.region}"
+
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::${var.account_number}:root"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {}
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_eks_access_policy_association" "eks_admin" {
+  depends_on = [aws_eks_cluster.kube_cluster]
+  cluster_name  = aws_eks_cluster.kube_cluster.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  principal_arn = aws_iam_user.eks_admin_iam_role.arn
+
+  access_scope {
+    type       = "namespace"
+    namespaces = ["*"]
+  }
+}
+
+
 
 ################################
 #####  EKS worker node role ####
@@ -149,48 +193,6 @@ resource "aws_eks_node_group" "worker-node-group" {
     aws_eks_cluster.kube_cluster,
     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly
   ]
-}
-
-## OIDC Config
-## https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html
-#######################################
-# Get tls certificate from EKS cluster identity issuer
-#######################################
-
-data "tls_certificate" "cluster" {
-  url = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
-  depends_on = [
-    aws_eks_cluster.kube_cluster
-  ]
-}
-
-# To associate default OIDC provider to Kube cluster
-
-resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
-  url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
-}
-
-
-### Add IAM custom acces role to cluster
-
-resource "null_resource" "iam-role-cluster-access" {
-  provisioner "local-exec" {
-    command = <<EOF
-      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      /tmp/eksctl version
-      /tmp/eksctl create iamidentitymapping --cluster ${local.eks_cluster_name} --region=${var.region} --arn ${var.userRoleARN} --group system:masters --username "AWSAdministratorAccess:{{SessionName}}"
-    EOF
-  }
-  depends_on = [
-    aws_eks_cluster.kube_cluster,
-    aws_eks_node_group.worker-node-group
-  ]
-  triggers = {
-    cluster_instance_ids = aws_eks_node_group.worker-node-group.id
-  }
-
 }
 
 
