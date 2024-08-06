@@ -121,6 +121,28 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
+/// Configure OIDC for IRSA(IAM Roles for Service Accounts)
+
+## OIDC Config
+#######################################
+# Get tls certificate from EKS cluster identity issuer
+
+data "tls_certificate" "cluster" {
+  url = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  depends_on = [
+    aws_eks_cluster.kube_cluster
+  ]
+}
+
+# To associate default OIDC provider to Kube cluster
+
+resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
+  url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+}
+
+
 
 
 ################################
