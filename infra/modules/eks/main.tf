@@ -121,6 +121,12 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
+resource "aws_eks_access_entry" "eks_admin_entry" {
+  cluster_name      = aws_eks_cluster.kube_cluster.name
+  principal_arn     = aws_iam_role.eks_admin_iam_role.arn
+  type              = "STANDARD"
+}
+
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
 ## OIDC Config
