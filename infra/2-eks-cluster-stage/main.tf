@@ -29,7 +29,6 @@ module "eks_cluster" {
   private_endpoint_api         = true
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
-  userRoleARN                  = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:role/user-mgnt-eks-cluster"
   account_number               = data.aws_caller_identity.id_account.id
 }
 
