@@ -110,10 +110,10 @@ EOF
 }
 
 resource "aws_eks_access_policy_association" "eks_admin" {
-  depends_on = [aws_eks_cluster.kube_cluster]
+  depends_on = [aws_eks_cluster.kube_cluster,aws_iam_role.eks_admin_iam_role]
   cluster_name  = aws_eks_cluster.kube_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
-  principal_arn = aws_iam_user.eks_admin_iam_role.arn
+  principal_arn = aws_iam_role.eks_admin_iam_role.arn
 
   access_scope {
     type       = "namespace"
