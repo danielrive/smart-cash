@@ -109,8 +109,15 @@ resource "aws_iam_role" "eks_admin_iam_role" {
 EOF
 }
 
-resource "aws_eks_access_policy_association" "eks_admin" {
+resource "aws_eks_access_entry" "eks_admin_entry" {
   depends_on = [aws_eks_cluster.kube_cluster,aws_iam_role.eks_admin_iam_role]
+  cluster_name      = aws_eks_cluster.kube_cluster.name
+  principal_arn     = aws_iam_role.eks_admin_iam_role.arn
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "eks_admin" {
+  depends_on = [aws_eks_access_entry.eks_admin_entry]
   cluster_name  = aws_eks_cluster.kube_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
   principal_arn = aws_iam_role.eks_admin_iam_role.arn
@@ -121,11 +128,7 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
-resource "aws_eks_access_entry" "eks_admin_entry" {
-  cluster_name      = aws_eks_cluster.kube_cluster.name
-  principal_arn     = aws_iam_role.eks_admin_iam_role.arn
-  type              = "STANDARD"
-}
+
 
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
