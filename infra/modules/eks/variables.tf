@@ -11,10 +11,6 @@ variable "project_name" {
   type = string
 }
 
-variable "role_admin_cluster" {
-  type = string
-}
-
 variable "cluster_name" {
   type = string
 }

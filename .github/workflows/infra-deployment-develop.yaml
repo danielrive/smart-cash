@@ -20,7 +20,7 @@ on:
   push:
     branches:
       - develop
-      - feature/*
+      - feat/*
     paths:
       - "infra/**"
   pull_request:
