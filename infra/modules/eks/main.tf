@@ -74,6 +74,7 @@ resource "aws_eks_cluster" "kube_cluster" {
   enabled_cluster_log_types = var.cluster_enabled_log_types
   access_config {
     authentication_mode = "API"
+    bootstrap_cluster_creator_admin_permissions = true
   }
   vpc_config {
     subnet_ids              = var.subnet_ids
@@ -227,26 +228,6 @@ resource "aws_eks_node_group" "worker-node-group" {
 }
 
 
-##############################################################################################################################
-# AWS EKS VPC CNI plugin
-# https://docs.aws.amazon.com/eks/latest/userguide/cni-iam-role.html
-#############################################################################################################################
-
-resource "null_resource" "vpc_cni_plugin_for_iam" {
-  provisioner "local-exec" {
-    command = <<EOF
-      curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      /tmp/eksctl version
-      /tmp/eksctl create iamserviceaccount --name aws-node --namespace kube-system --cluster ${aws_eks_cluster.kube_cluster.name} --region ${var.region} --role-name "${aws_eks_cluster.kube_cluster.name}_AmazonEKSVPCCNIRole" --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy --override-existing-serviceaccounts --approve
-    EOF
-  }
-  depends_on = [
-    aws_eks_cluster.kube_cluster,
-    aws_eks_node_group.worker-node-group
-  ]
-
-}
-
 ########################################
 # VPC CNI
 #########################################
@@ -254,7 +235,7 @@ resource "null_resource" "vpc_cni_plugin_for_iam" {
 resource "aws_eks_addon" "vpc-cni" {
   cluster_name      = aws_eks_cluster.kube_cluster.name
   addon_name        = "vpc-cni"
-  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
 
   configuration_values = jsonencode({
     enableNetworkPolicy= "true"
