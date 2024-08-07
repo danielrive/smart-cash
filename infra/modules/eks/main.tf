@@ -74,7 +74,7 @@ resource "aws_eks_cluster" "kube_cluster" {
   enabled_cluster_log_types = var.cluster_enabled_log_types
   access_config {
     authentication_mode = "API"
-    bootstrap_cluster_creator_admin_permissions = false
+    bootstrap_cluster_creator_admin_permissions = true
   }
   vpc_config {
     subnet_ids              = var.subnet_ids
@@ -88,8 +88,6 @@ resource "aws_eks_cluster" "kube_cluster" {
 ################################
 #### IAM ROLE CLUSTER ADMIN 
 
-## Hardcoded user name 
-
 resource "aws_iam_role" "eks_admin_iam_role" {
   name = "admin-role-eks-${local.eks_cluster_name}-${var.region}"
 
@@ -101,9 +99,8 @@ resource "aws_iam_role" "eks_admin_iam_role" {
     "Statement": [
         {
             "Effect": "Allow",
-            "Principal": [
+            "Principal": {
                 "AWS": "arn:aws:iam::${var.account_number}:user/daniel.rivera"  
-                ]
             },
             "Action": "sts:AssumeRole",
             "Condition": {}
