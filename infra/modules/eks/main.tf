@@ -224,7 +224,7 @@ resource "aws_eks_node_group" "worker-node-group" {
   node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
   update_config {
-    max_unavailable_percentage = 0
+    max_unavailable = 1
   }
   scaling_config {
     desired_size = var.min_instances_node_group
@@ -240,7 +240,6 @@ resource "aws_eks_node_group" "worker-node-group" {
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
     aws_eks_cluster.kube_cluster,
     aws_iam_role_policy_attachment.ecr_read_only,
     aws_launch_template.node_group
