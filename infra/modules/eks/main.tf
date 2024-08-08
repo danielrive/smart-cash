@@ -36,13 +36,8 @@ EOF
 
 }
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_iam_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly-EKS" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.eks_iam_role.name
 }
 
@@ -164,7 +159,7 @@ Nodes must have a role that allows to make calls to AWS API, the role is associa
 that is attached to EC2 instance
 */
 
-resource "aws_iam_role" "workernodes" {
+resource "aws_iam_role" "worker_nodes" {
   name = "role-${local.eks_node_group_name}"
   assume_role_policy = jsonencode({
     Statement = [{
@@ -178,19 +173,14 @@ resource "aws_iam_role" "workernodes" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.workernodes.name
+  role       = aws_iam_role.worker_nodes.name
 }
 
-resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.workernodes.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.workernodes.name
+  role       = aws_iam_role.worker_nodes.name
 }
 
 
@@ -198,6 +188,30 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
 ################################
 #####  EKS manage node group####
 ################################
+
+// Launch configuration for Node Group
+
+resource "aws_launch_template" "node_group" {
+  name = "template-eks-${local.eks_node_group_name}"
+  image_id = var.AMI_for_worker_nodes
+  instance_type = var.instance_type_worker_nodes
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+    instance_metadata_tags      = "enabled"
+  }
+  monitoring {
+    enabled = true
+  }
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "template-eks-${local.eks_node_group_name}"
+    }
+  }
+}
+
 
 /*
 node group managed by eks, this contains the ec2 instances that will be the worker nodes
@@ -207,23 +221,29 @@ ec2 instances has associated the node role created before
 resource "aws_eks_node_group" "worker-node-group" {
   cluster_name    = local.eks_cluster_name
   node_group_name = local.eks_node_group_name
-  node_role_arn   = aws_iam_role.workernodes.arn
+  node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
-  ami_type        = var.AMI_for_worker_nodes
-  instance_types  = var.instance_type_worker_nodes
+  update_config {
+    max_unavailable_percentage = 0
+  }
   scaling_config {
     desired_size = var.min_instances_node_group
     max_size     = var.max_instances_node_group
     min_size     = var.min_instances_node_group
   }
+  launch_template {
+    id = aws_launch_template.node_group.id
+    version = aws_launch_template.node_group.latest_version
+  }
 
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
-    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.eks_worker_node_policy,
+    aws_iam_role_policy_attachment.eks_cni_policy,
     aws_eks_cluster.kube_cluster,
-    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly
+    aws_iam_role_policy_attachment.ecr_read_only,
+    aws_launch_template.node_group
   ]
 }
 
