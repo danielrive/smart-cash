@@ -124,6 +124,10 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
+resource "aws_iam_role_policy_attachment" "eks_admin_policy" {
+  policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  role       = aws_iam_role.eks_admin_iam_role.name
+}
 
 
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
@@ -147,8 +151,6 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
   thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
   url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
-
-
 
 
 ################################
@@ -199,7 +201,7 @@ resource "aws_launch_template" "node_group" {
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"
-    http_put_response_hop_limit = 1
+    http_put_response_hop_limit = 2
     instance_metadata_tags      = "enabled"
   }
   monitoring {
@@ -224,9 +226,9 @@ resource "aws_eks_node_group" "worker-node-group" {
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
-  #update_config {
-  #  max_unavailable = 1
-  #}
+  update_config {
+    max_unavailable = 1
+  }
   scaling_config {
     desired_size = var.min_instances_node_group
     max_size     = var.max_instances_node_group
@@ -236,7 +238,6 @@ resource "aws_eks_node_group" "worker-node-group" {
     id      = aws_launch_template.node_group.id
     version = aws_launch_template.node_group.latest_version
   }
-
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
@@ -256,9 +257,7 @@ resource "aws_eks_node_group" "worker-node-group" {
 
 resource "aws_iam_role" "vpc_cni_role" {
   name = "vpc-cni-s-${local.eks_cluster_name}-${var.region}"
-
   path = "/"
-
   assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",

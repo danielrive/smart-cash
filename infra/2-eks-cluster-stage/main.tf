@@ -31,7 +31,7 @@ module "eks_cluster" {
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
   cluster_version              = local.k8_version
-  subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
+  subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets  ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes         = data.aws_ami.worker_nodes.image_id
