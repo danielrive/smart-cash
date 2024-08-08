@@ -23,6 +23,7 @@ on:
       - feat/*
     paths:
       - "infra/**"
+      - '!infra/modules/**'
   pull_request:
     branches:
       - develop
