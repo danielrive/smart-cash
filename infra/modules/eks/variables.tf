@@ -72,12 +72,19 @@ variable "private_endpoint_api" {
 }
 
 variable "public_endpoint_api" {
-  description = "Whether the Amazon EKS private API server endpoint is enabled"
+  description = "Whether the Amazon EKS public API server endpoint is enabled"
   type        = bool
   default     = false
 }
 
+variable "vpc_cni_version" {
+  description = "version of the k8 cni vpc "
+  type        = string
+}
+
+
+
 variable "account_number" {
-  type = string
+  type    = string
   default = ""
 }

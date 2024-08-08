@@ -1,10 +1,11 @@
 locals {
-  brach_gitops_repo = var.environment
+  brach_gitops_repo               = var.environment
   path_tf_repo_flux_kustomization = "./k8-manifests/bootstrap/kustomizations"
-  path_tf_repo_flux_sources = "./k8-manifests/bootstrap/flux-sources"
-  path_tf_repo_flux_core = "./k8-manifests/core"
-  cluster_name = "${var.project_name}-${var.environment}"
-  gh_username = "danielrive"
+  path_tf_repo_flux_sources       = "./k8-manifests/bootstrap/flux-sources"
+  path_tf_repo_flux_core          = "./k8-manifests/core"
+  cluster_name                    = "${var.project_name}-${var.environment}"
+  gh_username                     = "danielrive"
+  k8_version                      = "1.29"
 }
 
 
@@ -14,8 +15,8 @@ locals {
 // Get AMI ID for worker nodes instances
 
 data "aws_ami" "worker_nodes" {
-  most_recent      = true
-  name_regex       = "^EKS-Node-with-Preloaded-Images-AL2_x86_64"
+  most_recent = true
+  name_regex  = "^amazon-eks-node-${local.k8_version}"
 
   filter {
     name   = "virtualization-type"
@@ -29,7 +30,7 @@ module "eks_cluster" {
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = "1.29"
+  cluster_version              = local.k8_version
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
@@ -41,6 +42,7 @@ module "eks_cluster" {
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
+  vpc_cni_version              = "v1.18.3-eksbuild.1"
 }
 
 
@@ -76,8 +78,8 @@ EOF
 }
 
 resource "aws_iam_policy" "cert-manager-iam-role-policy" {
-  name        = "policy-cert-manager-iam-role"
-  policy      = data.aws_iam_policy_document.cert-manager-issuer.json
+  name   = "policy-cert-manager-iam-role"
+  policy = data.aws_iam_policy_document.cert-manager-issuer.json
 }
 
 resource "aws_iam_role_policy_attachment" "cert-manager-role" {
@@ -90,12 +92,12 @@ resource "aws_iam_role_policy_attachment" "cert-manager-role" {
 
 
 #### Get Kubeconfig
-  # $1 = CLUSTER_NAME
-  # $2 = AWS_REGION
-  # $3 = GH_USER_NAME
-  # $4 = FLUX_REPO_NAME
+# $1 = CLUSTER_NAME
+# $2 = AWS_REGION
+# $3 = GH_USER_NAME
+# $4 = FLUX_REPO_NAME
 resource "null_resource" "bootstrap-flux" {
-  depends_on          = [module.eks_cluster]
+  depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
     ./bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name} ${var.environment}
@@ -115,15 +117,15 @@ resource "null_resource" "bootstrap-flux" {
 ################################################
 ##### Flux kustomizations bootstrap /kubernetes/bootstrap
 resource "github_repository_file" "kustomizations" {
-  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
-  for_each            = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/bootstrap/${each.key}"
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  for_each   = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_kustomization}/${each.key}",
     {
-      ENVIRONMENT = var.environment
+      ENVIRONMENT  = var.environment
       CLUSTER_NAME = local.cluster_name
     }
   )
@@ -138,11 +140,11 @@ resource "github_repository_file" "kustomizations" {
 ##### Flux Sources 
 
 resource "github_repository_file" "sources" {
-  depends_on          = [module.eks_cluster,github_repository_file.kustomizations]
-  for_each            = fileset(local.path_tf_repo_flux_sources, "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/bootstrap/${each.key}"
+  depends_on = [module.eks_cluster, github_repository_file.kustomizations]
+  for_each   = fileset(local.path_tf_repo_flux_sources, "*.yaml")
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_sources}/${each.key}",
     {}
@@ -157,19 +159,19 @@ resource "github_repository_file" "sources" {
 ##### Core resources
 
 resource "github_repository_file" "core_resources" {
-  depends_on          = [module.eks_cluster,null_resource.bootstrap-flux]
-  for_each            = fileset(local.path_tf_repo_flux_core, "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "clusters/${local.cluster_name}/core/${each.key}"
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/core/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_core}/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION = var.region
-      ENVIRONMENT = var.environment
-      PROJECT = var.project_name    
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"    
+      AWS_REGION            = var.region
+      ENVIRONMENT           = var.environment
+      PROJECT               = var.project_name
+      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
     }
   )
   commit_message      = "Managed by Terraform"

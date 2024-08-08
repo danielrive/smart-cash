@@ -1,6 +1,6 @@
 
 locals {
-  eks_cluster_name   = var.cluster_name
+  eks_cluster_name    = var.cluster_name
   eks_node_group_name = "${var.project_name}-${var.environment}-eks-node-group"
 }
 
@@ -68,7 +68,7 @@ resource "aws_eks_cluster" "kube_cluster" {
   }
   enabled_cluster_log_types = var.cluster_enabled_log_types
   access_config {
-    authentication_mode = "API"
+    authentication_mode                         = "API"
     bootstrap_cluster_creator_admin_permissions = true
   }
   vpc_config {
@@ -106,14 +106,14 @@ EOF
 }
 
 resource "aws_eks_access_entry" "eks_admin_entry" {
-  depends_on = [aws_eks_cluster.kube_cluster,aws_iam_role.eks_admin_iam_role]
-  cluster_name      = aws_eks_cluster.kube_cluster.name
-  principal_arn     = aws_iam_role.eks_admin_iam_role.arn
-  type              = "STANDARD"
+  depends_on    = [aws_eks_cluster.kube_cluster, aws_iam_role.eks_admin_iam_role]
+  cluster_name  = aws_eks_cluster.kube_cluster.name
+  principal_arn = aws_iam_role.eks_admin_iam_role.arn
+  type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "eks_admin" {
-  depends_on = [aws_eks_access_entry.eks_admin_entry]
+  depends_on    = [aws_eks_access_entry.eks_admin_entry]
   cluster_name  = aws_eks_cluster.kube_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
   principal_arn = aws_iam_role.eks_admin_iam_role.arn
@@ -128,8 +128,9 @@ resource "aws_eks_access_policy_association" "eks_admin" {
 
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
+#########################
 ## OIDC Config
-#######################################
+#########################
 # Get tls certificate from EKS cluster identity issuer
 
 data "tls_certificate" "cluster" {
@@ -192,8 +193,8 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 // Launch configuration for Node Group
 
 resource "aws_launch_template" "node_group" {
-  name = "template-eks-${local.eks_node_group_name}"
-  image_id = var.AMI_for_worker_nodes
+  name          = "template-eks-${local.eks_node_group_name}"
+  image_id      = var.AMI_for_worker_nodes
   instance_type = var.instance_type_worker_nodes
   metadata_options {
     http_endpoint               = "enabled"
@@ -223,16 +224,16 @@ resource "aws_eks_node_group" "worker-node-group" {
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
-  update_config {
-    max_unavailable = 1
-  }
+  #update_config {
+  #  max_unavailable = 1
+  #}
   scaling_config {
     desired_size = var.min_instances_node_group
     max_size     = var.max_instances_node_group
     min_size     = var.min_instances_node_group
   }
   launch_template {
-    id = aws_launch_template.node_group.id
+    id      = aws_launch_template.node_group.id
     version = aws_launch_template.node_group.latest_version
   }
 
@@ -251,12 +252,47 @@ resource "aws_eks_node_group" "worker-node-group" {
 # VPC CNI
 #########################################
 
-resource "aws_eks_addon" "vpc-cni" {
-  cluster_name      = aws_eks_cluster.kube_cluster.name
-  addon_name        = "vpc-cni"
-  resolve_conflicts_on_update = "OVERWRITE"
+// IAM role for CNI add-on
 
+resource "aws_iam_role" "vpc_cni_role" {
+  name = "vpc-cni-s-${local.eks_cluster_name}-${var.region}"
+
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::${var.account_number}:oidc-provider/${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com",
+                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-node"
+                }
+            }
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "cni_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.vpc_cni_role.name
+}
+
+resource "aws_eks_addon" "vpc-cni" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "vpc-cni"
+  addon_version               = var.vpc_cni_version
+  service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
+  resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
-    enableNetworkPolicy= "true"
+    enableNetworkPolicy = "true"
   })
 }
