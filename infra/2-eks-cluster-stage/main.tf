@@ -11,6 +11,17 @@ locals {
 ##########################
 ####### EKS Cluster
 
+// Get AMI ID for worker nodes instances
+
+data "aws_ami" "worker_nodes" {
+  most_recent      = true
+  name_regex       = "^EKS-Node-with-Preloaded-Images-AL2_x86_64"
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
 
 module "eks_cluster" {
   source                       = "../modules/eks"
@@ -22,7 +33,7 @@ module "eks_cluster" {
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
-  AMI_for_worker_nodes         = "AL2_x86_64"
+  AMI_for_worker_nodes         = data.aws_ami.worker_nodes.arn
   desired_nodes                = 2
   max_instances_node_group     = 2
   min_instances_node_group     = 2
