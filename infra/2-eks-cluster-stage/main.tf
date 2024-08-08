@@ -33,7 +33,7 @@ module "eks_cluster" {
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
   retention_control_plane_logs = 7
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
-  AMI_for_worker_nodes         = data.aws_ami.worker_nodes.arn
+  AMI_for_worker_nodes         = data.aws_ami.worker_nodes.image_id
   desired_nodes                = 2
   max_instances_node_group     = 2
   min_instances_node_group     = 2
