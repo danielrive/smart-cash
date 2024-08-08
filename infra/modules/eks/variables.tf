@@ -47,7 +47,7 @@ variable "retention_control_plane_logs" {
 
 variable "instance_type_worker_nodes" {
   description = "a list with the instances types to use for eks worker nodes"
-  type        = list(any)
+  type        = string
 }
 
 variable "AMI_for_worker_nodes" {

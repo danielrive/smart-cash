@@ -21,7 +21,7 @@ module "eks_cluster" {
   cluster_version              = "1.29"
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets
   retention_control_plane_logs = 7
-  instance_type_worker_nodes   = var.environment == "develop" ? ["t3.medium"] : ["t3.medium"]
+  instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes         = "AL2_x86_64"
   desired_nodes                = 2
   max_instances_node_group     = 2
