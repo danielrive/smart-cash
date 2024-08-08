@@ -83,6 +83,11 @@ variable "vpc_cni_version" {
 }
 
 
+variable "storage_nodes" {
+  type    = number
+  default = 20
+}
+
 
 variable "account_number" {
   type    = string

@@ -38,6 +38,7 @@ module "eks_cluster" {
   desired_nodes                = 2
   max_instances_node_group     = 2
   min_instances_node_group     = 2
+  storage_nodes                = 20
   private_endpoint_api         = true
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn

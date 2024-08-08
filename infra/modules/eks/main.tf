@@ -85,9 +85,7 @@ resource "aws_eks_cluster" "kube_cluster" {
 
 resource "aws_iam_role" "eks_admin_iam_role" {
   name = "admin-role-eks-${local.eks_cluster_name}-${var.region}"
-
   path = "/"
-
   assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -119,8 +117,7 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   principal_arn = aws_iam_role.eks_admin_iam_role.arn
 
   access_scope {
-    type       = "namespace"
-    namespaces = ["*"]
+    type       = "cluster"
   }
 }
 
@@ -198,6 +195,13 @@ resource "aws_launch_template" "node_group" {
   name          = "template-eks-${local.eks_node_group_name}"
   image_id      = var.AMI_for_worker_nodes
   instance_type = var.instance_type_worker_nodes
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size = var.storage_nodes
+    }
+  }
+
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"
@@ -256,7 +260,7 @@ resource "aws_eks_node_group" "worker-node-group" {
 // IAM role for CNI add-on
 
 resource "aws_iam_role" "vpc_cni_role" {
-  name = "vpc-cni-s-${local.eks_cluster_name}-${var.region}"
+  name = "vpc-cni-${local.eks_cluster_name}-${var.region}"
   path = "/"
   assume_role_policy = <<EOF
 {
