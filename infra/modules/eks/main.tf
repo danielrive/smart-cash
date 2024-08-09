@@ -121,12 +121,6 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "eks_admin_policy" {
-  policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
-  role       = aws_iam_role.eks_admin_iam_role.name
-}
-
-
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
 #########################
