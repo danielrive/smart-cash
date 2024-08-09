@@ -27,11 +27,9 @@ resource "aws_dynamodb_table" "dynamo_table" {
   }
 
   attribute {
-
     name = "userId"
     type = "S"
   }
-
   global_secondary_index {
     name               = "by_userId"
     hash_key           = "userId"
