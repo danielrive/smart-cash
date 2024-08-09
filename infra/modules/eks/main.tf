@@ -193,7 +193,6 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 
 resource "aws_launch_template" "node_group" {
   name          = "template-eks-${local.eks_node_group_name}"
-  image_id      = var.AMI_for_worker_nodes
   instance_type = var.instance_type_worker_nodes
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -230,6 +229,7 @@ resource "aws_eks_node_group" "worker-node-group" {
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
+  ami_type        = var.AMI_for_worker_nodes
   update_config {
     max_unavailable = 1
   }
