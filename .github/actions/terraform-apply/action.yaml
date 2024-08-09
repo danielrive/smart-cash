@@ -20,10 +20,6 @@ runs:
       uses: hashicorp/setup-terraform@v3
       with: 
         terraform_version: '${{ env.TERRAFORM_VERSION }}'
-    - name: Validate terraform version
-      id: validate-tf-version
-      run: terraform version
-      shell: bash
     - name: Download Artifact
       id: download-tf-plan
       uses: actions/download-artifact@v4

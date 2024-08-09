@@ -1,9 +1,9 @@
 data "terraform_remote_state" "base" {
   backend = "s3"
   config = {
-    bucket = "${var.project_name}-tf-state-lock-${var.environment}-${var.region}" 
+    bucket = "${var.project_name}-tf-state-lock-${var.environment}-${var.region}"
     key    = "stage/1-base-stage/1-base-stage.tfstate"
-    region  = var.region
+    region = var.region
   }
 }
 
@@ -29,16 +29,16 @@ data "aws_iam_policy_document" "cert-manager-issuer" {
   statement {
     actions   = ["route53:GetChange"]
     resources = ["arn:aws:route53:::change/*"]
-    effect = "Allow"
+    effect    = "Allow"
   }
   statement {
-    actions   = ["route53:ChangeResourceRecordSets","route53:ListResourceRecordSets",]
+    actions   = ["route53:ChangeResourceRecordSets", "route53:ListResourceRecordSets", ]
     resources = ["arn:aws:route53:::hostedzone/*"]
-    effect = "Allow"
+    effect    = "Allow"
   }
   statement {
-    actions   = ["route53:ListHostedZonesByName",]
+    actions   = ["route53:ListHostedZonesByName", ]
     resources = ["*"]
-    effect = "Allow"
+    effect    = "Allow"
   }
 }
