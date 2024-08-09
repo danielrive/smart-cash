@@ -26,24 +26,27 @@ data "aws_ami" "worker_nodes" {
 
 module "eks_cluster" {
   source                       = "../modules/eks"
+  ### Control plane configs
   environment                  = var.environment
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
   cluster_version              = local.k8_version
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets  ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
+  private_endpoint_api         = true
+  public_endpoint_api          = true
+  kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
+  account_number               = data.aws_caller_identity.id_account.id
+  vpc_cni_version              = "v1.18.3-eksbuild.1"
+  cluster_admins               = "daniel.rivera"
   retention_control_plane_logs = 7
+  ### configs for worker nodes
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes         = "AL2_x86_64"
   desired_nodes                = 2
   max_instances_node_group     = 2
   min_instances_node_group     = 2
   storage_nodes                = 20
-  private_endpoint_api         = true
-  public_endpoint_api          = true
-  kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
-  account_number               = data.aws_caller_identity.id_account.id
-  vpc_cni_version              = "v1.18.3-eksbuild.1"
 }
 
 

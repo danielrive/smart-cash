@@ -93,7 +93,7 @@ resource "aws_iam_role" "eks_admin_iam_role" {
         {
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::${var.account_number}:user/daniel.rivera"  
+                "AWS": "arn:aws:iam::${var.account_number}:user/${cluster_admins}"  
             },
             "Action": "sts:AssumeRole",
             "Condition": {}
