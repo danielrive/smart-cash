@@ -12,7 +12,7 @@ on:
         options:
           -  develop
           -  main
-          - feat/refactor-golang
+          - feat/secure-eks
       stage:
         description: 'stage name to destroy'
         required: true

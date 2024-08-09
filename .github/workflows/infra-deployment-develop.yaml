@@ -20,9 +20,10 @@ on:
   push:
     branches:
       - develop
-      - feature/*
+      - feat/*
     paths:
       - "infra/**"
+      - '!infra/modules/**'
   pull_request:
     branches:
       - develop

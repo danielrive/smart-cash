@@ -11,10 +11,6 @@ variable "project_name" {
   type = string
 }
 
-variable "userRoleARN" {
-  type = string
-}
-
 variable "cluster_name" {
   type = string
 }
@@ -51,7 +47,7 @@ variable "retention_control_plane_logs" {
 
 variable "instance_type_worker_nodes" {
   description = "a list with the instances types to use for eks worker nodes"
-  type        = list(any)
+  type        = string
 }
 
 variable "AMI_for_worker_nodes" {
@@ -76,12 +72,29 @@ variable "private_endpoint_api" {
 }
 
 variable "public_endpoint_api" {
-  description = "Whether the Amazon EKS private API server endpoint is enabled"
+  description = "Whether the Amazon EKS public API server endpoint is enabled"
   type        = bool
   default     = false
 }
 
+variable "vpc_cni_version" {
+  description = "version of the k8 cni vpc "
+  type        = string
+}
+
+variable "cluster_admins" {
+  description = "aws user names that will be the admins of cluster"
+  type = string 
+}
+
+
+variable "storage_nodes" {
+  type    = number
+  default = 20
+}
+
+
 variable "account_number" {
-  type = string
+  type    = string
   default = ""
 }
