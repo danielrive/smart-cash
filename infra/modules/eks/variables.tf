@@ -93,6 +93,11 @@ variable "storage_nodes" {
   default = 20
 }
 
+variable "key_pair_name" {
+  type = string
+  default = ""
+}
+
 
 variable "account_number" {
   type    = string

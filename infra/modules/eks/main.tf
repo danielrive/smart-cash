@@ -188,6 +188,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 resource "aws_launch_template" "node_group" {
   name          = "template-eks-${local.eks_node_group_name}"
   instance_type = var.instance_type_worker_nodes
+   key_name = var.key_pair_name
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
