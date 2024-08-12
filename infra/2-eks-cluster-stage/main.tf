@@ -41,6 +41,7 @@ module "eks_cluster" {
   cluster_admins               = "daniel.rivera"
   retention_control_plane_logs = 7
   ### configs for worker nodes
+  key_pair_name                = "k8-admin"
   instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes         = "AL2_x86_64"
   desired_nodes                = 2
