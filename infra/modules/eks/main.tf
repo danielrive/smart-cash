@@ -121,6 +121,43 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   }
 }
 
+/// eks policy for role
+
+resource "aws_iam_policy" "eks-admin" {
+  name        = "policy-admin-eks-${local.eks_cluster_name}-${var.region}"
+  path        = "/"
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowClusterMgnt",
+            "Effect": "Allow",
+            "Action": [
+                "eks:*"
+            ],
+            "Resource": "${aws_eks_cluster.kube_cluster.arn}"
+        },
+        {
+          "Sid": "AllowListClusters",
+            "Effect": "Allow",
+            "Action": [
+                "eks:DescribeCluster",
+                "eks:ListClusters"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "eks_admin_role" {
+  policy_arn = aws_iam_policy.eks-admin.arn
+  role       = aws_iam_role.eks_admin_iam_role.name
+}
+
+
 /// Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
 #########################
