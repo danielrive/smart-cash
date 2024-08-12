@@ -20,6 +20,7 @@ spec:
         app: ${SERVICE_NAME}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

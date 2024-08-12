@@ -12,7 +12,7 @@ on:
         options:
           -  develop
           -  main
-          - feat/secure-eks
+          - feat/secure-eks-v2
       stage:
         description: 'stage name to destroy'
         required: true
