@@ -113,7 +113,7 @@ resource "aws_eks_access_entry" "eks_admin_entry" {
 resource "aws_eks_access_policy_association" "eks_admin" {
   depends_on    = [aws_eks_access_entry.eks_admin_entry]
   cluster_name  = aws_eks_cluster.kube_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = aws_iam_role.eks_admin_iam_role.arn
 
   access_scope {
