@@ -120,8 +120,6 @@ resource "aws_iam_role" "flux_imagerepository" {
 EOF
 }
 
-
-
 ###############################################
 #######    Flux Bootstrap 
 
@@ -153,7 +151,7 @@ resource "github_repository_file" "patch_flux" {
   branch     = local.brach_gitops_repo
   file       = "clusters/${local.cluster_name}/bootstrap/flux-system/kustomization.yaml"
   content = templatefile(
-    "./k8-manifests/bootstrap/patches-fluxBootstrap",
+    "./k8-manifests/bootstrap/patches-fluxBootstrap/mainKustomization.yaml",
     {
       ARN_ROLE  = aws_iam_role.flux_imagerepository.arn
     }
