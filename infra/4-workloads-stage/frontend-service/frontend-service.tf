@@ -37,6 +37,7 @@ resource "aws_iam_role" "iam_sa_role" {
 module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "frontend-service"
+  region = var.region
   project_name = var.project_name
   environment  = var.environment
   account_id   = data.aws_caller_identity.id_account.id

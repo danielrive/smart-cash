@@ -92,6 +92,36 @@ resource "aws_iam_role_policy_attachment" "cert-manager-role" {
   role       = aws_iam_role.cert-manager-iam-role.name
 }
 
+###################################################################
+########## IAM Role for flux Image update ECR
+
+resource "aws_iam_role" "flux_imagerepository" {
+  name = "flux-images-${var.environment}"
+  path = "/"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
+      },
+      "Condition": {
+        "StringEquals": {
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud" : "sts.amazonaws.com",
+          "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub" : "system:serviceaccount:flux-system:image-reflector-controller"
+        }
+      }
+    }
+  ]
+}
+EOF
+}
+
+
+
 ###############################################
 #######    Flux Bootstrap 
 
@@ -113,6 +143,26 @@ resource "null_resource" "bootstrap-flux" {
   }
 
 }
+
+#######################################################
+#####  Patch service account for imageRepositoryRole
+
+resource "github_repository_file" "patch_flux" {
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/flux-system/kustomization.yaml"
+  content = templatefile(
+    "./k8-manifests/bootstrap/patches-fluxBootstrap",
+    {
+      ARN_ROLE  = aws_iam_role.flux_imagerepository.arn
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+} 
 
 ###############################################
 #######    GitOps Configuration 

@@ -46,7 +46,10 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
         Sid    = "AllowPull",
         Effect = "Allow",
         Principal = {
-          "AWS" : "${var.service_role}"
+          "AWS" : [
+            "${var.service_role}",
+            "arn:aws:iam::${var.account_id}:role/flux-images-${var.environment}-${var.region}",
+          ]
         },
         Action = [
                 "ecr:BatchCheckLayerAvailability",
@@ -59,6 +62,7 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
         Effect = "Allow",
         Principal = {
           "AWS" : "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"
+
         },
         Action = [
                 "ecr:BatchCheckLayerAvailability",

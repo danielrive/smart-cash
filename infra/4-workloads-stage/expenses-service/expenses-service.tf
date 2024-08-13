@@ -126,6 +126,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "${local.this_service_name}-service"
+  region = var.region
   project_name = var.project_name
   environment  = var.environment
   account_id   = data.aws_caller_identity.id_account.id

@@ -23,3 +23,8 @@ variable "service_role" {
   type = string
   default = ""
 }
+
+variable "region" {
+  description = "Region where the VPC will be created."
+  type        = string
+}
