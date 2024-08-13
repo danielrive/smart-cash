@@ -185,6 +185,7 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
 #####  EKS worker node role ####
 ################################
 
+
 /*
 Nodes must have a role that allows to make calls to AWS API, the role is associate to a instance profile
 that is attached to EC2 instance
@@ -217,7 +218,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 
 
 ################################
-#####  EKS manage node group####
+#####  EKS manage node group ###
 ################################
 
 // Launch configuration for Node Group

@@ -30,7 +30,7 @@ resource "github_repository_file" "common_resources" {
 }
 
 ############################
-##### OPA constraints
+##### OPA constraints(policies)
 
 resource "github_repository_file" "opa_constraints" {
   repository = data.github_repository.flux-gitops.name

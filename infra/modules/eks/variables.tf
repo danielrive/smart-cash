@@ -98,8 +98,12 @@ variable "key_pair_name" {
   default = ""
 }
 
-
 variable "account_number" {
+  type    = string
+  default = ""
+}
+
+variable "vpc_id" {
   type    = string
   default = ""
 }
