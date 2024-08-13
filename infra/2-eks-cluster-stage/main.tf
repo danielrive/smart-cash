@@ -96,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "cert-manager-role" {
 ########## IAM Role for flux Image update ECR
 
 resource "aws_iam_role" "flux_imagerepository" {
-  name = "flux-images-${var.environment}"
+  name = "flux-images-${var.environment}-${var.region}"
   path = "/"
   assume_role_policy = <<EOF
 {
