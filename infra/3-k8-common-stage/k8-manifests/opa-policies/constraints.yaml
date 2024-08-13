@@ -16,3 +16,4 @@ spec:
       - prod
   parameters:
     registry: "${ECR_REGISTRY}"
+
