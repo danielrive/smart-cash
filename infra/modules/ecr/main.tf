@@ -39,9 +39,7 @@ EOF
 //  IAM Policy for repository, just allow pull for specific roles
 
 resource "aws_ecr_registry_policy" "allow_pod_pull" {
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = <<EOF 
+  policy = <<EOF 
     {
     "Version": "2012-10-17",
     "Statement": [
@@ -70,5 +68,4 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
     ]
 }
 EOF
-  })
 }
