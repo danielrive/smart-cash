@@ -14,7 +14,6 @@ resource "aws_ecr_repository" "this" {
 
 resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
   repository = aws_ecr_repository.this.name
-
   policy = <<EOF
 {
     "rules": [
@@ -39,33 +38,42 @@ EOF
 //  IAM Policy for repository, just allow pull for specific roles
 
 resource "aws_ecr_registry_policy" "allow_pod_pull" {
-  policy = <<EOF 
-    {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${var.service_role}"  
-            },
-            "Action": [
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "alloPull",
+        Effect = "Allow",
+        Principal = {
+          "AWS" : "${var.service_role}"
+        },
+        Action = [
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
                 "ecr:GetDownloadUrlForLayer"
-              ]
+              ],
+        Resource = [
+          aws_ecr_repository.this.arn
+        ]
+      },
+      {
+        Sid    = "alloPush",
+        Effect = "Allow",
+        Principal = {
+          "AWS" : "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"
         },
-        {
-            "Effect": "Allow",
-              "Principal": {
-                  "AWS": "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"  
-              },
-              "Action": [
-                  "ecr:BatchCheckLayerAvailability",
-                  "ecr:BatchGetImage",
-                  "ecr:GetDownloadUrlForLayer"
-                ]
-        }
+        Action = [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:CompleteLayerUpload",
+                "ecr:InitiateLayerUpload",
+                "ecr:PutImage",
+                "ecr:UploadLayerPart"
+              ],
+        Resource = [
+          aws_ecr_repository.this.arn
+        ]
+      }
+
     ]
-}
-EOF
+  })
 }
