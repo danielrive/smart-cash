@@ -35,3 +35,40 @@ resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
 }
 EOF
 }
+
+//  IAM Policy for repository, just allow pull for specific roles
+
+resource "aws_ecr_registry_policy" "allow_pod_pull" {
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = <<EOF 
+    {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "${var.service_role}"  
+            },
+            "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer"
+              ]
+        },
+        {
+            "Effect": "Allow",
+              "Principal": {
+                  "AWS": "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"  
+              },
+              "Action": [
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:BatchGetImage",
+                  "ecr:GetDownloadUrlForLayer"
+                ]
+        }
+    ]
+}
+EOF
+  })
+}

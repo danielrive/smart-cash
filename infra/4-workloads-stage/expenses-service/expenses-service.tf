@@ -128,6 +128,8 @@ module "ecr_registry" {
   name         = "${local.this_service_name}-service"
   project_name = var.project_name
   environment  = var.environment
+  account_id   = data.aws_caller_identity.id_account.id
+  service_role = aws_iam_role.iam_sa_role.arn
 }
 
 

@@ -89,3 +89,15 @@ resource "aws_vpc_endpoint_route_table_association" "s3_endpoint_association" {
   vpc_endpoint_id = aws_vpc_endpoint.s3.id
   route_table_id  = module.vpc.private_route_table_ids[count.index]
 }
+
+### AWS VPC DynamoDB endpoint
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id       = module.vpc.vpc_id
+  service_name = "com.amazonaws.${var.region}.dynamodb"
+}
+
+resource "aws_vpc_endpoint_route_table_association" "dynamodb" {
+  count           = length(module.vpc.private_route_table_ids)
+  vpc_endpoint_id = aws_vpc_endpoint.dynamodb.id
+  route_table_id  = module.vpc.private_route_table_ids[count.index]
+}

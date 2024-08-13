@@ -14,3 +14,12 @@ variable "force_delete" {
   type    = bool
   default = true
 }
+
+variable "account_id" {
+  type = number
+}
+
+variable "service_role" {
+  type = string
+  default = ""
+}
