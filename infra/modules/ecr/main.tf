@@ -55,6 +55,7 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
                 "ecr:GetDownloadUrlForLayer",
+                "ecr:GetAuthorizationToken",
               ]
       },
       {
@@ -65,6 +66,7 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
 
         },
         Action = [
+                "ecr:GetAuthorizationToken",
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:CompleteLayerUpload",
                 "ecr:InitiateLayerUpload",
