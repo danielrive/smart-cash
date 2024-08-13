@@ -106,7 +106,7 @@ resource "aws_iam_role" "flux_imagerepository" {
       "Effect": "Allow",
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${`module.eks_cluster.cluster_oidc}"
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
       },
       "Condition": {
         "StringEquals": {
