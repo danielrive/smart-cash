@@ -42,7 +42,7 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid    = "alloPull",
+        Sid    = "AllowPull",
         Effect = "Allow",
         Principal = {
           "AWS" : "${var.service_role}"
@@ -50,14 +50,11 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
         Action = [
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer"
-              ],
-        Resource = [
-          "${aws_ecr_repository.this.arn}"
-        ]
+                "ecr:GetDownloadUrlForLayer",
+              ]
       },
       {
-        Sid    = "alloPush",
+        Sid    = "AllowPush",
         Effect = "Allow",
         Principal = {
           "AWS" : "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"
@@ -67,11 +64,8 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
                 "ecr:CompleteLayerUpload",
                 "ecr:InitiateLayerUpload",
                 "ecr:PutImage",
-                "ecr:UploadLayerPart"
-              ],
-        Resource = [
-          "${aws_ecr_repository.this.arn}"
-        ]
+                "ecr:UploadLayerPart",
+              ]
       }
 
     ]
