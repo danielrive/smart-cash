@@ -53,7 +53,7 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
                 "ecr:GetDownloadUrlForLayer"
               ],
         Resource = [
-          aws_ecr_repository.this.arn
+          "${aws_ecr_repository.this.arn}"
         ]
       },
       {
@@ -70,7 +70,7 @@ resource "aws_ecr_registry_policy" "allow_pod_pull" {
                 "ecr:UploadLayerPart"
               ],
         Resource = [
-          aws_ecr_repository.this.arn
+          "${aws_ecr_repository.this.arn}"
         ]
       }
 
