@@ -65,7 +65,7 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
 }
 
 # Policy for ECR endpoint
-
+/*
 resource "aws_vpc_endpoint_policy" "ecr" {
   vpc_endpoint_id = aws_vpc_endpoint.ecr_dkr_vpc_endpoint.id
   policy = jsonencode({
@@ -81,6 +81,7 @@ resource "aws_vpc_endpoint_policy" "ecr" {
     ]
     })
 }
+*/
 
 resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   vpc_id              = module.vpc.vpc_id
@@ -96,7 +97,7 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
 }
 
 # Policy for ECR endpoint
-
+/*
 resource "aws_vpc_endpoint_policy" "ecr-api" {
   vpc_endpoint_id = aws_vpc_endpoint.ecr_api_vpc_endpoint.id
   policy = jsonencode({
@@ -112,7 +113,7 @@ resource "aws_vpc_endpoint_policy" "ecr-api" {
     ]
     })
 }
-
+*/
 ### AWS VPC S3 GATEWAY ENDPOINT
 
 resource "aws_vpc_endpoint" "s3" {
