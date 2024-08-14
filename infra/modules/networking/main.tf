@@ -64,25 +64,6 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   }
 }
 
-# Policy for ECR endpoint
-/*
-resource "aws_vpc_endpoint_policy" "ecr" {
-  vpc_endpoint_id = aws_vpc_endpoint.ecr_dkr_vpc_endpoint.id
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "LimitECRAccess",
-        "Principal": "*",
-        "Action": "*",
-        "Effect": "Allow",
-        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:*"
-      }
-    ]
-    })
-}
-*/
-
 resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   vpc_id              = module.vpc.vpc_id
   service_name        = "com.amazonaws.${var.region}.ecr.api"
@@ -96,24 +77,7 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   }
 }
 
-# Policy for ECR endpoint
-/*
-resource "aws_vpc_endpoint_policy" "ecr-api" {
-  vpc_endpoint_id = aws_vpc_endpoint.ecr_api_vpc_endpoint.id
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "LimitECRAccess",
-        "Principal": "*",
-        "Action": "*",
-        "Effect": "Allow",
-        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:*"
-      }
-    ]
-    })
-}
-*/
+
 ### AWS VPC S3 GATEWAY ENDPOINT
 
 resource "aws_vpc_endpoint" "s3" {

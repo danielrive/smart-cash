@@ -5,99 +5,45 @@ locals {
   path_tf_repo_flux_core          = "./k8-manifests/core"
   cluster_name                    = "${var.project_name}-${var.environment}"
   gh_username                     = "danielrive"
-  k8_version                      = "1.29"
 }
 
 
 ##########################
-####### EKS Cluster
-
-// Get AMI ID for worker nodes instances
-
-data "aws_ami" "worker_nodes" {
-  most_recent = true
-  name_regex  = "^amazon-eks-node-${local.k8_version}"
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
+#### EKS Cluster
 
 module "eks_cluster" {
-  source                       = "../modules/eks"
+  source = "../modules/eks"
   ### Control plane configs
   environment                  = var.environment
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = local.k8_version
-  subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets  ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
+  cluster_version              = "1.29"
+  subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
   private_endpoint_api         = true
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
   vpc_cni_version              = "v1.18.3-eksbuild.1"
-  cluster_admins               = "daniel.rivera"
+  cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
+  cluster_enabled_log_types    = ["audit", "api", "authenticator"]
   ### configs for worker nodes
-  key_pair_name                = "k8-admin"
-  instance_type_worker_nodes   = var.environment == "develop" ? "t3.medium" : "t3.medium"
-  AMI_for_worker_nodes         = "AL2_x86_64"
-  desired_nodes                = 2
-  max_instances_node_group     = 2
-  min_instances_node_group     = 2
-  storage_nodes                = 20
+  key_pair_name              = "k8-admin"
+  instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
+  AMI_for_worker_nodes       = "AL2_x86_64"
+  desired_nodes              = 2
+  max_instances_node_group   = 2
+  min_instances_node_group   = 2
+  storage_nodes              = 20
 }
 
-
-###################################################################
-########## IAM Role for CertManager Issuer DNS01 challenge
-
-
-resource "aws_iam_role" "cert-manager-iam-role" {
-  name = "cert-manager-${var.region}"
-
-  path = "/"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      "Condition": {
-        "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:cert-manager:cert-manager"
-        }
-      }
-    }
-  ]
-}
-EOF
-
-}
-
-resource "aws_iam_policy" "cert-manager-iam-role-policy" {
-  name   = "policy-cert-manager-iam-role"
-  policy = data.aws_iam_policy_document.cert-manager-issuer.json
-}
-
-resource "aws_iam_role_policy_attachment" "cert-manager-role" {
-  policy_arn = aws_iam_policy.cert-manager-iam-role-policy.arn
-  role       = aws_iam_role.cert-manager-iam-role.name
-}
-
-###################################################################
-########## IAM Role for flux Image update ECR
+##################################################
+#####  IAM Role for FluxCD Image update ECR
 
 resource "aws_iam_role" "flux_imagerepository" {
-  name = "flux-images-${var.environment}-${var.region}"
-  path = "/"
+  name               = "flux-images-${var.environment}-${var.region}"
+  path               = "/"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -120,15 +66,16 @@ resource "aws_iam_role" "flux_imagerepository" {
 EOF
 }
 
-###############################################
-#######    Flux Bootstrap 
+############################
+#####  Flux Bootstrap 
 
 
-#### Get Kubeconfig
+### Get Kubeconfig, arguments in bash script bootstrap-flux.sh
 # $1 = CLUSTER_NAME
 # $2 = AWS_REGION
 # $3 = GH_USER_NAME
 # $4 = FLUX_REPO_NAME
+
 resource "null_resource" "bootstrap-flux" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
@@ -139,7 +86,6 @@ resource "null_resource" "bootstrap-flux" {
   triggers = {
     always_run = timestamp() # this will always run
   }
-
 }
 
 #######################################################
@@ -153,22 +99,19 @@ resource "github_repository_file" "patch_flux" {
   content = templatefile(
     "./k8-manifests/bootstrap/patches-fluxBootstrap/mainKustomization.yaml",
     {
-      ARN_ROLE  = aws_iam_role.flux_imagerepository.arn
+      ARN_ROLE = aws_iam_role.flux_imagerepository.arn
     }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-} 
+}
 
-###############################################
-#######    GitOps Configuration 
-###############################################
+###############################
+####  GitOps Configuration 
 
-
-################################################
-##### Flux kustomizations bootstrap /kubernetes/bootstrap
+### Flux kustomizations bootstrap 
 resource "github_repository_file" "kustomizations" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
   for_each   = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
@@ -189,9 +132,7 @@ resource "github_repository_file" "kustomizations" {
 }
 
 
-###########################
 ##### Flux Sources 
-
 resource "github_repository_file" "sources" {
   depends_on = [module.eks_cluster, github_repository_file.kustomizations]
   for_each   = fileset(local.path_tf_repo_flux_sources, "*.yaml")
@@ -208,9 +149,7 @@ resource "github_repository_file" "sources" {
   overwrite_on_create = true
 }
 
-###########################
 ##### Core resources
-
 resource "github_repository_file" "core_resources" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
   for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")

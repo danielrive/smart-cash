@@ -1,12 +1,12 @@
-################################################
-########## Resources for frontend-service
-
 locals {
   this_service_name     = "frontend"
   this_service_port     = 9090
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo     = var.environment
 }
+
+##############################
+###### IAM Role K8 SA
 
 resource "aws_iam_role" "iam_sa_role" {
   name = "role-${local.this_service_name}-${var.environment}"
@@ -37,7 +37,7 @@ resource "aws_iam_role" "iam_sa_role" {
 module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "frontend-service"
-  region = var.region
+  region       = var.region
   project_name = var.project_name
   environment  = var.environment
   account_id   = data.aws_caller_identity.id_account.id
@@ -140,16 +140,16 @@ resource "github_repository_file" "image_updates" {
 ##### Images Updates automation
 
 resource "github_repository_file" "image_updates" {
-  for_each            = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
-  repository          = data.github_repository.flux-gitops.name
-  branch              = local.brach_gitops_repo
-  file                = "services/${local.this_service_name}-service/base/${each.key}"
+  for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/flux-image-update/${each.key}",
     {
-      SERVICE_NAME = local.this_service_name
-      ECR_REPO = module.ecr_registry.repo_url
-      ENVIRONMENT = var.environment
+      SERVICE_NAME    = local.this_service_name
+      ECR_REPO        = module.ecr_registry.repo_url
+      ENVIRONMENT     = var.environment
       PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
     }
   )

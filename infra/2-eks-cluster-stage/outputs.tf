@@ -1,7 +1,3 @@
-###################################
-####### eks outputs
-
-
 output "cluster_endpoint" {
   value = module.eks_cluster.cluster_endpoint
 }

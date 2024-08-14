@@ -7,9 +7,7 @@ data "terraform_remote_state" "eks" {
   }
 }
 
-####################################
 ### Github data sources
-
 data "github_repository" "flux-gitops" {
   full_name = "danielrive/smart-cash-gitops-flux"
 }

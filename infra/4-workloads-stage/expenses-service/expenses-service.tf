@@ -1,6 +1,3 @@
-################################################
-########## Resources for expenses-service
-
 locals {
   this_service_name     = "expenses"
   this_service_port     = 8282
@@ -12,7 +9,6 @@ locals {
 #### DynamoDB tables
 
 ### expenses Table
-
 resource "aws_dynamodb_table" "dynamo_table" {
   name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
@@ -86,9 +82,6 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
   name        = "policy-dynamodb-${local.this_service_name}-${var.environment}"
   path        = "/"
   description = "policy for k8 service account"
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -126,7 +119,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "${local.this_service_name}-service"
-  region = var.region
+  region       = var.region
   project_name = var.project_name
   environment  = var.environment
   account_id   = data.aws_caller_identity.id_account.id
@@ -137,9 +130,7 @@ module "ecr_registry" {
 ###########################
 ##### K8 Manifests 
 
-###########################
 ##### Base manifests
-
 resource "github_repository_file" "base_manifests" {
   for_each   = fileset("../microservices-templates", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -159,11 +150,7 @@ resource "github_repository_file" "base_manifests" {
   overwrite_on_create = true
 }
 
-
-
-###########################
 ##### overlays
-
 resource "github_repository_file" "overlays_svc" {
   for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -186,10 +173,7 @@ resource "github_repository_file" "overlays_svc" {
   overwrite_on_create = true
 }
 
-
-###########################
 ##### Network Policies
-
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -206,9 +190,7 @@ resource "github_repository_file" "network_policy" {
   overwrite_on_create = true
 }
 
-###########################
 ##### Images Updates automation
-
 resource "github_repository_file" "image_updates" {
   for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
   repository = data.github_repository.flux-gitops.name

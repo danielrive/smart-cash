@@ -1,6 +1,3 @@
-################################################
-########## Resources for expenses-service
-
 locals {
   this_service_name     = "bank"
   this_service_port     = 8585
@@ -48,7 +45,6 @@ resource "aws_dynamodb_table" "dynamo_table" {
   }
 
 }
-
 
 ##############################
 ###### IAM Role K8 SA
@@ -120,7 +116,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 module "ecr_registry" {
   source       = "../../modules/ecr"
   name         = "${local.this_service_name}-service"
-  region = var.region
+  region       = var.region
   project_name = var.project_name
   environment  = var.environment
   account_id   = data.aws_caller_identity.id_account.id
@@ -131,9 +127,8 @@ module "ecr_registry" {
 ###########################
 ##### K8 Manifests 
 
-###########################
-##### Base manifests
 
+##### Base manifests
 resource "github_repository_file" "base_manifests" {
   for_each   = fileset("../microservices-templates", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -154,10 +149,7 @@ resource "github_repository_file" "base_manifests" {
 }
 
 
-
-###########################
 ##### overlays
-
 resource "github_repository_file" "overlays_svc" {
   for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -181,9 +173,8 @@ resource "github_repository_file" "overlays_svc" {
 }
 
 
-###########################
-##### Network Policies
 
+##### Network Policies
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -200,9 +191,7 @@ resource "github_repository_file" "network_policy" {
   overwrite_on_create = true
 }
 
-###########################
 ##### Images Updates automation
-
 resource "github_repository_file" "image_updates" {
   for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
   repository = data.github_repository.flux-gitops.name

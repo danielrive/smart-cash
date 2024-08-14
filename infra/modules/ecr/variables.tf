@@ -20,7 +20,7 @@ variable "account_id" {
 }
 
 variable "service_role" {
-  type = string
+  type    = string
   default = ""
 }
 

@@ -14,7 +14,7 @@ resource "aws_ecr_repository" "this" {
 
 resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
   repository = aws_ecr_repository.this.name
-  policy = <<EOF
+  policy     = <<EOF
 {
     "rules": [
         {
@@ -52,14 +52,14 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
           ]
         },
         Action = [
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:GetAuthorizationToken",
-                "ecr:ListImages",
-                "ecr:DescribePullThroughCacheRules",
-                "ecr:DescribeImages",
-              ]
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:ListImages",
+          "ecr:DescribePullThroughCacheRules",
+          "ecr:DescribeImages",
+        ]
       },
       {
         Sid    = "AllowPush",
@@ -69,13 +69,13 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
 
         },
         Action = [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:CompleteLayerUpload",
-                "ecr:InitiateLayerUpload",
-                "ecr:PutImage",
-                "ecr:UploadLayerPart",
-              ]
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart",
+        ]
       }
 
     ]
