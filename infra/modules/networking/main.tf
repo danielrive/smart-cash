@@ -66,7 +66,6 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
 resource "aws_vpc_endpoint_policy" "ecr" {
   vpc_endpoint_id = aws_vpc_endpoint.ecr_dkr_vpc_endpoint.id
   policy = jsonencode({
-    {
   "Version" : "2012-10-17",
   "Statement": [
     {
@@ -77,7 +76,6 @@ resource "aws_vpc_endpoint_policy" "ecr" {
       "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
     }
   ]
-}
   })
 }
 
