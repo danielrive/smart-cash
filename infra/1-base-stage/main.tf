@@ -15,7 +15,7 @@ module "networking" {
   create_nat_gw         = false
   single_nat_gw         = false
   enable_auto_public_ip = true
-  account_id            = data.aws_caller_identity.current.account_id
+  account_id            = data.aws_caller_identity.current.id
 }
 
 ######################################################

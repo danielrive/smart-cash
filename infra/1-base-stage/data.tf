@@ -1,5 +1,5 @@
 ## Getting aws account ID 
-data "aws_caller_identity" "account_id" {}
+data "aws_caller_identity" "current" {}
 
 data "aws_availability_zones" "available" {
   state = "available"
@@ -16,7 +16,7 @@ data "aws_iam_policy_document" "kms_key_policy_encrypt_logs" {
 
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.id_account.id}:root"]
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.id}:root"]
     }
     actions   = ["kms:*", ]
     resources = ["*"]
@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "kms_key_policy_encrypt_logs" {
       test     = "ArnLike"
       variable = "kms:EncryptionContext:aws:logs:arn"
       values = [
-        "arn:aws:logs:${var.region}:${data.aws_caller_identity.id_account.id}:*"
+        "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.id}:*"
       ]
     }
   }
