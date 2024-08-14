@@ -1,5 +1,5 @@
 ## Getting aws account ID 
-data "aws_caller_identity" "id_account" {}
+data "aws_caller_identity" "account_id" {}
 
 data "aws_availability_zones" "available" {
   state = "available"

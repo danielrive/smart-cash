@@ -60,6 +60,10 @@ variable "region" {
   type = string
 }
 
+variable "account_id" {
+  type = string
+}
+
 variable "enable_auto_public_ip" {
   type    = bool
   default = false

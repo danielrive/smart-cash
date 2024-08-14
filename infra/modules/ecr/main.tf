@@ -56,6 +56,9 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
                 "ecr:BatchGetImage",
                 "ecr:GetDownloadUrlForLayer",
                 "ecr:GetAuthorizationToken",
+                "ecr:ListImages",
+                "ecr:DescribePullThroughCacheRules",
+                "ecr:DescribeImages",
               ]
       },
       {

@@ -48,14 +48,8 @@ resource "aws_security_group" "allow_tls" {
   }
 }
 
-
-
-### Create Private Link to access to ECR
-
 ###############################################
-# AWS private link endpoint to ECR
-# In ECN, it is not working as expected
-###############################################
+### AWS private link endpoint to ECR
 
 resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   vpc_id              = module.vpc.vpc_id
@@ -65,6 +59,26 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   subnet_ids          = module.vpc.private_subnets
   private_dns_enabled = true
   security_group_ids  = [aws_security_group.allow_tls.id]
+}
+
+# Policy for ECR endpoint
+
+resource "aws_vpc_endpoint_policy" "ecr" {
+  vpc_endpoint_id = aws_vpc_endpoint.ecr_dkr_vpc_endpoint.id
+  policy = jsonencode({
+    {
+  "Version" : "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LimitECRAccess",
+      "Principal": "*",
+      "Action": "*",
+      "Effect": "Allow",
+      "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
+    }
+  ]
+}
+  })
 }
 
 resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
