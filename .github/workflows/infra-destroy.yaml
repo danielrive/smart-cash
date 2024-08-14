@@ -8,11 +8,7 @@ on:
         description: 'branch name where is the tf code what will be used to destroy all the infra'
         required: true
         default: develop
-        type: choice
-        options:
-          -  develop
-          -  main
-          - feat/secure-eks-v2
+        type: string
       stage:
         description: 'stage name to destroy'
         required: true
