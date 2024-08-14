@@ -76,7 +76,7 @@ resource "aws_vpc_endpoint_policy" "ecr" {
         "Principal": "*",
         "Action": "*",
         "Effect": "Allow",
-        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
+        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:*"
       }
     ]
     })
@@ -107,7 +107,7 @@ resource "aws_vpc_endpoint_policy" "ecr-api" {
         "Principal": "*",
         "Action": "*",
         "Effect": "Allow",
-        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
+        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:*"
       }
     ]
     })
