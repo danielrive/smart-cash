@@ -66,17 +66,17 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
 resource "aws_vpc_endpoint_policy" "ecr" {
   vpc_endpoint_id = aws_vpc_endpoint.ecr_dkr_vpc_endpoint.id
   policy = jsonencode({
-  "Version" : "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "LimitECRAccess",
-      "Principal": "*",
-      "Action": "*",
-      "Effect": "Allow",
-      "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
-    }
-  ]
-  })
+    "Version" : "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "LimitECRAccess",
+        "Principal": "*",
+        "Action": "*",
+        "Effect": "Allow",
+        "Resource": "arn:aws:ecr:${var.region}:${var.account_id}:repository/*"
+      }
+    ]
+    })
 }
 
 resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
