@@ -39,8 +39,8 @@ EOF
 // the role is created by terraform but for some reason the ECR policy doesnt see yet 
 
 ### Force to update the Pod to take the changes in the SA
-resource "null_resource" "restart-image-reflector" {
-  depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
+resource "null_resource" "force_to_wait" {
+  depends_on = [null_resource.bootstrap-flux,github_repository_file.patch_flux]
   provisioner "local-exec" {
     command = <<EOF
     sleep 2
