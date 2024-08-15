@@ -12,7 +12,7 @@ resource "aws_ecr_repository" "this" {
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
+resource "aws_ecr_lifecycle_policy" "mandatory_policy" {
   repository = aws_ecr_repository.this.name
   policy     = <<EOF
 {
@@ -53,7 +53,7 @@ resource "null_resource" "force_to_wait" {
 
 //  IAM Policy for repository, just allow pull for specific roles
 resource "aws_ecr_repository_policy" "allow_pod_pull" {
-  depends_on = [aws_ecr_repository.this,null_resource.restart-image-reflector]
+  depends_on = [aws_ecr_repository.this,null_resource.force_to_wait]
   repository = aws_ecr_repository.this.name
   policy = jsonencode({
     Version = "2012-10-17",
