@@ -1,56 +1,21 @@
 ### Rule Description
-##  Allow communication from ingress to user svc pods
+##  Allow communication from User to Frontend svc pods
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-nginx-to-user
+  name: user-frontend
 spec:
   podSelector:
     matchLabels:
       app: user
   policyTypes:
   - Ingress
-  - Egress
   ingress:
   - from:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: nginx-ingress
-    ports:
-    - protocol: TCP
-      port: ${SERVICE_PORT}
-  egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: nginx-ingress
-
----
-
-### Rule Description
-##  Allow communication from Frontend to user svc pods
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ingress-frontend-to-user
-spec:
-  podSelector:
-    matchLabels:
-      app: user
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - namespaceSelector:
+    - podSelector:
         matchLabels:
           ingress: frontend
     ports:
     - protocol: TCP
       port: ${SERVICE_PORT}
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: frontend
