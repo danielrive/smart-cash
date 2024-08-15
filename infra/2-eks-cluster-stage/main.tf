@@ -66,6 +66,33 @@ resource "aws_iam_role" "flux_imagerepository" {
 EOF
 }
 
+## Policy for the role
+
+resource "aws_iam_policy" "allow_ecr" {
+  name = "ecr-flux-images-${var.environment}-${var.region}"
+  path = "/"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowPull",
+        Effect = "Allow",
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:ListImages",
+          "ecr:DescribePullThroughCacheRules",
+          "ecr:DescribeImages",
+        ],
+        Resource = "${data.aws_caller_identity.id_account.id}.dkr.ecr.${var.region}.amazonaws.com/*"
+      }
+    ]
+  })
+  }
+  
+
 ############################
 #####  Flux Bootstrap 
 
@@ -106,6 +133,20 @@ resource "github_repository_file" "patch_flux" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
+}
+
+### Force to update the Pod to take the changes in the SA
+
+resource "null_resource" "restart-image-reflector" {
+  depends_on = [module.eks_cluster]
+  provisioner "local-exec" {
+    command = <<EOF
+    kubectl rollout restart deployment image-reflector-controller -n flux-system
+    EOF
+  }
+  triggers = {
+    always_run = timestamp() # this will always run
+  }
 }
 
 ###############################
