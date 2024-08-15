@@ -36,8 +36,8 @@ EOF
 }
 
 //  IAM Policy for repository, just allow pull for specific roles
-
 resource "aws_ecr_repository_policy" "allow_pod_pull" {
+  depends_on = [aws_ecr_repository.this]
   repository = aws_ecr_repository.this.name
   policy = jsonencode({
     Version = "2012-10-17",

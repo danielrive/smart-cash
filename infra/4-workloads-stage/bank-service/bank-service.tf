@@ -115,6 +115,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 
 module "ecr_registry" {
   source       = "../../modules/ecr"
+  depends_on   = aws_iam_role.iam_sa_role
   name         = "${local.this_service_name}-service"
   region       = var.region
   project_name = var.project_name
