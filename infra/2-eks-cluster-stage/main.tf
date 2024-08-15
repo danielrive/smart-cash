@@ -137,10 +137,11 @@ resource "github_repository_file" "patch_flux" {
 ### Force to update the Pod to take the changes in the SA
 
 resource "null_resource" "restart-image-reflector" {
-  depends_on = [module.eks_cluster]
+  depends_on = [module.eks_cluster,null_resource.bootstrap-flux]
   provisioner "local-exec" {
     command = <<EOF
     aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
+    sleep 3
     kubectl rollout restart deployment image-reflector-controller -n flux-system
     EOF
   }
