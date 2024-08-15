@@ -1,3 +1,6 @@
+### Rule Description
+##  Allow communication from ingress to frontend pods
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,4 +18,4 @@ spec:
           ingress: nginx
     ports:
     - protocol: TCP
-      port: 9090
+      port: 80
