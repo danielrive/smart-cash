@@ -86,7 +86,7 @@ resource "aws_iam_policy" "allow_ecr" {
           "ecr:DescribePullThroughCacheRules",
           "ecr:DescribeImages",
         ],
-        Resource = "${data.aws_caller_identity.id_account.id}.dkr.ecr.${var.region}.amazonaws.com/*"
+        Resource = "arn:aws:ecr:*:${data.aws_caller_identity.id_account.id}:repository/*"
       }
     ]
   })
