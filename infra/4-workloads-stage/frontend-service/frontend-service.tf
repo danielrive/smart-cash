@@ -107,6 +107,7 @@ resource "github_repository_file" "network_policy" {
   content = templatefile(
     "${local.path_tf_repo_services}/network-policies/frontend.yaml", {
       PROJECT_NAME = var.project_name
+      SERVICE_PORT = local.this_service_port
   })
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"

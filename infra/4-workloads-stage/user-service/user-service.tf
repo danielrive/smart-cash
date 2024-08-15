@@ -183,6 +183,7 @@ resource "github_repository_file" "network_policy" {
     "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
       PROJECT_NAME = var.project_name
+      SERVICE_PORT = local.this_service_port
     }
   )
   commit_message      = "Managed by Terraform"
