@@ -27,4 +27,32 @@ spec:
           kubernetes.io/metadata.name: nginx-ingress
 
 
+--- 
 
+### Rule Description
+##  Allow communication from frontend to user
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-user
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: user
+    ports:
+    - protocol: TCP
+      port: ${SERVICE_PORT}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: user
