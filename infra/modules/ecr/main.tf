@@ -42,11 +42,8 @@ EOF
 resource "null_resource" "force_to_wait" {
   provisioner "local-exec" {
     command = <<EOF
-    sleep 2
+    sleep 10
     EOF
-  }
-  triggers = {
-    always_run = timestamp() # this will always run
   }
 }
 
