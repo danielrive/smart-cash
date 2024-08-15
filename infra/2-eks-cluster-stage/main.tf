@@ -141,6 +141,7 @@ resource "null_resource" "restart-image-reflector" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
+    aws eks update-kubeconfig --name $1  --region $2
     kubectl rollout restart deployment image-reflector-controller -n flux-system
     EOF
   }
