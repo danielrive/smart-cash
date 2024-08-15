@@ -35,9 +35,25 @@ resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
 EOF
 }
 
+// Sleep, this was necessary because the role for the service account take some time to be able to use in the console
+// the role is created by terraform but for some reason the ECR policy doesnt see yet 
+
+### Force to update the Pod to take the changes in the SA
+resource "null_resource" "restart-image-reflector" {
+  depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
+  provisioner "local-exec" {
+    command = <<EOF
+    sleep 2
+    EOF
+  }
+  triggers = {
+    always_run = timestamp() # this will always run
+  }
+}
+
 //  IAM Policy for repository, just allow pull for specific roles
 resource "aws_ecr_repository_policy" "allow_pod_pull" {
-  depends_on = [aws_ecr_repository.this]
+  depends_on = [aws_ecr_repository.this,null_resource.restart-image-reflector]
   repository = aws_ecr_repository.this.name
   policy = jsonencode({
     Version = "2012-10-17",
@@ -47,7 +63,7 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
         Effect = "Allow",
         Principal = {
           "AWS" : [
-           # "${var.service_role}",
+            "${var.service_role}",
             "arn:aws:iam::${var.account_id}:role/flux-images-${var.environment}-${var.region}",
           ]
         },
