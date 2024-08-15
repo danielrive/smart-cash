@@ -11,11 +11,17 @@ spec:
       app: frontend
   policyTypes:
   - Ingress
+  - Egress
   ingress:
   - from:
     - namespaceSelector:
         matchLabels:
-          ingress: nginx
+          kubernetes.io/metadata.name: nginx-ingress
     ports:
     - protocol: TCP
       port: 80
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: nginx-ingress
