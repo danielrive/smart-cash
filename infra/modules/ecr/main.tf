@@ -40,7 +40,6 @@ EOF
 
 ### Force to update the Pod to take the changes in the SA
 resource "null_resource" "force_to_wait" {
-  depends_on = [null_resource.bootstrap-flux,github_repository_file.patch_flux]
   provisioner "local-exec" {
     command = <<EOF
     sleep 2
