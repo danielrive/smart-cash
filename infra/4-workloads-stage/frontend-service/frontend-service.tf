@@ -136,26 +136,3 @@ resource "github_repository_file" "image_updates" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-###########################
-##### Images Updates automation
-
-resource "github_repository_file" "image_updates" {
-  for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/base/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_services}/flux-image-update/${each.key}",
-    {
-      SERVICE_NAME    = local.this_service_name
-      ECR_REPO        = module.ecr_registry.repo_url
-      ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
