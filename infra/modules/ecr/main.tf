@@ -48,7 +48,7 @@ resource "aws_ecr_repository_policy" "allow_pod_pull" {
         Principal = {
           "AWS" : [
             "${var.service_role}",
-            "arn:aws:iam::${var.account_id}:role/flux-images-${var.environment}-${var.region}",
+       #     "arn:aws:iam::${var.account_id}:role/flux-images-${var.environment}-${var.region}",
           ]
         },
         Action = [
