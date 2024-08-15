@@ -78,15 +78,9 @@ resource "aws_iam_policy" "allow_ecr" {
         Sid    = "AllowPull",
         Effect = "Allow",
         Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer",
           "ecr:GetAuthorizationToken",
-          "ecr:ListImages",
-          "ecr:DescribePullThroughCacheRules",
-          "ecr:DescribeImages",
         ],
-        Resource = "arn:aws:ecr:*:${data.aws_caller_identity.id_account.id}:repository/*"
+        Resource = "*"
       }
     ]
   })
