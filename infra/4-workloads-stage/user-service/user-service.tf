@@ -4,6 +4,7 @@ locals {
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo     = var.environment
   cluster_name                    = "${var.project_name}-${var.environment}"
+  tier = "backend"
 }
 
 
@@ -157,6 +158,7 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "health" ## don't include the / at the beginning
+      TIER                       = local.tier
     }
   )
   commit_message      = "Managed by Terraform"

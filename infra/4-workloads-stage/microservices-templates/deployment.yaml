@@ -4,6 +4,7 @@ metadata:
   name: deployment-${SERVICE_NAME}
   labels:
     app: ${SERVICE_NAME}
+    tier: ${TIER}
 spec:
   replicas: 1
   strategy:
