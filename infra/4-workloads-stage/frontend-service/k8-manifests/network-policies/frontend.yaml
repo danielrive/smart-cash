@@ -48,9 +48,6 @@ spec:
     - podSelector:
         matchLabels:
           app: user
-    ports:
-    - protocol: TCP
-      port: ${SERVICE_PORT}
   egress:
   - to:
     - podSelector:
