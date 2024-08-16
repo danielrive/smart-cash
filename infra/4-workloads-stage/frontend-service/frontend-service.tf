@@ -54,7 +54,7 @@ module "ecr_registry" {
 resource "github_repository_file" "kustomization" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/"
+  file       = "clusters/${local.cluster_name}/bootstrap/frontend-kustomize.yaml"
   content = templatefile(
     "${local.path_tf_repo_services}/kustomization/frontend.yaml",
     {
