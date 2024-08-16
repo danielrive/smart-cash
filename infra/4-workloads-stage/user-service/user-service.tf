@@ -126,6 +126,22 @@ module "ecr_registry" {
 ###########################
 ##### K8 Manifests 
 
+# Add Kustomization to flux
+resource "github_repository_file" "kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_services}/kustomization/${local.this_service_name}.yaml",
+    {
+      ENVIRONMENT               = var.environment
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
 
 ##### Base manifests
 resource "github_repository_file" "base_manifests" {
@@ -146,8 +162,6 @@ resource "github_repository_file" "base_manifests" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-
 
 
 ##### overlays
