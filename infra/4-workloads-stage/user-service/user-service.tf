@@ -136,6 +136,7 @@ resource "github_repository_file" "kustomization" {
     "${local.path_tf_repo_services}/kustomization/${local.this_service_name}.yaml",
     {
       ENVIRONMENT               = var.environment
+      SERVICE_NAME              = local.this_service_name
     }
   )
   commit_message      = "Managed by Terraform"
