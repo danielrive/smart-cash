@@ -3,6 +3,7 @@ locals {
   this_service_port     = 8282
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo     = var.environment
+  cluster_name                    = "${var.project_name}-${var.environment}"
   tier                  = "backend"
 }
 

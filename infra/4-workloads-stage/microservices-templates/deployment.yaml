@@ -19,6 +19,7 @@ spec:
     metadata:
       labels:
         app: ${SERVICE_NAME}
+        tier: ${TIER}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       enableServiceLinks: false
