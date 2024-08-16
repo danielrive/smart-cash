@@ -15,7 +15,7 @@ on:
         type: choice
         options:
           -  user-service
-          -  payment-service
+          -  frontend-service
           -  expenses-service
           -  bank-service
           -  3-k8-common-stage
