@@ -16,7 +16,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          ingress: frontend
+          app: frontend
     ports:
     - protocol: TCP
       port: ${SERVICE_PORT}
