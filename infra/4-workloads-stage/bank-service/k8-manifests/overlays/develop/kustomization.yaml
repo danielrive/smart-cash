@@ -1,6 +1,8 @@
 resources:
   - ../../base
 namespace: develop
+commonLabels:
+  tier: backend
 images:
   - name: service-image
     newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
