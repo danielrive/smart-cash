@@ -134,7 +134,7 @@ resource "github_repository_file" "patch_flux" {
 }
 
 ### Force to update the Pod to take the changes in the SA
-resource "null_resource" "restart-image-reflector" {
+resource "null_resource" "restart_image_reflector" {
   depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
   provisioner "local-exec" {
     command = <<EOF
