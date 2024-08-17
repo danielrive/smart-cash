@@ -25,7 +25,8 @@ spec:
       enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
+        runAsUser: 10003
+        runAsGroup: 30001
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
