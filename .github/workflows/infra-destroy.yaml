@@ -4,22 +4,13 @@ run-name: DESTROY-INFRASTRUCTURE
 on:
   workflow_dispatch:
     inputs:
-      branch-to-destroy:
-        description: 'branch name where is the tf code what will be used to destroy all the infra'
-        required: true
-        default: develop
-        type: choice
-        options:
-          -  develop
-          -  main
-          - feat/secure-eks
       stage:
         description: 'stage name to destroy'
         required: true
         type: choice
         options:
           -  user-service
-          -  payment-service
+          -  frontend-service
           -  expenses-service
           -  bank-service
           -  3-k8-common-stage
@@ -52,7 +43,6 @@ jobs:
        uses: actions/checkout@v4
        with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.branch-to-destroy }}
      - name: Terraform install
        id: 'install-terraform'
        uses: hashicorp/setup-terraform@v3

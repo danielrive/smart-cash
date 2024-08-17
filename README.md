@@ -1,6 +1,8 @@
 # Smart-Cash Project
 
-This is a personal project to practice some concepts that I have learned during my professional life and to use some tools that I want to learn in a hands-on manner.
+**STATUS** Under development
+
+This is a personal project to test some tools that I want to learn in a hands-on manner.
 
 ## Folder structure
 
@@ -8,7 +10,7 @@ This project contains two main folders:
 
 ### app folder
 
-Contains the application code. Each service has a subfolder that contains the word **_service_** at the end of the name.Inside this subfolder can be found the Go code and Dockerfile for the service.
+Contains the application code. Each service has a subfolder that contains the word **_service_** at the end of the name, where can be found the Go code and Dockerfile for the service.
 
 The subfoler utils contains Go packages used by microservice code.
 
@@ -21,26 +23,36 @@ Contains the terraform code divided by different stages:
 3. **3-k8-common-stage:** This stage deploys k8 and AWS resources that are used for the whole environment.
 4. **4-workloads-stage:** This stage contains the different microservices to deploy, inside this folder you can find subfolders that contains the k8 and AWS resources that each microservice need.
 
-## Infrastructure Deployment
+## Infrastructure
 
-Deployment is done per stage, all the stages uses a GitHub workflow template that executes terrafrom.
+### AWS Architecture
 
-This template define the jobs used to deploy the infrastructure AWS and K8 resources, this can be found in **_./github/workflows/template-run-terraform_**.
+<p align="center">
+<img src=".github/images-readme/aws-infra-v1.png" alt="infra-aws" width="650" />
+</p>
 
-The main steps done by the workflow are:
+### Infrastructure Deployment
 
-1. **Configure Terraform Backend**: This job executes a bash script located in  **_.github/jobs/terraform-backend.sh_**. This script checks if there is a S3 bucket and a DynamoDB table, if not, it is created, the name of the table depends on the variables passed on the action.
+Deployment is done per stage, all the stages uses a GitHub workflow template that executes terrafrom. The template can be found in **_./github/workflows/template-run-terraform_**. The following Diagram shows in high level the stages executed.
 
-2. **Terraform Plan**: This executes a composite action created to avoid repeating code because these steps are needed in other workflows. This can be found in **_./github/actions/terraform-plan/action.yaml**.The following diagram shows the steps execute by the composite action:
+<p align="center">
+<img src=".github/images-readme/terraform-pipeline.png" alt="general-workflow" width="650"  />
+</p>
 
-    <img src=".github/images-readme/Composite-action-tf-plan.png" alt="general-workflow" width="400" />
+* The bash script that detect the folders updated and generated the array can be found in **_.github/jobs/detect-folders-updated.sh**
+* The bash script to configure the Terraform backend is located in **_.github/jobs/terraform-backend.sh_**. 
+* Terraform Plan and Apply have benn configure as a composite action located in **_./github/actions.
 
-3. **Terraform Apply**: This executes a composite action created to avoid repeating code because these steps are needed in other workflows. This can be found in **_./github/actions/terraform-apply/action.yaml_**.The following diagram shows the steps execute by the composite action:
+## Kubernetes Resources
 
-    <img src=".github/images-readme/Composite-action-tf-apply.png" alt="general-workflow" width="400" />
+The following image shows in high level some kubernetes resources used:
 
-## CI/CD app
+<p align="center">
+<img src=".github/images-readme/smart-cash-Kubernetes.png" alt="general-workflow" width="650"  />
+</p>
 
+
+## CI/CD App
 ### Build Process
 
 The app folder contains the different services to deploy. Each service has its own Dockerfile that is used to build the image and push it to AWS ECR to be used by the pods.

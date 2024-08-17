@@ -1,11 +1,10 @@
-################################################
-########## Resources for expenses-service
-
 locals {
   this_service_name     = "bank"
   this_service_port     = 8585
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo     = var.environment
+  cluster_name                    = "${var.project_name}-${var.environment}"
+  tier = "backend"
 }
 
 #######################
@@ -48,7 +47,6 @@ resource "aws_dynamodb_table" "dynamo_table" {
   }
 
 }
-
 
 ##############################
 ###### IAM Role K8 SA
@@ -114,25 +112,43 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   role       = aws_iam_role.iam_sa_role.name
 }
 
-
-
 #############################
 ##### ECR Repo
 
 module "ecr_registry" {
   source       = "../../modules/ecr"
+  depends_on   = [aws_iam_role.iam_sa_role]
   name         = "${local.this_service_name}-service"
+  region       = var.region
   project_name = var.project_name
   environment  = var.environment
+  account_id   = data.aws_caller_identity.id_account.id
+  service_role = aws_iam_role.iam_sa_role.arn
 }
 
 
 ###########################
 ##### K8 Manifests 
 
-###########################
-##### Base manifests
+# Add Kustomization to flux
+resource "github_repository_file" "kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_services}/kustomization/${local.this_service_name}.yaml",
+    {
+      ENVIRONMENT               = var.environment
+      SERVICE_NAME              = local.this_service_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
 
+##### Base manifests
 resource "github_repository_file" "base_manifests" {
   for_each   = fileset("../microservices-templates", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -144,6 +160,7 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "health"
+      TIER                       = local.tier
     }
   )
   commit_message      = "Managed by Terraform"
@@ -153,10 +170,7 @@ resource "github_repository_file" "base_manifests" {
 }
 
 
-
-###########################
 ##### overlays
-
 resource "github_repository_file" "overlays_svc" {
   for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
   repository = data.github_repository.flux-gitops.name
@@ -180,9 +194,8 @@ resource "github_repository_file" "overlays_svc" {
 }
 
 
-###########################
-##### Network Policies
 
+##### Network Policies
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -199,9 +212,7 @@ resource "github_repository_file" "network_policy" {
   overwrite_on_create = true
 }
 
-###########################
 ##### Images Updates automation
-
 resource "github_repository_file" "image_updates" {
   for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
   repository = data.github_repository.flux-gitops.name

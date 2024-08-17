@@ -5,7 +5,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-####################################
 ### Github data sources
 
 data "github_repository" "flux-gitops" {

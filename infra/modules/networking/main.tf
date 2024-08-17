@@ -48,14 +48,8 @@ resource "aws_security_group" "allow_tls" {
   }
 }
 
-
-
-### Create Private Link to access to ECR
-
 ###############################################
-# AWS private link endpoint to ECR
-# In ECN, it is not working as expected
-###############################################
+### AWS private link endpoint to ECR
 
 resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   vpc_id              = module.vpc.vpc_id
@@ -65,6 +59,9 @@ resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
   subnet_ids          = module.vpc.private_subnets
   private_dns_enabled = true
   security_group_ids  = [aws_security_group.allow_tls.id]
+  tags = {
+    Name = "ecr-endp-${var.project_name}-${var.environment}"
+  }
 }
 
 resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
@@ -75,17 +72,39 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   subnet_ids          = module.vpc.private_subnets
   private_dns_enabled = true
   security_group_ids  = [aws_security_group.allow_tls.id]
+  tags = {
+    Name = "ecr-api-endp-${var.project_name}-${var.environment}"
+  }
 }
+
 
 ### AWS VPC S3 GATEWAY ENDPOINT
 
 resource "aws_vpc_endpoint" "s3" {
   vpc_id       = module.vpc.vpc_id
   service_name = "com.amazonaws.${var.region}.s3"
+  tags = {
+    Name = "s3-endp-${var.project_name}-${var.environment}"
+  }
 }
 
 resource "aws_vpc_endpoint_route_table_association" "s3_endpoint_association" {
   count           = length(module.vpc.private_route_table_ids)
   vpc_endpoint_id = aws_vpc_endpoint.s3.id
+  route_table_id  = module.vpc.private_route_table_ids[count.index]
+}
+
+### AWS VPC DynamoDB endpoint
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id       = module.vpc.vpc_id
+  service_name = "com.amazonaws.${var.region}.dynamodb"
+  tags = {
+    Name = "dynamodb-endp-${var.project_name}-${var.environment}"
+  }
+}
+
+resource "aws_vpc_endpoint_route_table_association" "dynamodb" {
+  count           = length(module.vpc.private_route_table_ids)
+  vpc_endpoint_id = aws_vpc_endpoint.dynamodb.id
   route_table_id  = module.vpc.private_route_table_ids[count.index]
 }

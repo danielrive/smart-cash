@@ -84,7 +84,7 @@ variable "vpc_cni_version" {
 
 variable "cluster_admins" {
   description = "aws user names that will be the admins of cluster"
-  type = string 
+  type        = string
 }
 
 
@@ -93,8 +93,17 @@ variable "storage_nodes" {
   default = 20
 }
 
+variable "key_pair_name" {
+  type    = string
+  default = ""
+}
 
 variable "account_number" {
+  type    = string
+  default = ""
+}
+
+variable "vpc_id" {
   type    = string
   default = ""
 }

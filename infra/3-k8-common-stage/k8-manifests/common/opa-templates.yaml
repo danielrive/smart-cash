@@ -1,37 +1,3 @@
-################################################
-######## Force to have project-label
-apiVersion: templates.gatekeeper.sh/v1
-kind: ConstraintTemplate
-metadata:
-  name: requiredlabels
-spec:
-  crd:
-    spec:
-      names:
-        kind: RequiredLabels
-      validation:
-        openAPIV3Schema:
-          type: object
-          properties:
-            labels:
-              type: array
-              items:
-                type: string
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package requiredlabels
-
-        violation[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }
-        
----
-
 #########################################################
 ######## Trust in AWS ECR registry only for workloads 
 
@@ -69,25 +35,55 @@ spec:
 #########################################
 ######## Container security 
 
+# Deny privileged mode
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
-  name: containersecurity
+  name: containerprivilegedmode
 spec:
   crd:
     spec:
       names:
-        kind: ContainerSecurity
+        kind: ContainerPrivilegedMode
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package containersecurity 
+        package containerprivilegedmode 
 
         import future.keywords
 
-        violation[{"msg": msg, "details": {"images MUST come from trusted registry"}}] {
+        violation[{"msg": msg, "details": {"Container can run in privileged mode, please remove this from manifest"}}] {
               some container in input.review.object.spec.containers
               container.securityContext.allowPrivilegeEscalation != "false"
               msg := sprintf("Container '%v' allow privilege escalation", [container.name])
-  
         }
+
+---
+
+#########################################
+######## Container security 
+
+# Deny Run as a root
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: containernonroot
+spec:
+  crd:
+    spec:
+      names:
+        kind: ContainerNonRoot
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package containernonroot 
+
+        import future.keywords
+
+        violation[{"msg": msg}] {
+              input.review.object.kind == "Pod"
+              not input.review.object.spec.securityContext.runAsNonRoot
+              msg := "Pod does not enforce running as non-root"
+          }
+        }
+

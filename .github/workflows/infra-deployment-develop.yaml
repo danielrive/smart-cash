@@ -24,6 +24,7 @@ on:
     paths:
       - "infra/**"
       - '!infra/modules/**'
+      - '!infra/4-workloads-stage/microservices-templates/**'
   pull_request:
     branches:
       - develop
@@ -90,7 +91,7 @@ jobs:
     strategy: 
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_STAGE_UPDATED.outputs.FOLDERS_UPDATED) }}
-      fail-fast: true
+      fail-fast: false
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@main
     with: 
       AWS_REGION: 'us-west-2'
