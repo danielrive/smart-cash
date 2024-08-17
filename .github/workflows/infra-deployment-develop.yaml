@@ -25,9 +25,6 @@ on:
       - "infra/**"
       - '!infra/modules/**'
       - '!infra/4-workloads-stage/microservices-templates/**'
-  pull_request:
-    branches:
-      - develop
 
 permissions:
   id-token: write # This is required for requesting the JWT

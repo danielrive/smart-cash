@@ -45,7 +45,6 @@ resource "aws_dynamodb_table" "dynamo_table" {
   tags = {
     Name = "${local.this_service_name}-table"
   }
-
 }
 
 ##############################
