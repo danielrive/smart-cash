@@ -12,10 +12,9 @@ resource "aws_ecr_repository" "this" {
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
+resource "aws_ecr_lifecycle_policy" "mandatory_policy" {
   repository = aws_ecr_repository.this.name
-
-  policy = <<EOF
+  policy     = <<EOF
 {
     "rules": [
         {
@@ -34,4 +33,63 @@ resource "aws_ecr_lifecycle_policy" "mandatory-policy" {
     ]
 }
 EOF
+}
+
+// Sleep, this was necessary because the role for the service account take some time to be able to use in the console
+// the role is created by terraform but for some reason the ECR policy doesnt see yet 
+
+### Force to update the Pod to take the changes in the SA
+resource "null_resource" "force_to_wait" {
+  provisioner "local-exec" {
+    command = <<EOF
+    sleep 10
+    EOF
+  }
+}
+
+//  IAM Policy for repository, just allow pull for specific roles
+resource "aws_ecr_repository_policy" "allow_pod_pull" {
+  depends_on = [aws_ecr_repository.this,null_resource.force_to_wait]
+  repository = aws_ecr_repository.this.name
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowPull",
+        Effect = "Allow",
+        Principal = {
+          "AWS" : [
+            "${var.service_role}",
+            "arn:aws:iam::${var.account_id}:role/flux-images-${var.environment}-${var.region}",
+          ]
+        },
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:ListImages",
+          "ecr:DescribePullThroughCacheRules",
+          "ecr:DescribeImages",
+        ]
+      },
+      {
+        Sid    = "AllowPush",
+        Effect = "Allow",
+        Principal = {
+          "AWS" : "arn:aws:iam::${var.account_id}:role/GitHubAction-smart-cash"
+
+        },
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart",
+        ]
+      }
+
+    ]
+  })
 }

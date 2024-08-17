@@ -1,39 +1,27 @@
+### Rule Description
+##  Allow communication from User to Frontend svc pods
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-nginx-to-user
+  name: user-frontend
 spec:
   podSelector:
     matchLabels:
       app: user
   policyTypes:
   - Ingress
+  - Egress
   ingress:
   - from:
-    - namespaceSelector:
+    - podSelector:
         matchLabels:
-          ingress: nginx
+          app: frontend
     ports:
     - protocol: TCP
-      port: 8181
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ingress-frontend-to-user
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - namespaceSelector:
+      port: ${SERVICE_PORT}
+  egress:
+  - to:
+    - podSelector:
         matchLabels:
-          ingress: frontend
-    ports:
-    - protocol: TCP
-      port: 8181
+          app: frontend

@@ -7,7 +7,7 @@ locals {
 
 
 ###########################
-##### Common resources
+#### Common resources
 
 resource "github_repository_file" "common_resources" {
   for_each   = fileset(local.path_tf_repo_flux_common, "*.yaml")
@@ -29,8 +29,8 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-############################
-##### OPA constraints
+#################################
+##### OPA constraints(policies)
 
 resource "github_repository_file" "opa_constraints" {
   repository = data.github_repository.flux-gitops.name

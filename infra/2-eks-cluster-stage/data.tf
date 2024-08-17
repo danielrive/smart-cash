@@ -14,17 +14,12 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-####################################
 ### Github data sources
-
 data "github_repository" "flux-gitops" {
   full_name = "danielrive/smart-cash-gitops-flux"
 }
 
-
-####################################
-#########  cert-manager Issuer policy
-
+##  cert-manager Issuer policy
 data "aws_iam_policy_document" "cert-manager-issuer" {
   statement {
     actions   = ["route53:GetChange"]

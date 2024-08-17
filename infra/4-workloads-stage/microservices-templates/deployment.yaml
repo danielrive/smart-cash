@@ -4,6 +4,7 @@ metadata:
   name: deployment-${SERVICE_NAME}
   labels:
     app: ${SERVICE_NAME}
+    tier: ${TIER}
 spec:
   replicas: 1
   strategy:
@@ -18,11 +19,14 @@ spec:
     metadata:
       labels:
         app: ${SERVICE_NAME}
+        tier: ${TIER}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
+        runAsUser: 10003
+        runAsGroup: 30001
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
