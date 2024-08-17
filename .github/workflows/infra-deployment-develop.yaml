@@ -24,6 +24,7 @@ on:
     paths:
       - "infra/**"
       - '!infra/modules/**'
+      - '!infra/4-workloads-stage/microservices-templates/**'
   pull_request:
     branches:
       - develop
