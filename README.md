@@ -1,6 +1,4 @@
-# Smart-Cash Project
-
-**STATUS** Under development
+# Smart-Cash Project(Under development)
 
 This is a personal project to test some tools that I want to learn in a hands-on manner.
 
@@ -10,18 +8,18 @@ This project contains two main folders:
 
 ### app folder
 
-Contains the application code. Each service has a subfolder that contains the word **_service_** at the end of the name, where can be found the Go code and Dockerfile for the service.
+Contains the application code. Each service has its own folder.
 
-The subfoler utils contains Go packages used by microservice code.
+utils folder contains Go packages used by microservice code.
 
 ### infra folder
 
-Contains the terraform code divided by different stages:
+Contains the Terraform code and K8 manifests divided by different stages:
 
-1. **1-base-stage:** This stage deploys the AWS networking needed for the project(VPC,subnets,endpoints, etc) and some resources like KMS keys and IAM roles.
-2. **2-eks-cluster-stage:** This stage creates the EKS cluster and deploy the first kubernetes resources like, flux CRD, namespaces, nginx-ingress. This stage should contains core resources for the project.
-3. **3-k8-common-stage:** This stage deploys k8 and AWS resources that are used for the whole environment.
-4. **4-workloads-stage:** This stage contains the different microservices to deploy, inside this folder you can find subfolders that contains the k8 and AWS resources that each microservice need.
+* **1-base-stage:** This stage deploys the AWS networking needed for the project(VPC,subnets,endpoints, etc) and some resources like KMS keys and IAM roles.
+* **2-eks-cluster-stage:** This stage creates the EKS cluster and deploy the first kubernetes resources like, flux CRD, namespaces, nginx-ingress. This stage defines the core resources for the project.
+* **3-k8-common-stage:** This stage deploys k8 and AWS resources that are used for the whole environment.
+* **4-workloads-stage:** This stage contains the infrastructure for the services to deploy, each service has its own folder where the TF code is defined based on the infrastructure requirements.
 
 ## Infrastructure
 
@@ -51,27 +49,17 @@ The following image shows in high level some kubernetes resources used:
 <img src=".github/images-readme/smart-cash-Kubernetes.png" alt="general-workflow" width="650"  />
 </p>
 
+The K8 manifest for each stage can be found in a folder named k8-manifests, these are pushed to GitHub by Terraform and FluxCD create/delete them in the Kubernetes cluster.
 
 ## CI/CD App
-### Build Process
 
 The app folder contains the different services to deploy. Each service has its own Dockerfile that is used to build the image and push it to AWS ECR to be used by the pods.
 
 There is a main workflow that is triggered when new changes are detected in the app folder. The workflow can be found in **_./github/workflows/service-build-push-${ENVIRONMENT}_**.
 
-The following image shows the 2 main job executed:
-
-<img src=".github/images-readme/Svc-build.png" alt="service-build" width="350" />
-
-#### Detect folders updated
-
-This is a bash script that gets the diff between the newly created commit and the previous one, validates the folders updated inside the app folder, and returns an array with the names. This script can be found in **.github/jobs/detect-folders-updated.sh**.
-
 #### Build process
 
 This calls a workflow tamplate that can be found in **_./github/workflows/template-service-deploy**. The following image shows the steps executed by the template:
-
-<img src=".github/images-readme/Svc-build-2.png" alt="service-build2" width="450" />
 
 1. **Set up Docker Buildx:** This step installs and configures docker Buildx used to build the Docker image.
 2. **Build image:** Docker build command is executed iniside the folder name passed in the previous job.
