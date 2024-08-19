@@ -1,5 +1,5 @@
 name: DEVELOP Microservice deploy 
-run-name: Devevelop-services-deploy
+run-name: Develop-services-deploy
 
 on:
   workflow_dispatch:
@@ -18,9 +18,10 @@ on:
     branches:
       - develop
       - feature/*
-    paths-ignore:
-      - .github/**
-      - infra/**
+    paths:
+      - "app/**"
+      - '!app/utils/**'
+      - '!app/go.*'
 
 permissions:
   id-token: write
