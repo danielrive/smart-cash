@@ -75,9 +75,10 @@ resource "null_resource" "bootstrap_argo" {
     echo "---> get kubeconfig"
     aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
     echo "---> add github repo"
-    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --token $GITHUB_TOKEN --username argobot
+    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --password $GITHUB_TOKEN --username argobot
     echo "---> add main app"
     argocd app create main-app --repo ${data.github_repository.gh_gitops.http_clone_url} \ 
+    --revision ${var.environment}
     --path cluster/${local.cluster_name}/bootstrap \
     --dest-namespace argocd --dest-server ${module.eks_cluster.cluster_endpoint} \
     --directory-recurse
