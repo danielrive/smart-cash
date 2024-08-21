@@ -56,7 +56,7 @@ resource "null_resource" "install_argo" {
     echo "---> install argo"
     helm repo add argo https://argoproj.github.io/argo-helm
     helm repo update
-    helm install argocd argo/argo-cd --namespace argocd --create-namespace  -f ./k8-manifests/helm-values/argocd.yaml
+    helm install argocd argo/argo-cd --namespace argocd --create-namespace  -f ./k8-manifests/helm-argo-installation/argocd.yaml
     EOF
   }
   triggers = {
