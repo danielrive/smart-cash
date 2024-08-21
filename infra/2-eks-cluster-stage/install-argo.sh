@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "---> installing helm"
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
+#echo "---> installing helm"
+#curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+#chmod 700 get_helm.sh
+#./get_helm.sh
 
 echo "Checking if  argoCD already was installed"
-argoInstalled=$(helm status argocd 2>/dev/null | grep STATUS)
-
+argoInstalled=$(helm status argocd -n argocd 2>/dev/null | grep STATUS)
+echo $argoInstalled
 if [[ -z "$argoInstalled" ]]; then
     echo "---> argoCD no Installed"
     echo "---> getting kubeconfig"
