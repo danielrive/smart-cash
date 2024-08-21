@@ -64,6 +64,34 @@ resource "null_resource" "install_argo" {
   }
 }
 
+resource "null_resource" "install_argo" {
+  depends_on = [module.eks_cluster]
+  provisioner "local-exec" {
+    command = <<EOF
+    echo "---> install argocli"
+    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+    rm argocd-linux-amd64
+    echo "---> get kubeconfig"
+    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
+    echo "---> add github repo"
+    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --token $GITHUB_TOKEN --username argobot
+    echo "---> add main app"
+    argocd app create main-app --repo ${data.github_repository.gh_gitops.http_clone_url} \ 
+    --path cluster/${local.cluster_name}/bootstrap \
+    --dest-namespace argocd --dest-server ${module.eks_cluster.cluster_endpoint} \
+    --directory-recurse
+    EOF
+  }
+  triggers = {
+    always_run = timestamp() # this will always run
+  }
+}
+
+// Bootstrap First main app
+
+
+
 /*
 # configure Private Repo
 resource "argocd_repository" "gh_gitops" {
