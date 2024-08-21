@@ -43,11 +43,20 @@ module "eks_cluster" {
 #####  ArgoCD Bootstrap 
 
 // Get kubeconfig GH runner to run HELM
-resource "null_resource" "get_kubeconfig" {
+resource "null_resource" "install_argo" {
   depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
   provisioner "local-exec" {
     command = <<EOF
+    echo "---> install helm"
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
+    echo "---> get kubeconfig"
     aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
+    echo "---> install argo 
+    helm repo add argo https://argoproj.github.io/argo-helm
+    helm repo update
+    helm install argocd argo/argo-cd --namespace argocd --create-namespace  -f ./k8-manifests/helm-values/argocd.yaml
     EOF
   }
   triggers = {
@@ -55,20 +64,9 @@ resource "null_resource" "get_kubeconfig" {
   }
 }
 
-/// Install ArgoCD
-resource "helm_release" "argocd" {
-  name             = "argocd"
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argo-cd"
-  namespace        = "argocd"
-  create_namespace = true
-  version          = "7.4.4"
-  values = [( var.environment == "develop" ? file("./k8-manifests/helm-values/argocd-no-ha.yaml") : file("./k8-manifests/helm-values/argocd-ha.yaml") )]
-}
-
 # configure Private Repo
 resource "argocd_repository" "gh_gitops" {
-  depends_on      = [helm_release.argocd]
+  depends_on      = [helm_release.install_argo]
   repo            = data.github_repository.gh_gitops.http_clone_url
   username        = "argobot"
   password        = var.gh_token
