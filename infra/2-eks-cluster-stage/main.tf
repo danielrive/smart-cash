@@ -64,6 +64,7 @@ resource "null_resource" "install_argo" {
   }
 }
 
+/*
 # configure Private Repo
 resource "argocd_repository" "gh_gitops" {
   depends_on      = [helm_release.install_argo]
@@ -130,3 +131,4 @@ resource "github_repository_file" "base_resources" {
   overwrite_on_create = true
 }
 
+*/
