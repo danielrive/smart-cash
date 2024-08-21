@@ -47,16 +47,7 @@ resource "null_resource" "install_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    echo "---> install helm"
-    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-    chmod 700 get_helm.sh
-    ./get_helm.sh
-    echo "---> get kubeconfig"
-    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
-    echo "---> install argo"
-    helm repo add argo https://argoproj.github.io/argo-helm
-    helm repo update
-    helm install argocd argo/argo-cd --namespace argocd --create-namespace  -f ./k8-manifests/helm-argo-installation/argocd.yaml
+    ./install-argo.sh ${local.cluster_name} ${var.region}
     EOF
   }
   triggers = {
@@ -64,26 +55,18 @@ resource "null_resource" "install_argo" {
   }
 }
 
+### Bootstrap argocd
+# $1 = Cluster name
+# $2 = aws region
+# $3 = REPO URL
+# $4 = Environment
+# $5 = EKS Cluster endpoint
+
 resource "null_resource" "bootstrap_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    echo "---> install argocli"
-    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-    rm argocd-linux-amd64
-    echo "---> get kubeconfig"
-    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
-    echo "---> set-up context ns to argocd"
-    kubectl config set-context --current --namespace=argocd 
-    echo "---> add github repo"
-    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --password $GITHUB_TOKEN --username argobot --core
-    echo "---> add main app"
-    argocd app create main-app --core --repo ${data.github_repository.gh_gitops.http_clone_url} \ 
-    --revision ${var.environment}
-    --path cluster/${local.cluster_name}/bootstrap \
-    --dest-namespace argocd --dest-server ${module.eks_cluster.cluster_endpoint} \
-    --directory-recurse
+    ./install-argo.sh ${local.cluster_name} ${var.region} ${data.github_repository.gh_gitops.http_clone_url} ${var.environment} ${module.eks_cluster.cluster_endpoint}
     EOF
   }
   triggers = {
