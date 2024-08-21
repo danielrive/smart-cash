@@ -49,3 +49,4 @@ runs:
       working-directory: './infra/${{ inputs.WORKING_DIR}}'
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        TF_VAR_gh_token: ${{ inputs.GITHUB_TOKEN }}

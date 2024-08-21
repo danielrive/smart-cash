@@ -20,3 +20,8 @@ output "created_at" {
   description = "Cluster created_at"
   value       = aws_eks_cluster.kube_cluster.created_at
 }
+
+output "certificate_auth" {
+  descriptin = "CA for the cluster"
+  value      = aws_eks_cluster.kube_cluster.certificate_authority[0].data
+}

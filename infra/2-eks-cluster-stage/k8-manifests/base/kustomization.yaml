@@ -4,5 +4,3 @@ kind: Kustomization
 resources:
 - namespaces.yaml
 - np-default-policies.yaml
-- helm-opa-gatekeeper.yaml
-- helm-nginx-ingress.yaml

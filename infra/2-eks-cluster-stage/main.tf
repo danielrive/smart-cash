@@ -1,8 +1,8 @@
 locals {
   brach_gitops_repo               = var.environment
-  path_tf_repo_flux_kustomization = "./k8-manifests/bootstrap/kustomizations"
+  path_app_bootstrap              = "./k8-manifests/bootstrap/kustomizations"
   path_tf_repo_flux_sources       = "./k8-manifests/bootstrap/flux-sources"
-  path_tf_repo_flux_core          = "./k8-manifests/core"
+  path_tf_repo_base          = "./k8-manifests/core"
   cluster_name                    = "${var.project_name}-${var.environment}"
   gh_username                     = "danielrive"
 }
@@ -38,110 +38,16 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
-##################################################
-#####  IAM Role for FluxCD Image update ECR
-
-resource "aws_iam_role" "flux_imagerepository" {
-  name               = "flux-images-${var.environment}-${var.region}"
-  path               = "/"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      "Condition": {
-        "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:aud" : "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub" : "system:serviceaccount:flux-system:image-reflector-controller"
-        }
-      }
-    }
-  ]
-}
-EOF
-}
-
-## Policy for the role
-resource "aws_iam_policy" "allow_ecr" {
-  name = "ecr-flux-images-${var.environment}-${var.region}"
-  path = "/"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "AllowPull",
-        Effect = "Allow",
-        Action = [
-          "ecr:GetAuthorizationToken",
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-  }
-  
-## attach the policy
-resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
-  policy_arn = aws_iam_policy.allow_ecr.arn
-  role       = aws_iam_role.flux_imagerepository.name
-}
 
 ############################
-#####  Flux Bootstrap 
+#####  ArgoCD Bootstrap 
 
-
-### Get Kubeconfig, arguments in bash script bootstrap-flux.sh
-# $1 = CLUSTER_NAME
-# $2 = AWS_REGION
-# $3 = GH_USER_NAME
-# $4 = FLUX_REPO_NAME
-
-resource "null_resource" "bootstrap-flux" {
-  depends_on = [module.eks_cluster]
-  provisioner "local-exec" {
-    command = <<EOF
-    ./bootstrap-flux.sh ${local.cluster_name}  ${var.region} ${local.gh_username} ${data.github_repository.flux-gitops.name} ${var.environment}
-    EOF
-  }
-  triggers = {
-    always_run = timestamp() # this will always run
-  }
-}
-
-#######################################################
-#####  Patch service account for imageRepositoryRole
-
-resource "github_repository_file" "patch_flux" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/flux-system/kustomization.yaml"
-  content = templatefile(
-    "./k8-manifests/bootstrap/patches-fluxBootstrap/mainKustomization.yaml",
-    {
-      ARN_ROLE = aws_iam_role.flux_imagerepository.arn
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-### Force to update the Pod to take the changes in the SA
-resource "null_resource" "restart_image_reflector" {
+// Get kubeconfig GH runner to run HELM
+resource "null_resource" "get_kubeconfig" {
   depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
   provisioner "local-exec" {
     command = <<EOF
-    aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
-    flux reconcile kustomization flux-system --with-source
-    sleep 5
-    kubectl rollout restart deployment image-reflector-controller -n flux-system
+    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
     EOF
   }
   triggers = {
@@ -149,54 +55,68 @@ resource "null_resource" "restart_image_reflector" {
   }
 }
 
-###############################
-####  GitOps Configuration 
+/// Install ArgoCD
+resource "helm_release" "argocd" {
+  depends_on       = null_resource.get_kubeconfig
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  version          = "7.4.4"
+  values = [( var.environment == "develop" ? file("./k8-manifests/helm-values/argocd-no-ha.yaml") : file("./k8-manifests/helm-values/argocd-ha.yaml") )]
+}
 
-### Flux kustomizations bootstrap 
-resource "github_repository_file" "kustomizations" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  for_each   = fileset(local.path_tf_repo_flux_kustomization, "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_kustomization}/${each.key}",
-    {
-      ENVIRONMENT  = var.environment
-      CLUSTER_NAME = local.cluster_name
+# configure Private Repo
+resource "argocd_repository" "gh_gitops" {
+  depends_on      = [helm_release.argocd]
+  repo            = data.github_repository.gh_gitops.http_clone_url
+  username        = "argobot"
+  password        = var.gh_token
+  insecure        = false
+}
+
+# Argocd app for base manifest
+resource "argocd_application" "base" {
+  depends_on      = [argocd_repository.gh_gitops]
+  metadata {
+    name      = "base"
+    namespace = "argocd"
+    labels = {
+      project = var.project_name
     }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
+  }
+  cascade = false # disable cascading deletion
+  wait    = true
+  spec {
+    project = "default"
+    destination {
+      server    = module.eks_cluster.cluster_endpoint
+      namespace = var.environment
+    }
+    source {
+      repo_url        = data.github_repository.gh_gitops.http_clone_url
+      path            = "cluster/${local.cluster_name}/base"
+      target_revision = var.environment == "prod" ? "main" : var.environment
+    }
+    sync_policy {
+      automated {
+        prune       = true
+        self_heal   = true
+      }
+    }
+  }
 }
 
+## Push the base manifests 
 
-##### Flux Sources 
-resource "github_repository_file" "sources" {
-  depends_on = [module.eks_cluster, github_repository_file.kustomizations]
-  for_each   = fileset(local.path_tf_repo_flux_sources, "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_sources}/${each.key}",
-    {}
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-##### Core resources
-resource "github_repository_file" "core_resources" {
+##### Base resources
+resource "github_repository_file" "base_resources" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")
+  for_each   = fileset("./k8-manifests/base", "*.yaml")
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/core/${each.key}"
+  file       = "clusters/${local.cluster_name}/base/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_flux_core}/${each.key}",
     {
@@ -212,3 +132,4 @@ resource "github_repository_file" "core_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
