@@ -6,6 +6,9 @@
 #./get_helm.sh
 
 echo "Checking if  argoCD already was installed"
+helm status argocd -n argocd 
+helm status argocd -n argocd 2>/dev/null
+helm status argocd -n argocd 2>/dev/null | grep STATUS
 argoInstalled=$(helm status argocd -n argocd 2>/dev/null | grep STATUS)
 echo $argoInstalled
 if [[ -z "$argoInstalled" ]]; then
