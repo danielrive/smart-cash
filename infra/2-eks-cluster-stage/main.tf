@@ -74,8 +74,10 @@ resource "null_resource" "bootstrap_argo" {
     rm argocd-linux-amd64
     echo "---> get kubeconfig"
     aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
+    echo "---> set-up context ns to argocd"
+    kubectl config set-context --current --namespace=argocd 
     echo "---> add github repo"
-    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --password $GITHUB_TOKEN --username argobot --core
+    argocd repo add ${data.github_repository.gh_gitops.http_clone_url} --password $GITHUB_TOKEN --username argobot --core -n argocd
     echo "---> add main app"
     argocd app create main-app --core --repo ${data.github_repository.gh_gitops.http_clone_url} \ 
     --revision ${var.environment}
