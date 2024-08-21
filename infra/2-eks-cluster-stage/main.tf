@@ -53,7 +53,7 @@ resource "null_resource" "install_argo" {
     ./get_helm.sh
     echo "---> get kubeconfig"
     aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
-    echo "---> install argo 
+    echo "---> install argo"
     helm repo add argo https://argoproj.github.io/argo-helm
     helm repo update
     helm install argocd argo/argo-cd --namespace argocd --create-namespace  -f ./k8-manifests/helm-values/argocd.yaml
