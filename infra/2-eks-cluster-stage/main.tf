@@ -64,7 +64,7 @@ resource "null_resource" "install_argo" {
   }
 }
 
-resource "null_resource" "install_argo" {
+resource "null_resource" "bootstrap_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
