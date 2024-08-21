@@ -57,7 +57,6 @@ resource "null_resource" "get_kubeconfig" {
 
 /// Install ArgoCD
 resource "helm_release" "argocd" {
-  depends_on       = null_resource.get_kubeconfig
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
