@@ -44,7 +44,7 @@ module "eks_cluster" {
 
 // Get kubeconfig GH runner to run HELM
 resource "null_resource" "install_argo" {
-  depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
+  depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
     echo "---> install helm"
