@@ -47,7 +47,7 @@ resource "null_resource" "install_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    ./install-argo.sh ${local.cluster_name} ${var.region}
+    . ./install-argo.sh ${local.cluster_name} ${var.region}
     EOF
   }
   triggers = {
@@ -66,7 +66,7 @@ resource "null_resource" "bootstrap_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    ./bootstrap-argo.sh ${local.cluster_name} ${var.region} ${data.github_repository.gh_gitops.http_clone_url} ${var.environment} ${module.eks_cluster.cluster_endpoint}
+    . ./bootstrap-argo.sh ${local.cluster_name} ${var.region} ${data.github_repository.gh_gitops.http_clone_url} ${var.environment} https://kubernetes.default.svc
     EOF
   }
   triggers = {

@@ -6,8 +6,11 @@
 #./get_helm.sh
 
 echo "Checking if  argoCD already was installed"
+echo "---------------> sin redirect"
 helm status argocd -n argocd 
+echo "---------------> redirect status to null"
 helm status argocd -n argocd 2>/dev/null
+echo "---------------> redirect status to null CON GREP"
 helm status argocd -n argocd 2>/dev/null | grep STATUS
 argoInstalled=$(helm status argocd -n argocd 2>/dev/null | grep STATUS)
 echo $argoInstalled
