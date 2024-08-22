@@ -42,7 +42,7 @@ module "eks_cluster" {
 ############################
 #####  ArgoCD Bootstrap 
 
-// Get kubeconfig GH runner to run HELM
+## Install ArgoCD using HELM
 resource "null_resource" "install_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
@@ -54,6 +54,23 @@ resource "null_resource" "install_argo" {
     always_run = timestamp() # this will always run
   }
 }
+
+##  Argo needs a existing folder in the GitOps Repo, wi will push a random .txt file to create the path
+##### Base resources
+resource "github_repository_file" "create_init_path" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/init.txt"
+  content = templatefile(
+    "./init.txt",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
 
 ### Bootstrap argocd
 # $1 = Cluster name
