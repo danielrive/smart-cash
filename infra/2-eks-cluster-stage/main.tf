@@ -47,7 +47,7 @@ resource "null_resource" "install_argo" {
   depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    ./install-argo.sh
+    ./install-argo.sh ${local.cluster_name} ${var.region}
     EOF
   }
   triggers = {
