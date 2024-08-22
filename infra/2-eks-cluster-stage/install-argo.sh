@@ -10,7 +10,7 @@ argoInstalled=$(helm list -n argocd --filter argocd --output json | jq -r '.[0].
 echo $argoInstalled
 if [[ "$argoInstalled" == "deployed" ]]; then
     echo "---> argoCD already installed"
-elif [[ "$argoInstalled" == "null" ]]
+elif [[ "$argoInstalled" == "null" ]]; then
     echo "---> argoCD no Installed"
     echo "---> installing argo"
     helm repo add argocd https://argoproj.github.io/argo-helm
