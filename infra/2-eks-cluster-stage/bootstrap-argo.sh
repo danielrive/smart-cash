@@ -14,6 +14,7 @@ echo "---> getting kubeconfig"
 aws eks update-kubeconfig --name $1 --region $2
 echo "---> set-up context ns to argocd"
 kubectl config set-context --current --namespace=argocd 
+kubectl get cm -n argocd
 echo "---> add github repo"
 argocd repo add $3 --password $GITHUB_TOKEN --username argobot --core
 echo "---> add main app"
