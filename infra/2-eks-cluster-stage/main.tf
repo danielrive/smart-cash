@@ -80,7 +80,7 @@ resource "github_repository_file" "create_init_path" {
 # $5 = EKS Cluster endpoint
 
 resource "null_resource" "bootstrap_argo" {
-  depends_on = [module.eks_cluster,null_resource.install_argo]
+  depends_on = [module.eks_cluster,null_resource.install_argo,github_repository_file.create_init_path]
   provisioner "local-exec" {
     command = <<EOF
     ./bootstrap-argo.sh ${local.cluster_name} ${var.region} ${data.github_repository.gh_gitops.http_clone_url} ${var.environment} https://kubernetes.default.svc
