@@ -58,7 +58,7 @@ resource "null_resource" "install_argo" {
 ##  Argo needs a existing folder in the GitOps Repo, wi will push a random .txt file to create the path
 ##### Base resources
 resource "github_repository_file" "create_init_path" {
-  repository = data.github_repository.flux-gitops.name
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
   file       = "clusters/${local.cluster_name}/bootstrap/init.txt"
   content = templatefile(
