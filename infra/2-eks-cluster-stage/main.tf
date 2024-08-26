@@ -1,7 +1,6 @@
 locals {
   brach_gitops_repo               = var.environment
   path_app_bootstrap              = "./k8-manifests/bootstrap/kustomizations"
-  path_tf_repo_flux_sources       = "./k8-manifests/bootstrap/flux-sources"
   path_tf_repo_base          = "./k8-manifests/core"
   cluster_name                    = "${var.project_name}-${var.environment}"
   gh_username                     = "danielrive"
@@ -91,9 +90,30 @@ resource "null_resource" "bootstrap_argo" {
   }
 }
 
+### Create Argo app for K8 core resources
+resource "github_repository_file" "core_app" {
+  repository = data.github_repository.gh_gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/core.yaml"
+  content = templatefile(
+    "./k8-manifests/argo-apps/core.yaml",
+    {
+      ## Common variables for manifests
+      ENVIRONMENT           = var.environment
+      REPO_URL = ${data.github_repository.gh_gitops.http_clone_url}
+      GITOPS_PATH = "clusters/${local.cluster_name}/core"
+     
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+
 // Bootstrap First main app
-
-
 
 /*
 # configure Private Repo
