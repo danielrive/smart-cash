@@ -111,6 +111,25 @@ resource "github_repository_file" "core_app" {
   overwrite_on_create = true
 }
 
+## Push core manifest to GitOps repo
+resource "github_repository_file" "core_manifest" {
+  for_each   = fileset("./k8-manifests/core", "*.yaml")
+  repository = data.github_repository.gh_gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/core/${each.key}"
+  content = templatefile(
+    "./k8-manifests/core/${each.key}",
+    {
+      ## Common variables for manifests
+      ENVIRONMENT           = var.environment
+      PROJECT = var.project_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
 
 
 // Bootstrap First main app
