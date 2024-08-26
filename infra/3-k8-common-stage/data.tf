@@ -7,6 +7,6 @@ data "aws_availability_zones" "available" {
 
 ### Github data sources
 
-data "github_repository" "flux-gitops" {
-  full_name = "danielrive/smart-cash-gitops-flux"
+data "github_repository" "gh_gitops" {
+  full_name = "danielrive/smart-cash-gitops-argocd"
 }
