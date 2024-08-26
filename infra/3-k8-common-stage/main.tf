@@ -31,8 +31,8 @@ resource "github_repository_file" "common_argo_apps" {
 
 resource "github_repository_file" "common_resources" {
   depends_on = [github_repository_file.common_argo_apps]
-  for_each   = fileset(local.path_tf_repo_flux_common, "*.yaml")
-  repository = data.github_repository.flux-gitops.name
+  for_each   = fileset("./k8-manifests/common/", "*.yaml")
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
   file       = "clusters/${local.cluster_name}/common/${each.key}"
   content = templatefile(
