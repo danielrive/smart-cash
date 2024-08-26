@@ -100,7 +100,7 @@ resource "github_repository_file" "core_app" {
     {
       ## Common variables for manifests
       ENVIRONMENT           = var.environment
-      REPO_URL = ${data.github_repository.gh_gitops.http_clone_url}
+      REPO_URL = data.github_repository.gh_gitops.http_clone_url
       GITOPS_PATH = "clusters/${local.cluster_name}/core"
      
     }
