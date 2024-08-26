@@ -1,24 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: core
+  name: opa-gatekeeper
   namespace: argocd
   # Add this finalizer ONLY if you want these to cascade delete.
   finalizers:
     # The default behaviour is foreground cascading deletion
     - resources-finalizer.argocd.argoproj.io
   labels:
-    name: core
+    name: opa-gatekeeper
 spec:
   # The project the application belongs to.
   project: default
   source:
-    repoURL: ${REPO_URL} 
-    targetRevision: ${ENVIRONMENT}
-    path: ${GITOPS_PATH_CORE}
+    chart: gatekeeper
+    repoURL: https://open-policy-agent.github.io/gatekeeper/charts
+    targetRevision: 3.15.0
+    helm:
+      releaseName: opa-gatekeeper
   destination:
     server: https://kubernetes.default.svc
-    namespace: ${ENVIRONMENT}
+    namespace: gatekeeper-system
   syncPolicy:
     automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
       prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).

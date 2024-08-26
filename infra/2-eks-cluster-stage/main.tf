@@ -91,18 +91,18 @@ resource "null_resource" "bootstrap_argo" {
 }
 
 ### Create Argo app for K8 core resources
-resource "github_repository_file" "core_app" {
+resource "github_repository_file" "core_argo_apps" {
+  for_each   = fileset("./k8-manifests/argo-apps", "*.yaml")
   repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/core.yaml"
+  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
   content = templatefile(
-    "./k8-manifests/argo-apps/core.yaml",
+    "./k8-manifests/argo-apps/${each.key}",
     {
       ## Common variables for manifests
       ENVIRONMENT           = var.environment
       REPO_URL = data.github_repository.gh_gitops.http_clone_url
-      GITOPS_PATH = "clusters/${local.cluster_name}/core"
-     
+      GITOPS_PATH_CORE = "clusters/${local.cluster_name}/core"
     }
   )
   commit_message      = "Managed by Terraform"
@@ -112,7 +112,7 @@ resource "github_repository_file" "core_app" {
 }
 
 ## Push core manifest to GitOps repo
-resource "github_repository_file" "core_manifest" {
+resource "github_repository_file" "core_manifests" {
   for_each   = fileset("./k8-manifests/core", "*.yaml")
   repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
