@@ -5,5 +5,4 @@ resources:
 - deployment.yaml
 - service.yaml
 - service-account.yaml
-- image-update-automation.yaml
 - network-policy.yaml
