@@ -22,5 +22,5 @@ echo "---> add github repo"
 argocd repo add $3 --password $GITHUB_TOKEN --username argobot --core
 ## Create the first app, the will be the main application that will contain other apps
 echo "---> add main app"
-argocd app create main-app --core --directory-recurse --repo $3 --revision $4 --path clusters/$1/bootstrap --dest-namespace argocd --dest-server $5 --sync-policy auto --self-heal
+argocd app create main-app --core --directory-recurse --repo $3 --revision $4 --path clusters/$1/bootstrap --dest-namespace argocd --dest-server $5 --sync-policy auto --self-heal --upsert
     
