@@ -156,7 +156,7 @@ resource "github_repository_file" "argo_app" {
       ENVIRONMENT               = var.environment
       SERVICE_NAME              = local.this_service_name
       REPO_URL                  = data.github_repository.gh_gitops.http_clone_url
-      GITOPS_PATH_COMMON        = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/overlays/${var.environment}"
+      GITOPS_PATH        = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/overlays/${var.environment}"
     }
   )
   commit_message      = "Managed by Terraform"
