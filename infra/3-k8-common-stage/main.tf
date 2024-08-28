@@ -50,14 +50,15 @@ resource "github_repository_file" "common_resources" {
   overwrite_on_create = true
 }
 
-/*
+
 #################################
 ##### OPA constraints(policies)
 
 resource "github_repository_file" "opa_constraints" {
-  repository = data.github_repository.flux-gitops.name
+  depends_on = [github_repository_file.common_resources]
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/opa-policies/opa-constraints.yaml"
+  file       = "clusters/${local.cluster_name}/common/opa-constraints.yaml"
   content = templatefile(
     "./k8-manifests/opa-policies/constraints.yaml",
     {
@@ -69,4 +70,3 @@ resource "github_repository_file" "opa_constraints" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-*/

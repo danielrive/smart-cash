@@ -8,19 +8,36 @@ metadata:
     # The default behaviour is foreground cascading deletion
     - resources-finalizer.argocd.argoproj.io
   labels:
-    name: nginx-ingress
+    name: prometheus
 spec:
   # The project the application belongs to.
   project: default
   source:
-    chart: nginx-ingress
-    repoURL: ghcr.io/nginxinc/charts
-    targetRevision: 1.2.1
+    chart: kube-prometheus-stack
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 62.3.0
     helm:
-      releaseName: nginx-ingress
+      releaseName: kube-prometheus-stack
+      valuesObject:
+        defaultRules:
+          rules:
+            etcd: false
+            kubeSchedulerAlerting: false
+            kubeSchedulerRecording: false
+            windows: false
+        prometheus:
+          prometheusSpec:
+            storageSpec:
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: aws-ebs-gp2
+                    accessModes: ["ReadWriteOnce"]
+                    resources:
+                      requests:
+                        storage: 40Gi
   destination:
     server: https://kubernetes.default.svc
-    namespace: ${ENVIRONMENT}
+    namespace: monitoring
   syncPolicy:
     automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
       prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).

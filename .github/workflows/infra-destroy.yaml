@@ -88,3 +88,5 @@ jobs:
             -var 'project_name=${{ env.PROJECT_NAME }}' 
        shell: bash
        working-directory:  '${{ env.WORKING_DIRECTORY }}'
+       env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
