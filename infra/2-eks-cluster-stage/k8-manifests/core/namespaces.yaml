@@ -4,34 +4,9 @@ metadata:
   name: ${ENVIRONMENT}
   labels:
     project: ${PROJECT}
-
+  
 ---
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nginx-ingress
-  labels:
-    ingress: nginx
----
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: monitoring
-
----
-
 apiVersion: v1
 kind: Namespace
 metadata:
   name: cert-manager
-
-
----
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gatekeeper-system
-
