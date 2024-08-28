@@ -218,7 +218,7 @@ resource "github_repository_file" "overlays_svc" {
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/base/${each.key}"
+  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/base/network-policy.yaml"
   content = templatefile(
     "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
