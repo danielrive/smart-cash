@@ -27,7 +27,6 @@ spec:
               some container in input.review.object.spec.containers
               not startswith(container.image, input.parameters.registry)
               msg := sprintf("Image '%v' comes from untrusted registry", [container.image])
-  
         }
 
 ---
@@ -85,5 +84,4 @@ spec:
               not input.review.object.spec.securityContext.runAsNonRoot
               msg := "Pod does not enforce running as non-root"
           }
-        }
 
