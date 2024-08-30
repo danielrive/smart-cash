@@ -37,6 +37,18 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
+######################
+### cer manager role
+
+module "cert_manager" {
+  source = "../modules/cert-manager"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  cluster_oidc = module.eks_cluster.cluster_oidc
+  account_id = data.aws_caller_identity.id_account.id
+}
+
 ############################
 #####  ArgoCD Bootstrap 
 
@@ -102,6 +114,7 @@ resource "github_repository_file" "core_argo_apps" {
       ENVIRONMENT           = var.environment
       REPO_URL = data.github_repository.gh_gitops.http_clone_url
       GITOPS_PATH_CORE = "clusters/${local.cluster_name}/core"
+      CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
   )
   commit_message      = "Managed by Terraform"

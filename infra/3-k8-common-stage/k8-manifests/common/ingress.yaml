@@ -27,6 +27,9 @@ metadata:
   namespace: argocd
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: danielrive-letsencrypt2
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   ingressClassName: nginx
   rules:
@@ -39,4 +42,8 @@ spec:
           service:
             name: argocd-server
             port:
-              number: 80
+              name: http
+  tls: 
+  - hosts:
+    - argo.${ENVIRONMENT}.smartcash.danielrive.site
+    secretName: argocd-cert
