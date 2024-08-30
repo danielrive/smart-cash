@@ -46,4 +46,4 @@ spec:
   tls: 
   - hosts:
     - argo.${ENVIRONMENT}.smartcash.danielrive.site
-    secretName: argocd-cert
+    secretName: argocd-tls

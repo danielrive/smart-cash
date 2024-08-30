@@ -1,6 +1,7 @@
 locals {
   brach_gitops_repo        = var.environment
   cluster_name             = "${var.project_name}-${var.environment}"
+  domain_name              = "danielrive.site"
 }
 
 
@@ -42,6 +43,7 @@ resource "github_repository_file" "common_resources" {
       AWS_REGION  = var.region
       ENVIRONMENT = var.environment
       PROJECT     = var.project_name
+      DOMAIN_NAME = local.domain_name
     }
   )
   commit_message      = "Managed by Terraform"
