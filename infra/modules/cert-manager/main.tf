@@ -29,7 +29,7 @@ EOF
 ###############################
 #### Role Policy
 
-resource "aws_iam_policy" "cer_manager" {
+resource "aws_iam_policy" "cert_manager" {
   name   = "policy-admin-eks-${var.cluster_name}-${var.region}"
   path   = "/"
   policy = <<EOF
@@ -61,7 +61,7 @@ EOF
 
 ## Attach policy to role
 resource "aws_iam_role_policy_attachment" "cert_manager" {
-  policy_arn = aws_iam_policy.cer_manager.arn
-  role       = aws_iam_role.cer_manager.name
+  policy_arn = aws_iam_policy.cert_manager.arn
+  role       = aws_iam_role.cert_manager.name
 }
 
