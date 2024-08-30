@@ -30,7 +30,7 @@ EOF
 #### Role Policy
 
 resource "aws_iam_policy" "cert_manager" {
-  name   = "policy-admin-eks-${var.cluster_name}-${var.region}"
+  name   = "policy-certmanager-${var.cluster_name}-${var.region}"
   path   = "/"
   policy = <<EOF
     {
