@@ -17,7 +17,7 @@ resource "aws_iam_role" "cert_manager" {
       "Condition": {
         "StringEquals": {
           "${var.cluster_oidc}:aud" : "sts.amazonaws.com",
-          "${var.cluster_oidc}:sub" : "system:serviceaccount:security:sa-cert-manager"
+          "${var.cluster_oidc}:sub" : "system:serviceaccount:cert-manager:cert-manager"
         }
       }
     }

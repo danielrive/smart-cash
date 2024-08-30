@@ -6,8 +6,8 @@ spec:
   acme:
     email: notreply@rootdr.info
     server: https://acme-staging-v02.api.letsencrypt.org/directory
- #   privateKeySecretRef:
- #     name: danielrive-issuer-account-key
+    privateKeySecretRef:
+      name: danielrive-issuer-acme
     solvers:
     - selector:
         dnsZones:
