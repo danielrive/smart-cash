@@ -6,9 +6,9 @@ controller:
 
 server:
   replicas: 1
-  extraEnv:
-    - name: ARGOCD_SERVER_INSECURE
-      value: "true"
+  insecure: false
+  extraArgs:
+    - --insecure
 
 repoServer:
   replicas: 1
