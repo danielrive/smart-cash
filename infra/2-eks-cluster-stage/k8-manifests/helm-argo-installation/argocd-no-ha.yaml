@@ -6,7 +6,7 @@ controller:
 
 server:
   replicas: 1
-  insecure: false
+  insecure: true
   extraArgs:
     - --insecure
 
