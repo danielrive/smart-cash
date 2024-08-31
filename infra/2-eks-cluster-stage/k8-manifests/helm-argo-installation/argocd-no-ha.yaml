@@ -6,9 +6,8 @@ controller:
 
 server:
   replicas: 1
-  insecure: true
-  extraArgs:
-    - --insecure
+  config:
+    server.insecure: "true"
 
 repoServer:
   replicas: 1
