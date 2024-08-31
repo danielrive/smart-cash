@@ -1,4 +1,4 @@
-# Smart-Cash Project(Under development)
+# Smart-Cash Project ArgoCD (Under development)
 
 This is a personal project to test some tools that I want to learn in a hands-on manner.
 
@@ -17,7 +17,7 @@ utils folder contains Go packages used by microservice code.
 Contains the Terraform code and K8 manifests divided by different stages:
 
 * **1-base-stage:** This stage deploys the AWS networking needed for the project(VPC,subnets,endpoints, etc) and some resources like KMS keys and IAM roles.
-* **2-eks-cluster-stage:** This stage creates the EKS cluster and deploy the first kubernetes resources like, flux CRD, namespaces, nginx-ingress. This stage defines the core resources for the project.
+* **2-eks-cluster-stage:** This stage creates the EKS cluster and deploy the first kubernetes resources like, ArgoCD components, namespaces, nginx-ingress. This stage defines the core resources for the project.
 * **3-k8-common-stage:** This stage deploys k8 and AWS resources that are used for the whole environment.
 * **4-workloads-stage:** This stage contains the infrastructure for the services to deploy, each service has its own folder where the TF code is defined based on the infrastructure requirements.
 
