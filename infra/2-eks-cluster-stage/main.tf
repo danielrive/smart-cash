@@ -1,7 +1,6 @@
 locals {
   brach_gitops_repo               = var.environment
   path_app_bootstrap              = "./k8-manifests/bootstrap/kustomizations"
-  path_tf_repo_flux_sources       = "./k8-manifests/bootstrap/flux-sources"
   path_tf_repo_base          = "./k8-manifests/core"
   cluster_name                    = "${var.project_name}-${var.environment}"
   gh_username                     = "danielrive"
@@ -38,16 +37,27 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
+######################
+### cer manager role
+
+module "cert_manager" {
+  source = "../modules/cert-manager"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  cluster_oidc = module.eks_cluster.cluster_oidc
+  account_id = data.aws_caller_identity.id_account.id
+}
 
 ############################
 #####  ArgoCD Bootstrap 
 
-// Get kubeconfig GH runner to run HELM
-resource "null_resource" "get_kubeconfig" {
-  depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
+## Install ArgoCD using HELM
+resource "null_resource" "install_argo" {
+  depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
+    ./install-argo.sh ${local.cluster_name} ${var.region}
     EOF
   }
   triggers = {
@@ -55,76 +65,56 @@ resource "null_resource" "get_kubeconfig" {
   }
 }
 
-/// Install ArgoCD
-resource "helm_release" "argocd" {
-  depends_on       = null_resource.get_kubeconfig
-  name             = "argocd"
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argo-cd"
-  namespace        = "argocd"
-  create_namespace = true
-  version          = "7.4.4"
-  values = [( var.environment == "develop" ? file("./k8-manifests/helm-values/argocd-no-ha.yaml") : file("./k8-manifests/helm-values/argocd-ha.yaml") )]
-}
-
-# configure Private Repo
-resource "argocd_repository" "gh_gitops" {
-  depends_on      = [helm_release.argocd]
-  repo            = data.github_repository.gh_gitops.http_clone_url
-  username        = "argobot"
-  password        = var.gh_token
-  insecure        = false
-}
-
-# Argocd app for base manifest
-resource "argocd_application" "base" {
-  depends_on      = [argocd_repository.gh_gitops]
-  metadata {
-    name      = "base"
-    namespace = "argocd"
-    labels = {
-      project = var.project_name
-    }
-  }
-  cascade = false # disable cascading deletion
-  wait    = true
-  spec {
-    project = "default"
-    destination {
-      server    = module.eks_cluster.cluster_endpoint
-      namespace = var.environment
-    }
-    source {
-      repo_url        = data.github_repository.gh_gitops.http_clone_url
-      path            = "cluster/${local.cluster_name}/base"
-      target_revision = var.environment == "prod" ? "main" : var.environment
-    }
-    sync_policy {
-      automated {
-        prune       = true
-        self_heal   = true
-      }
-    }
-  }
-}
-
-## Push the base manifests 
-
+##  Argo needs a existing folder in the GitOps Repo, wi will push a random .txt file to create the path
 ##### Base resources
-resource "github_repository_file" "base_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  for_each   = fileset("./k8-manifests/base", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
+resource "github_repository_file" "create_init_path" {
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/base/${each.key}"
+  file       = "clusters/${local.cluster_name}/bootstrap/init.txt"
   content = templatefile(
-    "${local.path_tf_repo_flux_core}/${each.key}",
+    "./init.txt",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
+### Bootstrap argocd
+# $1 = Cluster name
+# $2 = aws region
+# $3 = REPO URL
+# $4 = Environment
+# $5 = EKS Cluster endpoint
+
+resource "null_resource" "bootstrap_argo" {
+  depends_on = [module.eks_cluster,null_resource.install_argo,github_repository_file.create_init_path]
+  provisioner "local-exec" {
+    command = <<EOF
+    ./bootstrap-argo.sh ${local.cluster_name} ${var.region} ${data.github_repository.gh_gitops.http_clone_url} ${var.environment} https://kubernetes.default.svc
+    EOF
+  }
+  triggers = {
+    always_run = timestamp() # this will always run
+  }
+}
+
+### Create Argo app for K8 core resources
+resource "github_repository_file" "core_argo_apps" {
+  for_each   = fileset("./k8-manifests/argo-apps", "*.yaml")
+  repository = data.github_repository.gh_gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${each.key}"
+  content = templatefile(
+    "./k8-manifests/argo-apps/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION            = var.region
       ENVIRONMENT           = var.environment
-      PROJECT               = var.project_name
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      REPO_URL = data.github_repository.gh_gitops.http_clone_url
+      GITOPS_PATH_CORE = "clusters/${local.cluster_name}/core"
+      CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
   )
   commit_message      = "Managed by Terraform"
@@ -133,3 +123,22 @@ resource "github_repository_file" "base_resources" {
   overwrite_on_create = true
 }
 
+## Push core manifest to GitOps repo
+resource "github_repository_file" "core_manifests" {
+  for_each   = fileset("./k8-manifests/core", "*.yaml")
+  repository = data.github_repository.gh_gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/core/${each.key}"
+  content = templatefile(
+    "./k8-manifests/core/${each.key}",
+    {
+      ## Common variables for manifests
+      ENVIRONMENT           = var.environment
+      PROJECT = var.project_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}

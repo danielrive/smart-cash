@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: helm-nginx-ingress
+  namespace: argocd
+  # Add this finalizer ONLY if you want these to cascade delete.
+  finalizers:
+    # The default behaviour is foreground cascading deletion
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    name: nginx-ingress
+spec:
+  # The project the application belongs to.
+  project: default
+  source:
+    chart: nginx-ingress
+    repoURL: ghcr.io/nginxinc/charts
+    targetRevision: 1.2.1
+    helm:
+      releaseName: nginx-ingress
+      valuesObject:
+        controller:
+          service:
+            annotations: 
+              service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-ingress
+  syncPolicy:
+    automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
+      prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).
+      selfHeal: true # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected ( false by default ).
+      allowEmpty: false # Allows deleting all application resources during automatic syncing ( false by default ).
+    # The retry feature is available since v1.7
+    retry:
+      limit: 3 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+      backoff:
+        duration: 5s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+        factor: 2 # a factor to multiply the base duration after each failed retry
+        maxDuration: 3m # the maximum amount of time allowed for the backoff strategy
+    syncOptions:
+      - CreateNamespace=true

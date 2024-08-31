@@ -18,22 +18,3 @@ data "aws_availability_zones" "available" {
 data "github_repository" "gh_gitops" {
   full_name = "danielrive/smart-cash-gitops-argocd"
 }
-
-##  cert-manager Issuer policy
-data "aws_iam_policy_document" "cert-manager-issuer" {
-  statement {
-    actions   = ["route53:GetChange"]
-    resources = ["arn:aws:route53:::change/*"]
-    effect    = "Allow"
-  }
-  statement {
-    actions   = ["route53:ChangeResourceRecordSets", "route53:ListResourceRecordSets", ]
-    resources = ["arn:aws:route53:::hostedzone/*"]
-    effect    = "Allow"
-  }
-  statement {
-    actions   = ["route53:ListHostedZonesByName", ]
-    resources = ["*"]
-    effect    = "Allow"
-  }
-}

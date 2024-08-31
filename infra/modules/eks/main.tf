@@ -116,7 +116,7 @@ resource "aws_eks_access_policy_association" "eks_admin" {
 
 ## Create Identity Policy eks policy for role
 
-resource "aws_iam_policy" "eks-admin" {
+resource "aws_iam_policy" "eks_admin" {
   name   = "policy-admin-eks-${local.eks_cluster_name}-${var.region}"
   path   = "/"
   policy = <<EOF
@@ -147,7 +147,7 @@ EOF
 
 ## Attach policy to role
 resource "aws_iam_role_policy_attachment" "eks_admin_role" {
-  policy_arn = aws_iam_policy.eks-admin.arn
+  policy_arn = aws_iam_policy.eks_admin.arn
   role       = aws_iam_role.eks_admin_iam_role.name
 }
 

@@ -21,7 +21,7 @@ on:
     branches:
       - develop
       - feat/*
-      - main-argocd
+      - argo/*
     paths:
       - "infra/**"
       - '!infra/modules/**'

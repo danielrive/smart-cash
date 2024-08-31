@@ -133,16 +133,35 @@ module "ecr_registry" {
 ###########################
 ##### K8 Manifests 
 
-# Add Kustomization to flux
-resource "github_repository_file" "kustomization" {
-  repository = data.github_repository.flux-gitops.name
+##  Argo needs a existing folder in the GitOps Repo, wi will push a random .txt file to create the path
+##### Base resources
+resource "github_repository_file" "create_init_path" {
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
+  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/overlays/${var.environment}/init.txt"
   content = templatefile(
-    "${local.path_tf_repo_services}/kustomization/${local.this_service_name}.yaml",
+    "./../init.txt",
+    {}
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+# Create Argoapp
+resource "github_repository_file" "argo_app" {
+  depends_on = [github_repository_file.create_init_path]
+  repository = data.github_repository.gh_gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}.yaml"
+  content = templatefile(
+    "./k8-manifests/argo-apps/${local.this_service_name}.yaml",
     {
       ENVIRONMENT               = var.environment
       SERVICE_NAME              = local.this_service_name
+      REPO_URL                  = data.github_repository.gh_gitops.http_clone_url
+      GITOPS_PATH       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/overlays/${var.environment}"
     }
   )
   commit_message      = "Managed by Terraform"
@@ -154,9 +173,9 @@ resource "github_repository_file" "kustomization" {
 ##### Base manifests
 resource "github_repository_file" "base_manifests" {
   for_each   = fileset("../microservices-templates", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/base/${each.key}"
+  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
     "../microservices-templates/${each.key}",
     {
@@ -175,9 +194,9 @@ resource "github_repository_file" "base_manifests" {
 ##### overlays
 resource "github_repository_file" "overlays_svc" {
   for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
+  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/base/${each.key}"
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
     {
@@ -197,35 +216,14 @@ resource "github_repository_file" "overlays_svc" {
 
 ##### Network Policies
 resource "github_repository_file" "network_policy" {
-  repository = data.github_repository.flux-gitops.name
+  repository = data.github_repository.gh_gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/base/network-policy.yaml"
+  file       = "clusters/${local.cluster_name}/services/${local.this_service_name}-service/base/network-policy.yaml"
   content = templatefile(
     "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
       PROJECT_NAME = var.project_name
       SERVICE_PORT               = local.this_service_port
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-##### Images Updates automation
-resource "github_repository_file" "image_updates" {
-  for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/base/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_services}/flux-image-update/${each.key}",
-    {
-      SERVICE_NAME    = local.this_service_name
-      ECR_REPO        = module.ecr_registry.repo_url
-      ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
     }
   )
   commit_message      = "Managed by Terraform"

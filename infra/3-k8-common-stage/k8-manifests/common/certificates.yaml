@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-tls
+  namespace: argocd
+spec:
+  secretName: argocd-tls
+  issuerRef:
+    name: danielrive-letsencrypt2
+    kind: ClusterIssuer
+  commonName: "${DOMAIN_NAME}"
+  dnsNames:
+  - "${DOMAIN_NAME}"
+  - "argo.develop.smartcash.${DOMAIN_NAME}"
+
+--- 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: app-cert
+  namespace: ${ENVIRONMENT}
+spec:
+  secretName: app-tls
+  issuerRef:
+    name: danielrive-letsencrypt2
+    kind: ClusterIssuer
+  commonName: "${DOMAIN_NAME}"
+  dnsNames:
+  - "${DOMAIN_NAME}"
+  - "${ENVIRONMENT}.smartcash.${DOMAIN_NAME}"
