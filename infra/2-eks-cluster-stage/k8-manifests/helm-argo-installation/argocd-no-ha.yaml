@@ -1,3 +1,6 @@
+configs:
+  params:
+    server.insecure: "true"
 redis-ha:
   enabled: false
 
@@ -6,8 +9,6 @@ controller:
 
 server:
   replicas: 1
-  config:
-    server.insecure: "true"
 
 repoServer:
   replicas: 1
