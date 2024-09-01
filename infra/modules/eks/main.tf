@@ -356,7 +356,7 @@ EOF
 ## Attach policy to vpc cni role
 resource "aws_iam_role_policy_attachment" "csi_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  role       = aws_iam_role.vpc_cni_role.name
+  role       = aws_iam_role.ebs_csi_role.name
 }
 
 ## Install EBS add-on
