@@ -191,6 +191,18 @@ resource "github_repository_file" "sources" {
   overwrite_on_create = true
 }
 
+######################
+### cer manager role
+
+module "cert_manager" {
+  source = "../modules/cert-manager"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  cluster_oidc = module.eks_cluster.cluster_oidc
+  account_id = data.aws_caller_identity.id_account.id
+}
+
 ##### Core resources
 resource "github_repository_file" "core_resources" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
@@ -205,7 +217,7 @@ resource "github_repository_file" "core_resources" {
       AWS_REGION            = var.region
       ENVIRONMENT           = var.environment
       PROJECT               = var.project_name
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
   )
   commit_message      = "Managed by Terraform"
