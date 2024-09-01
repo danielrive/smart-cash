@@ -6,3 +6,5 @@ resources:
 - np-default-policies.yaml
 - helm-opa-gatekeeper.yaml
 - helm-nginx-ingress.yaml
+- ebs-storage-class.yaml
+- helm-prometheus.yaml
