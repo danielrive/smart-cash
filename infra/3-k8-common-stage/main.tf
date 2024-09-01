@@ -6,6 +6,23 @@ locals {
 }
 
 
+# Add Kustomization to flux
+resource "github_repository_file" "kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/common-kustomize.yaml"
+  content = templatefile(
+    "./k8-manifests/kustomization/common.yaml",
+    {
+      CLUSTER_NAME      = local.cluster_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
 ###########################
 #### Common resources
 

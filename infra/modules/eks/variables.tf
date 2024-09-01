@@ -78,7 +78,12 @@ variable "public_endpoint_api" {
 }
 
 variable "vpc_cni_version" {
-  description = "version of the k8 cni vpc "
+  description = "version of the cni vpc addon"
+  type        = string
+}
+
+variable "ebs_csi_version" {
+  description = "version of the ebs csi addon "
   type        = string
 }
 

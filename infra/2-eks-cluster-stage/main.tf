@@ -25,6 +25,7 @@ module "eks_cluster" {
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
   vpc_cni_version              = "v1.18.3-eksbuild.1"
+  ebs_csi_version              = "v1.34.0-eksbuild.1"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
   cluster_enabled_log_types    = ["audit", "api", "authenticator"]
