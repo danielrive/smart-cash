@@ -3,8 +3,26 @@ locals {
   path_tf_repo_flux_common = "./k8-manifests/common"
   cluster_name             = "${var.project_name}-${var.environment}"
   gh_username              = "danielrive"
+  domain_name              = "danielrive.site"
 }
 
+
+# Add Kustomization to flux
+resource "github_repository_file" "kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/bootstrap/common-kustomize.yaml"
+  content = templatefile(
+    "./k8-manifests/kustomization/common.yaml",
+    {
+      CLUSTER_NAME      = local.cluster_name
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
 
 ###########################
 #### Common resources
@@ -21,6 +39,8 @@ resource "github_repository_file" "common_resources" {
       AWS_REGION  = var.region
       ENVIRONMENT = var.environment
       PROJECT     = var.project_name
+      DOMAIN_NAME = local.domain_name
+
     }
   )
   commit_message      = "Managed by Terraform"

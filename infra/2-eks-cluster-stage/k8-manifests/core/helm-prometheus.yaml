@@ -8,6 +8,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
+      version: 62.3.1
       sourceRef:
         kind: HelmRepository
         name: helm-repo-prometheus
@@ -24,7 +25,7 @@ spec:
         storageSpec:
             volumeClaimTemplate:
               spec:
-                storageClassName: aws-ebs-gp2
+                storageClassName: aws-ebs-gp3
                 accessModes: ["ReadWriteOnce"]
                 resources:
                   requests:
