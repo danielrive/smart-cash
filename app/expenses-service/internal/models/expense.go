@@ -6,7 +6,7 @@ type Expense struct {
 	ExpenseId   string  `json:"expenseId" dynamodbav:"expenseId"` // primary key
 	Date        string  `json:"date" dynamodbav:"date"`
 	Description string  `json:"description" dynamodbav:"description"`
-	Status      string  `json:"paid" dynamodbav:"paid"`
+	Status      string  `json:"status" dynamodbav:"status"`
 	Name        string  `json:"name" dynamodbav:"name"`
 	Amount      float64 `json:"amount" dynamodbav:"amount"`
 	UserId      string  `json:"userId" dynamodbav:"userId"`     // global secondary index

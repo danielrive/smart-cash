@@ -1,58 +1,84 @@
 package service
 
 import (
-	"log"
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/models"
 	"smart-cash/bank-service/internal/repositories"
+
+	"log/slog"
 )
 
 // Define service interface
 
 type BankService struct {
 	bankRepository *repositories.DynamoDBBankRepository
+	logger         *slog.Logger
 }
 
 // Create a new bank service
-func NewBankService(bankRepository *repositories.DynamoDBBankRepository) *BankService {
-	return &BankService{bankRepository: bankRepository}
+func NewBankService(bankRepository *repositories.DynamoDBBankRepository, logger *slog.Logger) *BankService {
+	return &BankService{
+		bankRepository: bankRepository,
+		logger:         logger,
+	}
 }
 
-func (bank *BankService) ProcessPayment(transaction models.PaymentRequest) (models.PaymentRequest, error) {
+func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.PaymentRequest, error) {
 	// proccess expenses
 	// validate user in bank
-	user, err := bank.bankRepository.GetUser(transaction.UserId)
+	user, err := s.bankRepository.GetUser(transaction.UserId)
 	if err != nil {
-		log.Printf("user not registered in the bank: %v", err)
+		s.logger.Error("user not exist",
+			"error", err.Error(),
+			"userId", transaction.UserId,
+		)
 		transaction.Status = "NotPaid"
-		return transaction, err
+		return transaction, common.ErrTransactionFailed
 	}
-	log.Printf("Processing the expense %v for user %v", transaction.ExpenseId, user.UserId)
+	s.logger.Info("processing transaction for expense",
+		"expenseId", transaction.ExpenseId,
+		"userId", transaction.UserId,
+	)
 	newSaldo, err := processPayment(transaction.Amount, user.Savings)
 	if err != nil {
-		log.Printf("Transaction failed: %v", err)
+		s.logger.Error("transaction failed",
+			"error", err.Error(),
+			"userId", transaction.UserId,
+			"expenseId", transaction.ExpenseId,
+		)
 		transaction.Status = "NotPaid"
-		return transaction, err
+		return transaction, common.ErrTransactionFailed
 	}
 	// update saving in user account
 	user.Savings = newSaldo
-	err = bank.bankRepository.UpdateSavingsUser(user)
+	err = s.bankRepository.UpdateSavingsUser(user)
 	if err != nil {
-		log.Printf("Transaction failed: %v", err)
+		// Use retry ?
+		s.logger.Error("transaction failed",
+			"error", err.Error(),
+			"userId", transaction.UserId,
+			"expenseId", transaction.ExpenseId,
+		)
 		transaction.Status = "NotPaid"
 		return transaction, err
 	}
 	transaction.Status = "Paid"
-	log.Printf("Transaction processed for expense %v", transaction.ExpenseId)
+	s.logger.Info("transaction processed",
+		"userId", transaction.UserId,
+		"expenseId", transaction.ExpenseId,
+	)
 
 	return transaction, nil
 }
 
 // Function to get bank by Id
-func (bank *BankService) GetUser(userId string) (models.BankUser, error) {
-	user, err := bank.bankRepository.GetUser(userId)
+func (s *BankService) GetUser(userId string) (models.BankUser, error) {
+	user, err := s.bankRepository.GetUser(userId)
 	if err != nil {
-		log.Printf("error: %v", err)
+		s.logger.Error("error getting the user",
+			"error", err.Error(),
+			"user", userId,
+		)
 		return models.BankUser{}, err
 	}
 

@@ -2,10 +2,9 @@ package repositories
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"smart-cash/expenses-service/internal/common"
 
-	"log"
 	"smart-cash/expenses-service/internal/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -24,13 +23,15 @@ type DynamoDBExpensesRepository struct {
 	client        *dynamodb.Client
 	expensesTable string
 	uuid          UUIDHelper
+	logger        *slog.Logger
 }
 
-func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string, uuid UUIDHelper) *DynamoDBExpensesRepository {
+func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string, uuid UUIDHelper, logger *slog.Logger) *DynamoDBExpensesRepository {
 	return &DynamoDBExpensesRepository{
 		client:        client,
 		expensesTable: expensesTable,
 		uuid:          uuid,
+		logger:        logger,
 	}
 }
 
@@ -42,7 +43,10 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 	expense.ExpenseId = r.uuid.New()
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
-		log.Printf("internal error while unmarshaling DynamoDB item %v:", err)
+		r.logger.Error("error while unmarshaling DynamoDB item",
+			"error", err.Error(),
+			"expenseId", expense.ExpenseId,
+		)
 		return output, common.ErrInternalError
 	}
 
@@ -52,7 +56,10 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 		Item:      item,
 	})
 	if err != nil {
-		log.Printf("dynamodb error while putting item %v:", err)
+		r.logger.Error("dynamodb error while putting item",
+			"error", err.Error(),
+			"expenseId", expense.ExpenseId,
+		)
 		return output, common.ErrExpenseNoCreated
 	}
 	return createExpenserReturn(expense), nil
@@ -64,13 +71,19 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense)
 	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
-		log.Printf("dynamodb udpate expression couldn't be created: %v", err)
+		r.logger.Error("dynamodb update expression couldn't be created",
+			"error", err.Error(),
+			"expenseId", expense.ExpenseId,
+		)
 		return models.ExpensesReturn{}, common.ErrInternalError
 	}
 	// Define the key of the item to update
 	expId, err := attributevalue.Marshal(expense.ExpenseId)
 	if err != nil {
-		log.Printf("dynamodb udpate key couldn't be created: %v", err)
+		r.logger.Error("dynamodb udpate key couldn't be created",
+			"error", err.Error(),
+			"expenseId", expense.ExpenseId,
+		)
 		return models.ExpensesReturn{}, common.ErrInternalError
 	}
 
@@ -85,7 +98,10 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense)
 	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
 
 	if err != nil {
-		log.Printf("status for expense %v couldn't be updated %v:", expense.ExpenseId, err)
+		r.logger.Error("status couldn't be updated",
+			"error", err.Error(),
+			"expenseId", expense.ExpenseId,
+		)
 		return models.ExpensesReturn{}, common.ErrInternalError
 	}
 	// Unmarshal the response
@@ -96,13 +112,16 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense)
 			// Unmarshal the AttributeValue into a generic interface{}
 			err := attributevalue.Unmarshal(value, &readableValue)
 			if err != nil {
-				log.Printf("failed to unmarshal attribute value: %s", err)
+				r.logger.Error("failed to unmarshal attribute value",
+					"error", err.Error(),
+					"expenseId", expense.ExpenseId,
+				)
 			}
 			expense.Status = readableValue.(string)
-			// Print the attribute name and its readable value
+
 		}
 	} else {
-		fmt.Println("No attributes returned.")
+		r.logger.Info("no attributes returned")
 	}
 
 	return createExpenserReturn(expense), nil
@@ -121,18 +140,26 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, 
 		},
 	})
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb couldn't get the item",
+			"error", err.Error(),
+			"expenseId", id,
+		)
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		log.Println(common.ErrExpenseNotFound, err)
+		r.logger.Info("expense not found",
+			"expenseId", id,
+		)
 		return output, common.ErrExpenseNotFound
 	}
 
 	// Unmarshal the expense item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("failed to unmarshal attribute value",
+			"error", err.Error(),
+			"expenseId", id,
+		)
 		return output, common.ErrInternalError
 	}
 
@@ -149,7 +176,9 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(k string, v string) ([]
 	// create expression
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb expression couldn't be created",
+			"error", err.Error(),
+		)
 		return output, common.ErrInternalError
 	}
 	// Get expenses by userID
@@ -164,19 +193,26 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(k string, v string) ([]
 	response, err := r.client.Query(context.TODO(), queryInput)
 
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb query failed",
+			"error", err.Error(),
+		)
 		return output, common.ErrInternalError
 	}
 
 	if len(response.Items) == 0 {
-		log.Println(common.ErrExpenseNotFound, err)
+		r.logger.Info("expense not found",
+			"tag", k,
+			"value", v,
+		)
 		return output, common.ErrExpenseNotFound
 	}
 
 	// Unmarshal the expense items
 	err = attributevalue.UnmarshalListOfMaps(response.Items, &output)
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("failed to unmarshal attribute value",
+			"error", err.Error(),
+		)
 		return []models.Expense{}, common.ErrInternalError
 	}
 
@@ -194,7 +230,9 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
 		},
 	})
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb delete operation failed",
+			"error", err.Error(),
+		)
 		return common.ErrInternalError
 	}
 
