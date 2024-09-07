@@ -15,25 +15,4 @@ spec:
           ingress: nginx
     ports:
     - protocol: TCP
-      port: 8585
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ingress-frontend-to-bank
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          ingress: frontend
-    ports:
-    - protocol: TCP
-      port: 8585
+      port: 80

@@ -16,12 +16,12 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: frontend
+          ingress: nginx
     ports:
     - protocol: TCP
-      port: ${SERVICE_PORT}
+      port: 80
   egress:
   - to:
     - podSelector:
         matchLabels:
-          app: frontend
+          ingress: nginx
