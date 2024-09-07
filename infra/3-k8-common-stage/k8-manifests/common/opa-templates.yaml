@@ -54,7 +54,7 @@ spec:
 
         violation[{"msg": msg, "details": {"Container can run in privileged mode, please remove this from manifest"}}] {
               some container in input.review.object.spec.containers
-              container.securityContext.allowPrivilegeEscalation != "false"
+              no container.securityContext.allowPrivilegeEscalation == false
               msg := sprintf("Container '%v' allow privilege escalation", [container.name])
         }
 
