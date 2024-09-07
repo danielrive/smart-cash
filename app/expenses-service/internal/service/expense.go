@@ -21,7 +21,10 @@ type ExpensesService struct {
 
 // Create a new expenses service
 func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesRepository, logger *slog.Logger) *ExpensesService {
-	return &ExpensesService{expensesRepository: expensesRepository}
+	return &ExpensesService{
+		expensesRepository: expensesRepository,
+		logger:             logger,
+	}
 }
 
 func (s *ExpensesService) CreateExpense(expense models.Expense) (models.ExpensesReturn, error) {
@@ -49,9 +52,6 @@ func (s *ExpensesService) CreateExpense(expense models.Expense) (models.Expenses
 func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, error) {
 	expense, err := s.expensesRepository.GetExpenseById(expenseId)
 	if err != nil {
-		s.logger.Error("error getting the expense",
-			"error", err.Error(),
-		)
 		return models.Expense{}, err
 	}
 
@@ -62,14 +62,9 @@ func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, erro
 
 func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]models.Expense, error) {
 	expenses, err := s.expensesRepository.GetExpByUserIdorCat(key, value)
-
 	if err != nil {
-		s.logger.Error("error getting the expense",
-			"error", err.Error(),
-		)
 		return expenses, err
 	}
-
 	return expenses, nil
 }
 
@@ -79,9 +74,6 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 	// get the expense from DB
 	expense, err := s.expensesRepository.GetExpenseById(expensesId.ExpenseId)
 	if err != nil {
-		s.logger.Error("error getting the expense",
-			"error", err.Error(),
-		)
 		return models.Expense{}, common.ErrInternalError
 	}
 	// Validate user in bank
@@ -103,7 +95,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 			"user", expense.UserId,
 		)
 	}
-	s.logger.Info("user exist in ban, preparing request to pay",
+	s.logger.Info("user exist in bank, preparing request to pay",
 		"user", expense.UserId,
 	)
 
