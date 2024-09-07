@@ -40,7 +40,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
 		gin.Recovery(),
 	)
 	// new UUID helper
@@ -56,15 +56,15 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 
 	// GET user/userID
-	router.GET("/user/:userId", userHandler.GetUserById)
+	router.GET("/:userId", userHandler.GetUserById)
 	// GET user?username=username user?email=email
-	router.GET("/user", userHandler.GetUserByQuery)
+	router.GET("/", userHandler.GetUserByQuery)
 
 	// GET api/v1/[controller]/user[?userID=0]
-	router.POST("/user", userHandler.CreateUser)
+	router.POST("/", userHandler.CreateUser)
 
 	// Health check
-	router.GET("/user/health", userHandler.HealthCheck)
+	router.GET("/health", userHandler.HealthCheck)
 
 	router.Run(":8181")
 }

@@ -85,5 +85,4 @@ spec:
               not input.review.object.spec.securityContext.runAsNonRoot
               msg := "Pod does not enforce running as non-root"
           }
-        }
 

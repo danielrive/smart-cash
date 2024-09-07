@@ -49,7 +49,7 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
 		gin.Recovery(),
 	)
 	// // Initialize expenses repository
@@ -62,17 +62,17 @@ func main() {
 	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
 	// create expenses
-	router.POST("/expenses/", expensesHandler.CreateExpense)
+	router.POST("/", expensesHandler.CreateExpense)
 
 	// define router for get expenses by tag
-	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)
+	router.GET("/:expenseId", expensesHandler.GetExpensesById)
 	// define router for get expenses by category or userId
-	router.GET("/expenses/", expensesHandler.GetExpensesByQuery)
+	router.GET("/", expensesHandler.GetExpensesByQuery)
 
-	router.POST("/expenses/pay/", expensesHandler.PayExpenses)
+	router.POST("/pay/", expensesHandler.PayExpenses)
 
 	// Endpoint to test health check
-	router.GET("/expenses/health", expensesHandler.HealthCheck)
+	router.GET("/health", expensesHandler.HealthCheck)
 
 	router.Run(":8282")
 
