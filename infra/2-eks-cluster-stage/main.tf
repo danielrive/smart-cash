@@ -25,6 +25,7 @@ module "eks_cluster" {
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
   vpc_cni_version              = "v1.18.3-eksbuild.1"
+  ebs_csi_version              = "v1.34.0-eksbuild.1"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
   cluster_enabled_log_types    = ["audit", "api", "authenticator"]
@@ -190,6 +191,18 @@ resource "github_repository_file" "sources" {
   overwrite_on_create = true
 }
 
+######################
+### cer manager role
+
+module "cert_manager" {
+  source = "../modules/cert-manager"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  cluster_oidc = module.eks_cluster.cluster_oidc
+  account_id = data.aws_caller_identity.id_account.id
+}
+
 ##### Core resources
 resource "github_repository_file" "core_resources" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
@@ -204,7 +217,7 @@ resource "github_repository_file" "core_resources" {
       AWS_REGION            = var.region
       ENVIRONMENT           = var.environment
       PROJECT               = var.project_name
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
   )
   commit_message      = "Managed by Terraform"

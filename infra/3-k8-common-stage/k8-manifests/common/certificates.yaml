@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-tls
+  namespace: monitoring
+spec:
+  secretName: grafana-tls
+  issuerRef:
+    name: danielrive-letsencrypt2
+    kind: ClusterIssuer
+  commonName: "${DOMAIN_NAME}"
+  dnsNames:
+  - "${DOMAIN_NAME}"
+  - "monitoring.${ENVIRONMENT}.smartcash.${DOMAIN_NAME}"
+
+--- 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: frontend-cert
+  namespace: ${ENVIRONMENT}
+spec:
+  secretName: frontend-tls
+  issuerRef:
+    name: danielrive-letsencrypt2
+    kind: ClusterIssuer
+  commonName: "${DOMAIN_NAME}"
+  dnsNames:
+  - "${DOMAIN_NAME}"
+  - "${ENVIRONMENT}.smartcash.${DOMAIN_NAME}"
