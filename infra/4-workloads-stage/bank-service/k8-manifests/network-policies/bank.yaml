@@ -17,7 +17,7 @@ spec:
           kubernetes.io/metadata.name: nginx-ingress
     ports:
     - protocol: TCP
-      port: 80
+      port: ${SERVICE_PORT}
   egress:
   - to:
     - namespaceSelector:
