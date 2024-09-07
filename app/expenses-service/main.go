@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"smart-cash/expenses-service/internal/handler"
 	"smart-cash/expenses-service/internal/repositories"
@@ -15,15 +15,24 @@ import (
 )
 
 func main() {
+	// Set-up logger handler
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
+	}))
+	slog.SetDefault(logger)
+
 	// validate if env variables exists
 	expensesTable := os.Getenv("DYNAMODB_EXPENSES_TABLE")
 	if expensesTable == "" {
-		panic("DYNAMODB_EXPENSES_TABLE cannot be empty")
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
+		os.Exit(1)
 	}
 
 	awsRegion := os.Getenv("AWS_REGION")
+
 	if awsRegion == "" {
-		panic("AWS_REGION cannot be empty")
+		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+		os.Exit(1)
 	}
 
 	// configure the SDK
@@ -31,7 +40,7 @@ func main() {
 		config.WithRegion(awsRegion),
 	)
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
 	}
 	// define uuid helper
 	uuidHelper := utils.NewUUIDHelper()
@@ -40,30 +49,30 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
 		gin.Recovery(),
 	)
 	// // Initialize expenses repository
-	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper)
+	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
 
 	// Initialize expenses service
-	expensesService := service.NewExpensesService(expensesRepo)
+	expensesService := service.NewExpensesService(expensesRepo, logger)
 
 	// Init expenses handler
-	expensesHandler := handler.NewExpensesHandler(expensesService)
+	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
 	// create expenses
-	router.POST("/expenses/", expensesHandler.CreateExpense)
+	router.POST("/", expensesHandler.CreateExpense)
 
 	// define router for get expenses by tag
-	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)
+	router.GET("/:expenseId", expensesHandler.GetExpensesById)
 	// define router for get expenses by category or userId
-	router.GET("/expenses/", expensesHandler.GetExpensesByQuery)
+	router.GET("/", expensesHandler.GetExpensesByQuery)
 
-	router.POST("/expenses/pay/", expensesHandler.PayExpenses)
+	router.POST("/pay/", expensesHandler.PayExpenses)
 
 	// Endpoint to test health check
-	router.GET("/expenses/health", expensesHandler.HealthCheck)
+	router.GET("/health", expensesHandler.HealthCheck)
 
 	router.Run(":8282")
 

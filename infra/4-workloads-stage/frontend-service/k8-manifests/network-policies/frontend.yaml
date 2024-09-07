@@ -1,6 +1,4 @@
 ### Rule Description
-##  Allow communication from ingress to frontend pods
-
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -25,63 +23,3 @@ spec:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: nginx-ingress
-
-
---- 
-
-### Rule Description
-##  Allow communication from frontend to user
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: frontend-user
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: user
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: user
-    ports:
-    - protocol: TCP
-      port: 8181
-
----
-### Rule Description
-##  Allow communication from frontend to expenses
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: frontend-expenses
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: expenses
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: expenses
-    ports:
-    - protocol: TCP
-      port: 8282

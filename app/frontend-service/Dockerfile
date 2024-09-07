@@ -1,4 +1,4 @@
-FROM nginxinc/nginx-unprivileged:alpine
+FROM nginx:mainline-alpine3.20-slim
 
 COPY frontend-service/nginx.conf ./etc/nginx/nginx.conf
 

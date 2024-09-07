@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: frontend-ingress
+  name: api-gw-ingress
   namespace: ${ENVIRONMENT}
   annotations:
     cert-manager.io/cluster-issuer: danielrive-letsencrypt2
@@ -9,14 +9,35 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: ${ENVIRONMENT}.smartcash.danielrive.site
+  - host: api.${ENVIRONMENT}.smartcash.danielrive.site
     http:
       paths:
-      - path: /
+      - path: /user
         pathType: Prefix
         backend:
           service:
-            name: frontend
+            name: user
+            port:
+              number: 80
+      - path: /expenses
+        pathType: Prefix
+        backend:
+          service:
+            name: expenses
+            port:
+              number: 80
+      - path: /bank
+        pathType: Prefix
+        backend:
+          service:
+            name: bank
+            port:
+              number: 80
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment
             port:
               number: 80
   tls: 

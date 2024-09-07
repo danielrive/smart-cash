@@ -1,39 +1,25 @@
+### Rule Description
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingress-nginx-to-bank
+  name: api-ingress-bank
 spec:
   podSelector:
     matchLabels:
       app: bank
   policyTypes:
   - Ingress
+  - Egress
   ingress:
   - from:
     - namespaceSelector:
         matchLabels:
-          ingress: nginx
+          kubernetes.io/metadata.name: nginx-ingress
     ports:
     - protocol: TCP
-      port: 8585
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ingress-frontend-to-bank
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
+      port: ${SERVICE_PORT}
+  egress:
+  - to:
     - namespaceSelector:
         matchLabels:
-          ingress: frontend
-    ports:
-    - protocol: TCP
-      port: 8585
+          kubernetes.io/metadata.name: nginx-ingress
