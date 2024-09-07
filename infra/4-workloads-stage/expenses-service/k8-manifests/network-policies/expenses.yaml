@@ -1,10 +1,8 @@
 ### Rule Description
-##  Allow communication from expenses to Frontend svc pods
-
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: expenses-frontend
+  name: api-ingress-expenses
 spec:
   podSelector:
     matchLabels:
@@ -14,14 +12,14 @@ spec:
   - Egress
   ingress:
   - from:
-    - podSelector:
+    - namespaceSelector:
         matchLabels:
-          ingress: nginx
+          kubernetes.io/metadata.name: nginx-ingress
     ports:
     - protocol: TCP
       port: 80
   egress:
   - to:
-    - podSelector:
+    - namespaceSelector:
         matchLabels:
-          ingress: nginx
+          kubernetes.io/metadata.name: nginx-ingress
