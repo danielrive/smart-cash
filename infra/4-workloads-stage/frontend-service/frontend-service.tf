@@ -7,32 +7,6 @@ locals {
   tier = "frontend"
 }
 
-##############################
-###### IAM Role K8 SA
-
-resource "aws_iam_role" "iam_sa_role" {
-  name = "role-${local.this_service_name}-${var.environment}"
-  path = "/"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
-        },
-        Action = "sts:AssumeRoleWithWebIdentity",
-        Condition = {
-          StringEquals = {
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud" : "sts.amazonaws.com",
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub" : "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
-          }
-        }
-      }
-    ]
-  })
-}
-
 #############################
 ##### ECR Repo
 

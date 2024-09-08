@@ -51,31 +51,30 @@ resource "aws_dynamodb_table" "dynamo_table" {
 
 }
 
-
 ##############################
 ###### IAM Role K8 SA
 
 resource "aws_iam_role" "iam_sa_role" {
-  name = "role-${local.this_service_name}-${var.environment}"
+  name = "role-sa-${local.this_service_name}-${var.environment}"
   path = "/"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
-        },
-        Action = "sts:AssumeRoleWithWebIdentity",
-        Condition = {
-          StringEquals = {
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud" : "sts.amazonaws.com",
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub" : "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
-          }
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
         }
-      }
     ]
-  })
+}
+EOF
 }
 
 ####### IAM policy for SA expenses
@@ -113,7 +112,12 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   role       = aws_iam_role.iam_sa_role.name
 }
 
-
+resource "aws_eks_pod_identity_association" "association" {
+  cluster_name    = local.cluster_name
+  namespace       = var.environment
+  service_account = "sa-${local.this_service_name}-service"
+  role_arn        = aws_iam_role.iam_sa_role.arn
+}
 
 #############################
 ##### ECR Repo

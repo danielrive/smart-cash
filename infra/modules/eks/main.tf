@@ -205,7 +205,6 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 }
 
 
-
 ################################
 #####  EKS manage node group ###
 ################################
@@ -365,5 +364,19 @@ resource "aws_eks_addon" "ebs_csi" {
   addon_name                  = "aws-ebs-csi-driver"
   addon_version               = var.ebs_csi_version
   service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+
+
+#####################
+### Pod Identity  ###
+#####################
+
+## Install EBS add-on
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.pod_identity_version
   resolve_conflicts_on_update = "OVERWRITE"
 }
