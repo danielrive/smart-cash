@@ -39,57 +39,17 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
-##################################################
-#####  IAM Role for FluxCD Image update ECR
 
-resource "aws_iam_role" "flux_imagerepository" {
-  name               = "flux-images-${var.environment}-${var.region}"
-  path               = "/"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      "Condition": {
-        "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:aud" : "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub" : "system:serviceaccount:flux-system:image-reflector-controller"
-        }
-      }
-    }
-  ]
-}
-EOF
-}
+######################
+### cer manager role
 
-## Policy for the role
-resource "aws_iam_policy" "allow_ecr" {
-  name = "ecr-flux-images-${var.environment}-${var.region}"
-  path = "/"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "AllowPull",
-        Effect = "Allow",
-        Action = [
-          "ecr:GetAuthorizationToken",
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-  }
-  
-## attach the policy
-resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
-  policy_arn = aws_iam_policy.allow_ecr.arn
-  role       = aws_iam_role.flux_imagerepository.name
+module "flux_imageupdate_role" {
+  source = "../modules/flux-image-repo-role"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  cluster_oidc = module.eks_cluster.cluster_oidc
+  account_id = data.aws_caller_identity.id_account.id
 }
 
 ############################
@@ -125,7 +85,7 @@ resource "github_repository_file" "patch_flux" {
   content = templatefile(
     "./k8-manifests/bootstrap/patches-fluxBootstrap/mainKustomization.yaml",
     {
-      ARN_ROLE = aws_iam_role.flux_imagerepository.arn
+      ARN_ROLE = module.flux_imageupdate_role.role_arn
     }
   )
   commit_message      = "Managed by Terraform"
