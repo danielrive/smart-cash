@@ -87,6 +87,10 @@ variable "ebs_csi_version" {
   type        = string
 }
 
+variable "pod_identity_version" {
+  type = string
+}
+
 variable "cluster_admins" {
   description = "aws user names that will be the admins of cluster"
   type        = string
