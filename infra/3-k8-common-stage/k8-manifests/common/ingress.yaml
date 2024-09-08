@@ -4,7 +4,7 @@ metadata:
   name: api-gw-ingress
   namespace: ${ENVIRONMENT}
   annotations:
-    cert-manager.io/cluster-issuer: danielrive-letsencrypt2
+    #cert-manager.io/cluster-issuer: danielrive-letsencrypt2
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
@@ -40,10 +40,10 @@ spec:
             name: payment
             port:
               number: 80
-  tls: 
-  - hosts:
-    - ${ENVIRONMENT}.smartcash.danielrive.site
-    secretName: frontend-tls
+  #tls: 
+  #- hosts:
+  #  - api.${ENVIRONMENT}.smartcash.danielrive.site
+  #  secretName: frontend-tls
 
 ---
 
