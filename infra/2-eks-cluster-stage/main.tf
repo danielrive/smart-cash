@@ -45,6 +45,7 @@ module "eks_cluster" {
 ### Flux imageupdate role
 
 module "flux_imageupdate_role" {
+  depends_on = [module.eks_cluster]
   source = "../modules/flux-image-repo-role"
   environment = var.environment
   region = var.region
@@ -57,11 +58,12 @@ module "flux_imageupdate_role" {
 ### cer manager role
 
 module "cert_manager" {
+  depends_on = [module.eks_cluster]
   source = "../modules/cert-manager"
   environment = var.environment
   region = var.region
   cluster_name = local.cluster_name 
-  service_account = "module.eks_cluster.cluster_oidc"
+  service_account = "cert-manager"
   namespace = "cert-manager"
 }
 
