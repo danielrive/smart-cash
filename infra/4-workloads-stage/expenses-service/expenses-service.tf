@@ -199,6 +199,7 @@ resource "github_repository_file" "overlays_svc" {
   overwrite_on_create = true
 }
 
+/*
 ##### Network Policies
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.flux-gitops.name
@@ -216,6 +217,7 @@ resource "github_repository_file" "network_policy" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+*/
 
 ##### Images Updates automation
 resource "github_repository_file" "image_updates" {
