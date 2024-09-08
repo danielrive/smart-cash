@@ -29,6 +29,7 @@ spec:
         runAsGroup: 30001
       containers:
       - name: ${SERVICE_NAME}-container
+        image: service-image
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
