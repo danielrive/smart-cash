@@ -5,7 +5,7 @@ metadata:
   namespace: ${ENVIRONMENT}
   annotations:
     #cert-manager.io/cluster-issuer: danielrive-letsencrypt2
-    nginx.ingress.kubernetes.io/rewrite-target: /
+   # nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
