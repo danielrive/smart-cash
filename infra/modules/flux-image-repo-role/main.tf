@@ -47,7 +47,7 @@ resource "aws_iam_policy" "allow_ecr" {
 ## attach the policy
 resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
   policy_arn = aws_iam_policy.allow_ecr.arn
-  role       = aws_iam_role.flux_imagerepository.name
+  role       = aws_iam_role.pod_sa_role.name
 }
 
 resource "aws_eks_pod_identity_association" "association" {

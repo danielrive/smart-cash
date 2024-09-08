@@ -60,7 +60,7 @@ EOF
 ## Attach policy to role
 resource "aws_iam_role_policy_attachment" "cert_manager" {
   policy_arn = aws_iam_policy.cert_manager.arn
-  role       = aws_iam_role.cert_manager.name
+  role       = aws_iam_role.pod_sa_role.name
 }
 
 resource "aws_eks_pod_identity_association" "association" {
