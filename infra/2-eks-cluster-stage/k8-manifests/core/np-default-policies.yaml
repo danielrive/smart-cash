@@ -55,11 +55,17 @@ spec:
   - Ingress
   ingress:
   - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
     - podSelector:
         matchLabels:
-          app.kubernetes.io/instance: eks-pod-identity-agent 
+          app.kubernetes.io/instance: eks-pod-identity-agent
   egress:
   - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
     - podSelector:
         matchLabels:
           app.kubernetes.io/instance: eks-pod-identity-agent 
