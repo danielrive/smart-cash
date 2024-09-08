@@ -52,8 +52,8 @@ kind: Ingress
 metadata:
   name: grafana-ingress
   namespace: monitoring
-  annotations:
-    cert-manager.io/cluster-issuer: danielrive-letsencrypt2
+ # annotations:
+ #   cert-manager.io/cluster-issuer: danielrive-letsencrypt2
 spec:
   ingressClassName: nginx
   rules:
@@ -67,7 +67,7 @@ spec:
             name: prometheus-grafana
             port:
               number: 80
-  tls: 
-  - hosts:
-    - monitoring.${ENVIRONMENT}.smartcash.danielrive.site
-    secretName: grafana-tls
+  #tls: 
+  #- hosts:
+  #  - monitoring.${ENVIRONMENT}.smartcash.danielrive.site
+  #  secretName: grafana-tls
