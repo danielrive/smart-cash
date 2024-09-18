@@ -12,7 +12,6 @@ locals {
 
 module "ecr_registry" {
   source       = "../../modules/ecr"
-  depends_on   = [aws_iam_role.iam_sa_role]
   name         = "frontend-service"
   region       = var.region
   project_name = var.project_name
