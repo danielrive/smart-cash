@@ -182,9 +182,9 @@ resource "github_repository_file" "base_manifests" {
 resource "github_repository_file" "overlays_svc_patch" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/patch_deployment.yaml"
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/patch-deployment.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/overlays/${var.environment}/patch_deployment.yaml",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/patch-deployment.yaml",
     {
       SERVICE_NAME        = local.this_service_name
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
