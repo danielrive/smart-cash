@@ -177,19 +177,34 @@ resource "github_repository_file" "base_manifests" {
 
 
 ##### overlays
-resource "github_repository_file" "overlays_svc" {
-  for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
+###Patch
+resource "github_repository_file" "overlays_svc_patch" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/patch-deployment.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/patch-deployment.yaml",
+    {
+      SERVICE_NAME        = local.this_service_name
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
+      AWS_REGION          = var.region
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+## Kustomization
+resource "github_repository_file" "overlays_svc_kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_services}/overlays/${var.environment}/kustomization.yaml",
     {
       SERVICE_NAME        = local.this_service_name
       ECR_REPO            = module.ecr_registry.repo_url
-      ARN_ROLE_SERVICE    = aws_iam_role.iam_sa_role.arn
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
-      AWS_REGION          = var.region
       ENVIRONMENT         = var.environment
     }
   )
@@ -197,6 +212,9 @@ resource "github_repository_file" "overlays_svc" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
+  lifecycle {
+    ignore_changes = [content]
+  }
 }
 
 
