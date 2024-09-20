@@ -180,12 +180,11 @@ resource "github_repository_file" "base_manifests" {
 
 ###Patch
 resource "github_repository_file" "overlays_svc_patch" {
-  for_each   = "${local.path_tf_repo_services}/overlays/${var.environment}/patch_deployment.yaml"
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/patch_deployment.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/patch_deployment.yaml",
     {
       SERVICE_NAME        = local.this_service_name
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
