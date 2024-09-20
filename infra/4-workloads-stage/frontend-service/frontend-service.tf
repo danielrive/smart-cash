@@ -7,6 +7,32 @@ locals {
   tier = "frontend"
 }
 
+##############################
+###### IAM Role K8 SA
+
+resource "aws_iam_role" "iam_sa_role" {
+  name = "role-sa-${local.this_service_name}-${var.environment}"
+  path = "/"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
+}
+EOF
+}
+
 #############################
 ##### ECR Repo
 
