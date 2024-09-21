@@ -4,7 +4,7 @@ import (
 	"context"
 	"smart-cash/bank-service/internal/common"
 
-	"log"
+	"log/slog"
 	"smart-cash/bank-service/internal/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,13 +16,15 @@ import (
 
 type DynamoDBBankRepository struct {
 	client    *dynamodb.Client
+	logger    *slog.Logger
 	bankTable string
 }
 
-func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string) *DynamoDBBankRepository {
+func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string, logger *slog.Logger) *DynamoDBBankRepository {
 	return &DynamoDBBankRepository{
 		client:    client,
 		bankTable: bankTable,
+		logger:    logger,
 	}
 }
 
@@ -38,18 +40,26 @@ func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
 		},
 	})
 	if err != nil {
-		log.Printf("internal error while getting item from DynamoDB: %v", err)
+		r.logger.Error("dynamodb couldn't get the item",
+			"error", err.Error(),
+			"userId", id,
+		)
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		log.Printf("user with id %s not found in DynamoDB", id)
+		r.logger.Info("user not found",
+			"userId", id,
+		)
 		return output, common.ErrUserNotFound
 	}
 
 	// Unmarshal the bank item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		log.Printf("internal error while unmarshaling DynamoDB item: %v", err)
+		r.logger.Error("failed to unmarshal attribute value",
+			"error", err.Error(),
+			"userId", id,
+		)
 		return output, common.ErrInternalError
 	}
 
@@ -62,13 +72,19 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) error {
 	update := expression.Set(expression.Name("savings"), expression.Value(user.Savings))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
-		log.Printf("dynamoDB udpate expression couldn't be created: %v", err)
+		r.logger.Error("dynamodb update expression couldn't be created",
+			"error", err.Error(),
+			"userId", user.UserId,
+		)
 		return common.ErrInternalError
 	}
 	// Define the key of the item to update
 	userId, err := attributevalue.Marshal(user.UserId)
 	if err != nil {
-		log.Printf("dynamoDB udpate key couldn't be created: %v", err)
+		r.logger.Error("dynamodb udpate key couldn't be created",
+			"error", err.Error(),
+			"userId", user.UserId,
+		)
 		return common.ErrInternalError
 	}
 
@@ -84,7 +100,10 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) error {
 
 	// Update bank item
 	if err != nil {
-		log.Printf("saving for user %v couldn't be updated:", err)
+		r.logger.Error("saving could't be updated",
+			"error", err.Error(),
+			"userId", user.UserId,
+		)
 		return common.ErrInternalError
 	}
 	return nil

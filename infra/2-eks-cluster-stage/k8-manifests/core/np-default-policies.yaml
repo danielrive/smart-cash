@@ -37,6 +37,32 @@ spec:
     - protocol: UDP
       port: 53
 
+
+---
+### Rule Description
+##  ### Allow traffic TO/FROM AWS pod identity agent
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traffic-pod-identity
+  namespace: ${ENVIRONMENT}
+spec:
+  podSelector: 
+    matchLabels:
+      tier: backend
+  policyTypes:
+  - Egress
+  - Ingress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 169.254.170.23/32
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 169.254.170.23/32
+
+
 ---
 ### Rule Description
 ##  Allow egress traffic to HTTPs

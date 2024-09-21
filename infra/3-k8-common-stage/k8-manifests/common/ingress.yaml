@@ -1,9 +1,58 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: core-ingress
+  name: api-gw-ingress
   namespace: ${ENVIRONMENT}
   annotations:
+    #cert-manager.io/cluster-issuer: danielrive-letsencrypt2
+   # nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.${ENVIRONMENT}.smartcash.danielrive.site
+    http:
+      paths:
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: user
+            port:
+              number: 80
+      - path: /expenses
+        pathType: Prefix
+        backend:
+          service:
+            name: expenses
+            port:
+              number: 80
+      - path: /bank
+        pathType: Prefix
+        backend:
+          service:
+            name: bank
+            port:
+              number: 80
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment
+            port:
+              number: 80
+  #tls: 
+  #- hosts:
+  #  - api.${ENVIRONMENT}.smartcash.danielrive.site
+  #  secretName: frontend-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  namespace: ${ENVIRONMENT}
+  annotations:
+    cert-manager.io/cluster-issuer: danielrive-letsencrypt2
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
@@ -18,3 +67,34 @@ spec:
             name: frontend
             port:
               number: 80
+  tls: 
+    - hosts:
+      - ${ENVIRONMENT}.smartcash.danielrive.site
+      secretName: frontend-tls
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+ # annotations:
+ #   cert-manager.io/cluster-issuer: danielrive-letsencrypt2
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: monitoring.${ENVIRONMENT}.smartcash.danielrive.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+  #tls: 
+  #- hosts:
+  #  - monitoring.${ENVIRONMENT}.smartcash.danielrive.site
+  #  secretName: grafana-tls

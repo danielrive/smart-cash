@@ -25,6 +25,8 @@ module "eks_cluster" {
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
   vpc_cni_version              = "v1.18.3-eksbuild.1"
+  ebs_csi_version              = "v1.34.0-eksbuild.1"
+  pod_identity_version         = "v1.3.2-eksbuild.2"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
   cluster_enabled_log_types    = ["audit", "api", "authenticator"]
@@ -32,63 +34,37 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 2
-  max_instances_node_group   = 2
-  min_instances_node_group   = 2
+  desired_nodes              = 3
+  max_instances_node_group   = 3
+  min_instances_node_group   = 3
   storage_nodes              = 20
 }
 
-##################################################
-#####  IAM Role for FluxCD Image update ECR
 
-resource "aws_iam_role" "flux_imagerepository" {
-  name               = "flux-images-${var.environment}-${var.region}"
-  path               = "/"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      "Condition": {
-        "StringEquals": {
-          "${module.eks_cluster.cluster_oidc}:aud" : "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub" : "system:serviceaccount:flux-system:image-reflector-controller"
-        }
-      }
-    }
-  ]
-}
-EOF
+##############################
+### Flux imageupdate role
+
+module "flux_imageupdate_role" {
+  depends_on = [module.eks_cluster]
+  source = "../modules/flux-image-repo-role"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  service_account = "image-reflector-controller"
+  namespace = "flux-system"
 }
 
-## Policy for the role
-resource "aws_iam_policy" "allow_ecr" {
-  name = "ecr-flux-images-${var.environment}-${var.region}"
-  path = "/"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "AllowPull",
-        Effect = "Allow",
-        Action = [
-          "ecr:GetAuthorizationToken",
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-  }
-  
-## attach the policy
-resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
-  policy_arn = aws_iam_policy.allow_ecr.arn
-  role       = aws_iam_role.flux_imagerepository.name
+######################
+### cer manager role
+
+module "cert_manager" {
+  depends_on = [module.eks_cluster]
+  source = "../modules/cert-manager"
+  environment = var.environment
+  region = var.region
+  cluster_name = local.cluster_name 
+  service_account = "cert-manager"
+  namespace = "cert-manager"
 }
 
 ############################
@@ -113,29 +89,9 @@ resource "null_resource" "bootstrap-flux" {
   }
 }
 
-#######################################################
-#####  Patch service account for imageRepositoryRole
-
-resource "github_repository_file" "patch_flux" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/bootstrap/flux-system/kustomization.yaml"
-  content = templatefile(
-    "./k8-manifests/bootstrap/patches-fluxBootstrap/mainKustomization.yaml",
-    {
-      ARN_ROLE = aws_iam_role.flux_imagerepository.arn
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
 ### Force to update the Pod to take the changes in the SA
 resource "null_resource" "restart_image_reflector" {
-  depends_on = [module.eks_cluster,null_resource.bootstrap-flux,github_repository_file.patch_flux]
+  depends_on = [module.eks_cluster,null_resource.bootstrap-flux]
   provisioner "local-exec" {
     command = <<EOF
     aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
@@ -204,7 +160,7 @@ resource "github_repository_file" "core_resources" {
       AWS_REGION            = var.region
       ENVIRONMENT           = var.environment
       PROJECT               = var.project_name
-      ARN_CERT_MANAGER_ROLE = "arn:aws:iam::12345678910:role/cert-manager-us-west-2"
+      ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
   )
   commit_message      = "Managed by Terraform"

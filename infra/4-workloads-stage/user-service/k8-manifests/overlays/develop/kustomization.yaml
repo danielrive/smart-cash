@@ -7,5 +7,4 @@ images:
     newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
 
 patches:
-  - path: patch-service-account.yaml
   - path: patch-deployment.yaml

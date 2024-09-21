@@ -51,26 +51,26 @@ resource "aws_dynamodb_table" "dynamo_table" {
 ###### IAM Role K8 SA
 
 resource "aws_iam_role" "iam_sa_role" {
-  name = "role-${local.this_service_name}-${var.environment}"
+  name = "role-sa-${local.this_service_name}-${var.environment}"
   path = "/"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${data.terraform_remote_state.eks.outputs.cluster_oidc}"
-        },
-        Action = "sts:AssumeRoleWithWebIdentity",
-        Condition = {
-          StringEquals = {
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:aud" : "sts.amazonaws.com",
-            "${data.terraform_remote_state.eks.outputs.cluster_oidc}:sub" : "system:serviceaccount:${var.environment}:sa-${local.this_service_name}-service"
-          }
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
         }
-      }
     ]
-  })
+}
+EOF
 }
 
 ####### IAM policy for SA 
@@ -109,6 +109,13 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
 resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   policy_arn = aws_iam_policy.dynamodb_iam_policy.arn
   role       = aws_iam_role.iam_sa_role.name
+}
+
+resource "aws_eks_pod_identity_association" "association" {
+  cluster_name    = local.cluster_name
+  namespace       = var.environment
+  service_account = "sa-${local.this_service_name}-service"
+  role_arn        = aws_iam_role.iam_sa_role.arn
 }
 
 #############################
@@ -158,7 +165,7 @@ resource "github_repository_file" "base_manifests" {
     {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
-      SERVICE_PATH_HEALTH_CHECKS = "health"
+      SERVICE_PATH_HEALTH_CHECKS = "/health"
       TIER                       = local.tier
     }
   )
@@ -168,22 +175,17 @@ resource "github_repository_file" "base_manifests" {
   overwrite_on_create = true
 }
 
-
-##### overlays
-resource "github_repository_file" "overlays_svc" {
-  for_each   = fileset("${local.path_tf_repo_services}/overlays/${var.environment}", "*.yaml")
+###Patch
+resource "github_repository_file" "overlays_svc_patch" {
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/${each.key}"
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/patch-deployment.yaml"
   content = templatefile(
-    "${local.path_tf_repo_services}/overlays/${var.environment}/${each.key}",
+    "${local.path_tf_repo_services}/overlays/${var.environment}/patch-deployment.yaml",
     {
       SERVICE_NAME        = local.this_service_name
-      ECR_REPO            = module.ecr_registry.repo_url
-      ARN_ROLE_SERVICE    = aws_iam_role.iam_sa_role.arn
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
       AWS_REGION          = var.region
-      ENVIRONMENT         = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -191,6 +193,29 @@ resource "github_repository_file" "overlays_svc" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+## Kustomization
+resource "github_repository_file" "overlays_svc_kustomization" {
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+  content = templatefile(
+    "${local.path_tf_repo_services}/overlays/${var.environment}/kustomization.yaml",
+    {
+      SERVICE_NAME        = local.this_service_name
+      ECR_REPO            = module.ecr_registry.repo_url
+      ENVIRONMENT         = var.environment
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+  lifecycle {
+    ignore_changes = [content]
+  }
+}
+
+
 
 
 
@@ -203,6 +228,7 @@ resource "github_repository_file" "network_policy" {
     "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
       PROJECT_NAME = var.project_name
+      SERVICE_PORT               = local.this_service_port
     }
   )
   commit_message      = "Managed by Terraform"

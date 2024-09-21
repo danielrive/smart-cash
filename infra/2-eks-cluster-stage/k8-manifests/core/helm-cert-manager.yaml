@@ -8,12 +8,14 @@ spec:
   chart:
     spec:
       chart: cert-manager
-      version: 1.13.2
+      version: 1.15.3
       sourceRef:
         kind: HelmRepository
         name: helm-cert-manager
         namespace: flux-system
   values:
+    crds:
+      enabled: true
     serviceAccount:
       annotations:
         eks.amazonaws.com/role-arn: ${ARN_CERT_MANAGER_ROLE}

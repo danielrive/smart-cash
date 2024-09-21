@@ -205,7 +205,6 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 }
 
 
-
 ################################
 #####  EKS manage node group ###
 ################################
@@ -319,4 +318,65 @@ resource "aws_eks_addon" "vpc-cni" {
   configuration_values = jsonencode({
          enableNetworkPolicy = "true"
   })
+}
+
+
+################
+### EBS CSI  ###
+################
+
+// IAM role for CNI add-on
+
+resource "aws_iam_role" "ebs_csi_role" {
+  name               = "ebs-cni-role-${local.eks_cluster_name}-${var.region}"
+  path               = "/"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::${var.account_number}:oidc-provider/${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com",
+                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+                }
+            }
+        }
+    ]
+}
+EOF
+}
+
+## Attach policy to vpc cni role
+resource "aws_iam_role_policy_attachment" "csi_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.ebs_csi_role.name
+}
+
+## Install EBS add-on
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "aws-ebs-csi-driver"
+  addon_version               = var.ebs_csi_version
+  service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+
+
+#####################
+### Pod Identity  ###
+#####################
+
+## Install EBS add-on
+resource "aws_eks_addon" "pod_identity" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.pod_identity_version
+  resolve_conflicts_on_update = "OVERWRITE"
 }

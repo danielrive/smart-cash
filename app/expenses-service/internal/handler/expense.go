@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"smart-cash/expenses-service/internal/common"
@@ -13,10 +13,14 @@ import (
 
 type ExpensesHandler struct {
 	expensesService *service.ExpensesService
+	logger          *slog.Logger
 }
 
-func NewExpensesHandler(expensesService *service.ExpensesService) *ExpensesHandler {
-	return &ExpensesHandler{expensesService: expensesService}
+func NewExpensesHandler(expensesService *service.ExpensesService, logger *slog.Logger) *ExpensesHandler {
+	return &ExpensesHandler{
+		expensesService: expensesService,
+		logger:          logger,
+	}
 }
 
 // Handler for creating new user
@@ -25,16 +29,19 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	expense := models.Expense{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
-		log.Printf("error binding body to json %v:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.logger.Error("error binding json",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 	// create the expense
 	response, err := h.expensesService.CreateExpense(expense)
-
 	if err != nil {
-		log.Printf("error processing the expense  %v:", err)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		h.logger.Error("error processing expense",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return
 	}
 	c.Header("Location", "/expense/"+response.ExpenseId)
@@ -47,14 +54,18 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
 	expenses := models.ExpensesPay{}
 	if err := c.ShouldBindJSON(&expenses); err != nil {
-		log.Printf("error binding body to json %v:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.logger.Error("error binding json",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
 	response, err := h.expensesService.PayExpenses(expenses)
 	if err != nil {
-		log.Printf("error processing the expense  %v:", err)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		h.logger.Error("error processing expense",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return
 	}
 	c.JSON(http.StatusCreated, response)
@@ -71,7 +82,7 @@ func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrExpenseNotFound})
 			return
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 			return
 		}
 	}
@@ -111,19 +122,3 @@ func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
 func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }
-
-/*
-func (h *ExpensesHandler) ConnectToOtherSvc(c *gin.Context) {
-
-	uri := c.Request.URL.Query()
-
-	err := h.expensesService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-	c.JSON(http.StatusOK, "ok")
-
-}
-*/
