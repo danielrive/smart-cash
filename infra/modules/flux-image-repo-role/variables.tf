@@ -12,10 +12,10 @@ variable "cluster_name" {
 }
 
 
-variable "service_account" {
+variable "namespace" {
   type = string
 }
 
-variable "namespace" {
+variable "service_account" {
     type = string
 }

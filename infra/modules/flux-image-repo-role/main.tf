@@ -24,42 +24,29 @@ resource "aws_iam_role" "pod_sa_role" {
 EOF
 }
 
-###############################
-#### Role Policy
 
-resource "aws_iam_policy" "cert_manager" {
-  name   = "policy-certmanager-${var.cluster_name}-${var.region}"
-  path   = "/"
-  policy = <<EOF
-    {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-        "Effect": "Allow",
-        "Action": "route53:GetChange",
-        "Resource": "arn:aws:route53:::change/*"
-        },
-        {
-        "Effect": "Allow",
-        "Action": [
-            "route53:ChangeResourceRecordSets",
-            "route53:ListResourceRecordSets"
+## Policy for the role
+resource "aws_iam_policy" "allow_ecr" {
+  name = "ecr-flux-images-${var.environment}-${var.region}"
+  path = "/"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowPull",
+        Effect = "Allow",
+        Action = [
+          "ecr:GetAuthorizationToken",
         ],
-        "Resource": "arn:aws:route53:::hostedzone/*"
-        },
-        {
-        "Effect": "Allow",
-        "Action": "route53:ListHostedZonesByName",
-        "Resource": "*"
-        }
+        Resource = "*"
+      }
     ]
-    }
-EOF
-}
-
-## Attach policy to role
-resource "aws_iam_role_policy_attachment" "cert_manager" {
-  policy_arn = aws_iam_policy.cert_manager.arn
+  })
+  }
+  
+## attach the policy
+resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
+  policy_arn = aws_iam_policy.allow_ecr.arn
   role       = aws_iam_role.pod_sa_role.name
 }
 
