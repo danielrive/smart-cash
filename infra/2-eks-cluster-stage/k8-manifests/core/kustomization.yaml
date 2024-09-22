@@ -9,3 +9,4 @@ resources:
 - ebs-storage-class.yaml
 - helm-prometheus.yaml
 - helm-cert-manager.yaml
+- fluent-bit.yaml
