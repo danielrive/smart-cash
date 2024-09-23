@@ -39,8 +39,14 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 ### cloudwatch logs group ###
 #############################
 
-resource "aws_cloudwatch_log_group" "log_groups_eks" {
-  name              = "/aws/eks/${local.eks_cluster_name}/cluster"
+resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
+  name              = "/aws/eks/${local.eks_cluster_name}/control-plane"
+  retention_in_days = var.retention_control_plane_logs
+  kms_key_id        = var.kms_arn
+}
+
+resource "aws_cloudwatch_log_group" "log_groups_workloads" {
+  name              = "/aws/eks/${local.eks_cluster_name}/workloads"
   retention_in_days = var.retention_control_plane_logs
   kms_key_id        = var.kms_arn
 }
@@ -50,7 +56,7 @@ resource "aws_cloudwatch_log_group" "log_groups_eks" {
 #######################
 
 resource "aws_eks_cluster" "kube_cluster" {
-  depends_on                = [aws_cloudwatch_log_group.log_groups_eks]
+  depends_on                = [aws_cloudwatch_log_group.log_groups_control_plane]
   name                      = local.eks_cluster_name
   role_arn                  = aws_iam_role.eks_iam_role.arn
   version                   = var.cluster_version
