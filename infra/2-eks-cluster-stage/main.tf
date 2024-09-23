@@ -159,6 +159,7 @@ resource "github_repository_file" "core_resources" {
       ## Common variables for manifests
       AWS_REGION            = var.region
       ENVIRONMENT           = var.environment
+      CLUSTER_NAME          = local.cluster_name
       PROJECT               = var.project_name
       ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
     }
