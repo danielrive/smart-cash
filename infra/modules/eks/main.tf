@@ -40,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 #############################
 
 resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
-  name              = "/aws/eks/${local.eks_cluster_name}/control-plane"
+  name              = "/aws/eks/${local.eks_cluster_name}/cluster"
   retention_in_days = var.retention_control_plane_logs
   kms_key_id        = var.kms_arn
 }
