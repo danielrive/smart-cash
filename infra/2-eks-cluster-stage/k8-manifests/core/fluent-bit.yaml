@@ -72,4 +72,5 @@ spec:
             Match kube.*
             region ${AWS_REGION} 
             log_group_name /aws/eks/${CLUSTER_NAME}/workloads
-            auto_create_group On
+            log_stream_prefix from-k8-fluent-bit-
+            auto_create_group off
