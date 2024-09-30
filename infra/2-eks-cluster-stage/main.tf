@@ -169,3 +169,58 @@ resource "github_repository_file" "core_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
+## Add fluent-bit service account to pod identity
+
+resource "aws_iam_role" "fluent_bit" {
+  name = "role-sa-fluent-bit-${var.environment}"
+  path = "/"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "fluent_bit" {
+  name        = "policy-fluent-bit-${var.environment}"
+  path        = "/"
+  description = "policy for k8 service account"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "*"
+        ]
+        Effect = "Allow"
+        Resource = ["*"]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "att_policy_role1" {
+  policy_arn = aws_iam_policy.fluent_bit.arn
+  role       = aws_iam_role.fluent_bit.name
+}
+
+resource "aws_eks_pod_identity_association" "association" {
+  cluster_name    = local.cluster_name
+  namespace       = var.environment
+  service_account = "fluent-bit"
+  role_arn        = aws_iam_role.fluent_bit.arn
+}
