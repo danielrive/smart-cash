@@ -220,7 +220,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 
 resource "aws_eks_pod_identity_association" "association" {
   cluster_name    = local.cluster_name
-  namespace       = var.environment
+  namespace       = "fluent-bit"
   service_account = "fluent-bit"
   role_arn        = aws_iam_role.fluent_bit.arn
 }
