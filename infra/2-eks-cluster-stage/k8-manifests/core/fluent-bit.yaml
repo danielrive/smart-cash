@@ -25,7 +25,7 @@ spec:
       create: true
       nodeAccess: false
       eventsAccess: false
-    hostNetwork: true
+    hostNetwork: false
     dnsPolicy: ClusterFirst
     securityContext: 
       capabilities:
@@ -97,8 +97,6 @@ spec:
             K8S-Logging.Exclude Off
             Labels              On
             Annotations         Off
-            Use_Kubelet         On
-            Kubelet_Port        10250
             Buffer_Size         0
             
 
