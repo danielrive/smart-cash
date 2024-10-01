@@ -45,6 +45,13 @@ spec:
         path: /api/v1/health
         port: http
     logLevel: info
+    extraVolumes:
+      - name: fluentbit-status
+        hostPath:
+          path: /var/fluent-bit/state
+    extraVolumeMounts:
+      - name: fluentbit-status
+        mountPath: /var/fluent-bit/state
     config:
       service: |
         [SERVICE]
@@ -68,6 +75,7 @@ spec:
             Mem_Buf_Limit       50MB
             Skip_Long_Lines     On
             Refresh_Interval    10
+            storage.type        filesystem
             Rotate_Wait         30
 
 
