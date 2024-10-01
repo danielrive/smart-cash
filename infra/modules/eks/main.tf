@@ -322,7 +322,7 @@ resource "aws_eks_addon" "vpc-cni" {
   service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
-         enableNetworkPolicy = "true"
+    enableNetworkPolicy = "true"
   })
 }
 

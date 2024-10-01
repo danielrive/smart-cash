@@ -42,8 +42,8 @@ resource "aws_iam_policy" "allow_ecr" {
       }
     ]
   })
-  }
-  
+}
+
 ## attach the policy
 resource "aws_iam_role_policy_attachment" "flux_imageupdate" {
   policy_arn = aws_iam_policy.allow_ecr.arn

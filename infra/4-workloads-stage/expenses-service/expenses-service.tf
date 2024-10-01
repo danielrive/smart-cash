@@ -3,7 +3,7 @@ locals {
   this_service_port     = 8282
   path_tf_repo_services = "./k8-manifests"
   brach_gitops_repo     = var.environment
-  cluster_name                    = "${var.project_name}-${var.environment}"
+  cluster_name          = "${var.project_name}-${var.environment}"
   tier                  = "backend"
 }
 
@@ -55,8 +55,8 @@ resource "aws_dynamodb_table" "dynamo_table" {
 ###### IAM Role K8 SA
 
 resource "aws_iam_role" "iam_sa_role" {
-  name = "role-sa-${local.this_service_name}-${var.environment}"
-  path = "/"
+  name               = "role-sa-${local.this_service_name}-${var.environment}"
+  path               = "/"
   assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -145,8 +145,8 @@ resource "github_repository_file" "kustomization" {
   content = templatefile(
     "${local.path_tf_repo_services}/kustomization/${local.this_service_name}.yaml",
     {
-      ENVIRONMENT               = var.environment
-      SERVICE_NAME              = local.this_service_name
+      ENVIRONMENT  = var.environment
+      SERVICE_NAME = local.this_service_name
     }
   )
   commit_message      = "Managed by Terraform"
@@ -204,9 +204,9 @@ resource "github_repository_file" "overlays_svc_kustomization" {
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/kustomization.yaml",
     {
-      SERVICE_NAME        = local.this_service_name
-      ECR_REPO            = module.ecr_registry.repo_url
-      ENVIRONMENT         = var.environment
+      SERVICE_NAME = local.this_service_name
+      ECR_REPO     = module.ecr_registry.repo_url
+      ENVIRONMENT  = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
@@ -227,7 +227,7 @@ resource "github_repository_file" "network_policy" {
     "${local.path_tf_repo_services}/network-policies/${local.this_service_name}.yaml",
     {
       PROJECT_NAME = var.project_name
-      SERVICE_PORT               = local.this_service_port
+      SERVICE_PORT = local.this_service_port
     }
   )
   commit_message      = "Managed by Terraform"

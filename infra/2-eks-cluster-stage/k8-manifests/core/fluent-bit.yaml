@@ -59,19 +59,39 @@ spec:
             Health_Check On
       inputs: |
         [INPUT]
-            name            fluentbit_metrics
-            tag             internal_metrics
-            scrape_interval 2
-        [INPUT]
-            Name tail
-            Path /var/log/containers/*.log
-            Tag kube.*
-            Mem_Buf_Limit 5MB
-            Skip_Long_Lines On
+            Name                tail
+            Tag                 application.*
+            Exclude_Path        /var/log/containers/cloudwatch-agent*, /var/log/containers/fluent-bit*, /var/log/containers/aws-node*, /var/log/containers/kube-proxy*
+            Path                /var/log/containers/*.log
+            multiline.parser    docker, cri
+            DB                  /var/fluent-bit/state/flb_container.db
+            Mem_Buf_Limit       50MB
+            Skip_Long_Lines     On
+            Refresh_Interval    10
+            Rotate_Wait         30
+            storage.type        filesystem
+
+
+      filters: |
+        [FILTER]
+            Name                kubernetes
+            Match               application.*
+            Kube_URL            https://kubernetes.default.svc:443
+            Kube_Tag_Prefix     application.var.log.containers.
+            Merge_Log           On
+            Merge_Log_Key       log_processed
+            K8S-Logging.Parser  On
+            K8S-Logging.Exclude Off
+            Labels              Off
+            Annotations         Off
+            Use_Kubelet         On
+            Kubelet_Port        10250
+            Buffer_Size         0
+
       outputs: |
         [OUTPUT]
             Name cloudwatch_logs
-            Match kube.*
+            Match applications.*
             region ${AWS_REGION} 
             log_group_name /aws/eks/${CLUSTER_NAME}/workloads
             log_stream_prefix from-k8-fluent-bit-

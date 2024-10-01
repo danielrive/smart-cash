@@ -45,26 +45,26 @@ module "eks_cluster" {
 ### Flux imageupdate role
 
 module "flux_imageupdate_role" {
-  depends_on = [module.eks_cluster]
-  source = "../modules/flux-image-repo-role"
-  environment = var.environment
-  region = var.region
-  cluster_name = local.cluster_name 
+  depends_on      = [module.eks_cluster]
+  source          = "../modules/flux-image-repo-role"
+  environment     = var.environment
+  region          = var.region
+  cluster_name    = local.cluster_name
   service_account = "image-reflector-controller"
-  namespace = "flux-system"
+  namespace       = "flux-system"
 }
 
 ######################
-### cer manager role
+### cert manager role
 
 module "cert_manager" {
-  depends_on = [module.eks_cluster]
-  source = "../modules/cert-manager"
-  environment = var.environment
-  region = var.region
-  cluster_name = local.cluster_name 
+  depends_on      = [module.eks_cluster]
+  source          = "../modules/cert-manager"
+  environment     = var.environment
+  region          = var.region
+  cluster_name    = local.cluster_name
   service_account = "cert-manager"
-  namespace = "cert-manager"
+  namespace       = "cert-manager"
 }
 
 ############################
@@ -91,7 +91,7 @@ resource "null_resource" "bootstrap-flux" {
 
 ### Force to update the Pod to take the changes in the SA
 resource "null_resource" "restart_image_reflector" {
-  depends_on = [module.eks_cluster,null_resource.bootstrap-flux]
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
   provisioner "local-exec" {
     command = <<EOF
     aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
@@ -171,51 +171,11 @@ resource "github_repository_file" "core_resources" {
   overwrite_on_create = true
 }
 
-## Add fluent-bit service account to pod identity
-
-
-resource "aws_iam_role" "fluent_bit" {
-  name = "role-fluent-bit-${var.environment}"
-  path = "/"
-  assume_role_policy = jsonencode({
-  Version="2012-10-17"
-  Statement =  [
-    {
-      Effect= "Allow"
-      Principal= {
-        Federated= "arn:aws:iam::${data.aws_caller_identity.id_account.id}:oidc-provider/${module.eks_cluster.cluster_oidc}"
-      },
-      Action= "sts:AssumeRoleWithWebIdentity",
-      Condition={
-        StringEquals= {
-          "${module.eks_cluster.cluster_oidc}:aud": "sts.amazonaws.com",
-          "${module.eks_cluster.cluster_oidc}:sub": "system:serviceaccount:fluent-bit:fluent-bit"
-        }
-      }
-    }
-  ]
-})
-}
-
-resource "aws_iam_policy" "fluent_bit" {
-  name        = "policy-fluent-bit-${var.environment}"
-  path        = "/"
-  description = "policy for k8 service account"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "*"
-        ]
-        Effect = "Allow"
-        Resource = ["*"]
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "att_policy_role1" {
-  policy_arn = aws_iam_policy.fluent_bit.arn
-  role       = aws_iam_role.fluent_bit.name
+module "fuent-bit-role" {
+  source         = "../modules/fluent-bit-role"
+  environment    = var.environment
+  region         = var.region
+  cluster_name   = local.cluster_name
+  cluster_oidc   = module.eks_cluster.cluster_oidc
+  account_number = data.aws_caller_identity.id_account.id
 }
