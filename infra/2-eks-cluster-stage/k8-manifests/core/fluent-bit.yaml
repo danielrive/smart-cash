@@ -64,6 +64,10 @@ spec:
             HTTP_Listen 0.0.0.0
             HTTP_Port {{ .Values.metricsPort }}
             Health_Check On
+            storage.path  /var/fluent-bit/state/flb-storage/
+            storage.sync              normal
+            storage.checksum          off
+            storage.backlog.mem_limit 5M
       inputs: |
         [INPUT]
             Name                tail
