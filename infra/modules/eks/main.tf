@@ -431,7 +431,7 @@ resource "aws_eks_addon" "cloudwatch" {
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
     containerLogs = {
-        enabled = "true"
+        enabled = true
     },    
     agent = {
       config = {
@@ -439,8 +439,8 @@ resource "aws_eks_addon" "cloudwatch" {
           metrics_collected = {
             application_signals = {},
             kubernetes = {
-              "enhanced_container_insights": "true"
-              "accelerated_compute_metrics": "false"
+              "enhanced_container_insights": true
+              "accelerated_compute_metrics": false
             }
           }
       }
