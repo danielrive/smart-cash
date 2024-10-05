@@ -431,7 +431,7 @@ resource "aws_eks_addon" "cloudwatch" {
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
     containerLogs = {
-        enabled = "true"
+        enabled = "true",
         fluentBit = {
           configWindows = ""
         }
