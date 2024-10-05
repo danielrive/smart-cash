@@ -429,4 +429,25 @@ resource "aws_eks_addon" "cloudwatch" {
   addon_version               = var.cloudwatch_addon_version
   service_account_role_arn    = aws_iam_role.cloudwatch_role.arn 
   resolve_conflicts_on_update = "OVERWRITE"
+  configuration_values = jsonencode({
+    containerLogs = {
+        enable = false
+    },
+    fluentBit = {
+      configWindows = ""
+    },
+    agent = {
+      config = {
+        logs = {
+          metrics_collected = {
+            application_signals = {},
+            kubernetes = {
+              "enhanced_container_insights": true
+              "accelerated_compute_metrics": false
+            }
+          }
+      }
+    }
+  }
+})
 }

@@ -57,7 +57,7 @@ spec:
         [SERVICE]
             Daemon Off
             Flush 1
-            Log_Level info
+            Log_Level {{ .Values.logLevel }}
             Parsers_File /fluent-bit/etc/parsers.conf
             Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
             HTTP_Server On
@@ -82,7 +82,6 @@ spec:
             storage.type        filesystem
             Rotate_Wait         30
 
-
       filters: |
         [FILTER]
             Name                kubernetes
@@ -99,7 +98,6 @@ spec:
             Annotations         Off
             Buffer_Size         0
             
-
       outputs: |
         [OUTPUT]
             Name cloudwatch_logs
