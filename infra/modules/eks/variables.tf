@@ -87,6 +87,12 @@ variable "ebs_csi_version" {
   type        = string
 }
 
+variable "cloudwatch_addon_version" {
+  description = "version of the cloudwatch observability addon "
+  type        = string
+  default     = ""
+}
+
 variable "pod_identity_version" {
   type = string
 }
