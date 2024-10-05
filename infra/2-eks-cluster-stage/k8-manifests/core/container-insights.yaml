@@ -16,6 +16,6 @@ spec:
   values:
     replicaCount: 1
     clusterName: ${CLUSTER_NAME}
-    region: ${REGION}
+    region: ${AWS_REGION}
     containerLogs:
       enabled: false
