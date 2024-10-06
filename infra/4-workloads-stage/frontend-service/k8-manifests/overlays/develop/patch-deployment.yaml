@@ -7,23 +7,9 @@ spec:
     spec:
       containers:
       - name: ${SERVICE_NAME}-container
-        volumeMounts:
-        - name: nginx-logs
-          mountPath: /var/log/nginx/
-        - name: nginx-temp
-          mountPath: /tmp/
         livenessProbe:
           httpGet:
             port: 9090  
             path: / 
           initialDelaySeconds: 1
           periodSeconds: 10
-      volumes:
-      - name: nginx-logs
-        volumeMounts:
-          - name: nginx-logs
-            emptyDir: {}
-      - name: nginx-temp
-        volumeMounts:
-          - name: nginx-temp
-            emptyDir: {}

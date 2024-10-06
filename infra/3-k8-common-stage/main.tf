@@ -15,7 +15,7 @@ resource "github_repository_file" "kustomization" {
   content = templatefile(
     "./k8-manifests/kustomization/common.yaml",
     {
-      CLUSTER_NAME      = local.cluster_name
+      CLUSTER_NAME = local.cluster_name
     }
   )
   commit_message      = "Managed by Terraform"

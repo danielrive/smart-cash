@@ -1,0 +1,110 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: fluent-bit
+  namespace: fluent-bit
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: fluent-bit
+      version: 0.47.9
+      sourceRef:
+        kind: HelmRepository
+        name: fluent-bit
+        namespace: flux-system
+  values:
+    kind: DaemonSet
+    testFramework:
+      enabled: false
+    serviceAccount:
+      create: true
+      annotations: 
+        eks.amazonaws.com/role-arn: arn:aws:iam::${ACCOUNT_NUMBER}:role/role-fluent-bit-${ENVIRONMENT}
+    rbac:
+      create: true
+      nodeAccess: false
+      eventsAccess: false
+    hostNetwork: false
+    dnsPolicy: ClusterFirst
+    securityContext: 
+      capabilities:
+        drop:
+        - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+    serviceMonitor:
+      enabled: false
+    livenessProbe:
+      httpGet:
+        path: /
+        port: http
+    readinessProbe:
+      httpGet:
+        path: /api/v1/health
+        port: http
+    logLevel: info
+    extraVolumes:
+      - name: fluentbit-status
+        hostPath:
+          path: /var/fluent-bit/state
+    extraVolumeMounts:
+      - name: fluentbit-status
+        mountPath: /var/fluent-bit/state
+    config:
+      service: |
+        [SERVICE]
+            Daemon Off
+            Flush 1
+            Log_Level info
+            Parsers_File /fluent-bit/etc/parsers.conf
+            Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+            HTTP_Server On
+            HTTP_Listen 0.0.0.0
+            HTTP_Port {{ .Values.metricsPort }}
+            Health_Check On
+            storage.path  /var/fluent-bit/state/flb-storage/
+            storage.sync              normal
+            storage.checksum          off
+            storage.backlog.mem_limit 5M
+      inputs: |
+        [INPUT]
+            Name                tail
+            Tag                 applications.*
+            Exclude_Path        /var/log/containers/cloudwatch-agent*, /var/log/containers/fluent-bit*, /var/log/containers/aws-node*, /var/log/containers/kube-proxy*
+            Path                /var/log/containers/*.log
+            multiline.parser    docker, cri
+            DB                  /var/fluent-bit/state/flb_container.db
+            Mem_Buf_Limit       50MB
+            Skip_Long_Lines     On
+            Refresh_Interval    10
+            storage.type        filesystem
+            Rotate_Wait         30
+
+
+      filters: |
+        [FILTER]
+            Name                kubernetes
+            Match               applications.*
+            Kube_URL            https://kubernetes.default.svc:443
+            Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+            Kube_Tag_Prefix     application.var.log.containers.
+            Merge_Log           On
+            Merge_Log_Key       log_processed
+            K8S-Logging.Parser  On
+            K8S-Logging.Exclude Off
+            Labels              On
+            Annotations         Off
+            Buffer_Size         0
+            
+
+      outputs: |
+        [OUTPUT]
+            Name cloudwatch_logs
+            Match applications.*
+            region ${AWS_REGION} 
+            log_group_name /aws/eks/${CLUSTER_NAME}/workloads
+            log_stream_prefix from-k8-fluent-bit-
+            auto_create_group off

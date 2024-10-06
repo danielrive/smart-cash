@@ -11,7 +11,7 @@ spec:
       version: 1.2.1
       sourceRef:
         kind: HelmRepository
-        name: helm-repo-nginx-ingress
+        name: nginx-ingress
         namespace: flux-system
   values:
     controller:

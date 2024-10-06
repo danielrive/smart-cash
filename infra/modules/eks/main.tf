@@ -39,8 +39,14 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 ### cloudwatch logs group ###
 #############################
 
-resource "aws_cloudwatch_log_group" "log_groups_eks" {
+resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
   name              = "/aws/eks/${local.eks_cluster_name}/cluster"
+  retention_in_days = var.retention_control_plane_logs
+  kms_key_id        = var.kms_arn
+}
+
+resource "aws_cloudwatch_log_group" "log_groups_workloads" {
+  name              = "/aws/eks/${local.eks_cluster_name}/workloads"
   retention_in_days = var.retention_control_plane_logs
   kms_key_id        = var.kms_arn
 }
@@ -50,7 +56,7 @@ resource "aws_cloudwatch_log_group" "log_groups_eks" {
 #######################
 
 resource "aws_eks_cluster" "kube_cluster" {
-  depends_on                = [aws_cloudwatch_log_group.log_groups_eks]
+  depends_on                = [aws_cloudwatch_log_group.log_groups_control_plane]
   name                      = local.eks_cluster_name
   role_arn                  = aws_iam_role.eks_iam_role.arn
   version                   = var.cluster_version
@@ -316,7 +322,7 @@ resource "aws_eks_addon" "vpc-cni" {
   service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
-         enableNetworkPolicy = "true"
+    enableNetworkPolicy = "true"
   })
 }
 
@@ -357,7 +363,7 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
   role       = aws_iam_role.ebs_csi_role.name
 }
-
+/*
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name                = aws_eks_cluster.kube_cluster.name
@@ -366,7 +372,7 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
 }
-
+*/
 
 
 #####################
