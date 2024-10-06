@@ -11,7 +11,7 @@
 echo "---------->  get eks credentials"
 aws eks update-kubeconfig --name $1  --region $2
 
-if [[ $5 -eq 'production'  ]]; then
+if [[ "$5" -eq "production"  ]]; then
   BRANCH="main"
 else 
   BRANCH=$5
