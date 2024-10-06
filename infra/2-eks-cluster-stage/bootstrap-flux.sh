@@ -11,7 +11,7 @@
 echo "---------->  get eks credentials"
 aws eks update-kubeconfig --name $1  --region $2
 
-if [[ "$5"=="production"  ]]; then
+if [ "$5"=="production"  ]; then
   BRANCH="main"
 else 
   BRANCH=$5
@@ -20,7 +20,7 @@ fi
 
 flux_installed=$(kubectl api-resources | grep flux)
 echo "---> $flux_installed"
-if [[ -z "$flux_installed" ]]; then
+if [ -z "$flux_installed" ]; then
   echo "---------->  flux is not installed"
 
   ### install flux
