@@ -108,6 +108,7 @@ resource "github_repository_file" "overlays_svc_patch" {
     {
       SERVICE_NAME = local.this_service_name
       AWS_REGION   = var.region
+      ENVIRONMENT  = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
