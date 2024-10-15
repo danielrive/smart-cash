@@ -8,7 +8,8 @@ spec:
       containers:
       - name: ${SERVICE_NAME}-container
         env:
-          API_URL: api.${ENVIRONMENT}.smartcash.danielrive.site
+        - name:  API_URL
+          value: api.${ENVIRONMENT}.smartcash.danielrive.site
         volumeMounts:
           - name: nginx-temp
             mountPath: /tmp/
@@ -19,7 +20,5 @@ spec:
           initialDelaySeconds: 1
           periodSeconds: 10
       volumes:
-      - name: nginx-temp
-        volumeMounts:
-          - name: nginx-temp
-            emptyDir: {}
+        - name: nginx-temp
+          emptyDir: {}
