@@ -1,7 +1,7 @@
 FROM nginx:mainline-alpine3.20-slim
 
-COPY ./nginx.conf ./etc/nginx/nginx.conf
+COPY frontend-service/nginx.conf ./etc/nginx/nginx.conf
 
-COPY ./page/* ./usr/share/nginx/html/
+COPY frontend-service/page/* ./usr/share/nginx/html/
 
 EXPOSE 9090
