@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('/user', {
+                const response = await fetch(process.env.API_URL+'/user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ firstname,lastname,username, email,password })
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const category = document.getElementById('category').value;
 
             try {
-                const response = await fetch('/expenses', {
+                const response = await fetch(process.env.API_URL+'/expenses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name,description,amount,userId, category })
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const expenseId = document.getElementById('expenseId').value;
             try {
-                const response = await fetch('/expenses/pay', {
+                const response = await fetch(process.env.API_URL+'/expenses/pay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expenseId })

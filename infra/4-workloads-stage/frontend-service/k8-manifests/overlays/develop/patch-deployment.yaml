@@ -7,11 +7,12 @@ spec:
     spec:
       containers:
       - name: ${SERVICE_NAME}-container
+        env:
+        - name:  API_URL
+          value: api.${ENVIRONMENT}.smartcash.danielrive.site
         volumeMounts:
-        - name: nginx-logs
-          mountPath: /var/log/nginx/
-        - name: nginx-temp
-          mountPath: /tmp/
+          - name: nginx-temp
+            mountPath: /tmp/
         livenessProbe:
           httpGet:
             port: 9090  
@@ -19,11 +20,5 @@ spec:
           initialDelaySeconds: 1
           periodSeconds: 10
       volumes:
-      - name: nginx-logs
-        volumeMounts:
-          - name: nginx-logs
-            emptyDir: {}
-      - name: nginx-temp
-        volumeMounts:
-          - name: nginx-temp
-            emptyDir: {}
+        - name: nginx-temp
+          emptyDir: {}

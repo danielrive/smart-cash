@@ -11,5 +11,5 @@ spec:
       version: 3.15.0
       sourceRef:
         kind: HelmRepository
-        name: helm-opa-gatekeeper
+        name: opa-gatekeeper
         namespace: flux-system

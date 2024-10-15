@@ -3,9 +3,10 @@ kind: Kustomization
 
 resources:
 - namespaces.yaml
-- np-default-policies.yaml
+#- np-default-policies.yaml
 - helm-opa-gatekeeper.yaml
 - helm-nginx-ingress.yaml
 - ebs-storage-class.yaml
 - helm-prometheus.yaml
 - helm-cert-manager.yaml
+- fluent-bit.yaml

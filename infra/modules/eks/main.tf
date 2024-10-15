@@ -1,6 +1,5 @@
 
 locals {
-  eks_cluster_name    = var.cluster_name
   eks_node_group_name = "${var.project_name}-${var.environment}-eks-node-group"
 }
 
@@ -11,7 +10,7 @@ locals {
 # Role that will be used by the EKS cluster to make calls to aws services like ec2 instances, tag ec2 instances.
 
 resource "aws_iam_role" "eks_iam_role" {
-  name               = "role-eks-${local.eks_cluster_name}-${var.region}"
+  name               = "role-eks-${var.cluster_name}-${var.region}"
   path               = "/"
   assume_role_policy = <<EOF
 {
@@ -39,8 +38,14 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 ### cloudwatch logs group ###
 #############################
 
-resource "aws_cloudwatch_log_group" "log_groups_eks" {
-  name              = "/aws/eks/${local.eks_cluster_name}/cluster"
+resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
+  name              = "/aws/eks/${var.cluster_name}/cluster"
+  retention_in_days = var.retention_control_plane_logs
+  kms_key_id        = var.kms_arn
+}
+
+resource "aws_cloudwatch_log_group" "log_groups_workloads" {
+  name              = "/aws/eks/${var.cluster_name}/workloads"
   retention_in_days = var.retention_control_plane_logs
   kms_key_id        = var.kms_arn
 }
@@ -50,8 +55,8 @@ resource "aws_cloudwatch_log_group" "log_groups_eks" {
 #######################
 
 resource "aws_eks_cluster" "kube_cluster" {
-  depends_on                = [aws_cloudwatch_log_group.log_groups_eks]
-  name                      = local.eks_cluster_name
+  depends_on                = [aws_cloudwatch_log_group.log_groups_control_plane]
+  name                      = var.cluster_name
   role_arn                  = aws_iam_role.eks_iam_role.arn
   version                   = var.cluster_version
   enabled_cluster_log_types = var.cluster_enabled_log_types
@@ -75,7 +80,7 @@ resource "aws_eks_cluster" "kube_cluster" {
 #### IAM role used to manage the entire cluster, for now you need to pass one user that will be able to assume the role
 
 resource "aws_iam_role" "eks_admin_iam_role" {
-  name               = "admin-role-eks-${local.eks_cluster_name}-${var.region}"
+  name               = "admin-role-eks-${var.cluster_name}-${var.region}"
   path               = "/"
   assume_role_policy = <<EOF
 {
@@ -94,7 +99,7 @@ resource "aws_iam_role" "eks_admin_iam_role" {
 EOF
 }
 
-## Create EKS access entries, ConfigMap deprecated
+## Create EKS access entries
 resource "aws_eks_access_entry" "eks_admin_entry" {
   depends_on    = [aws_eks_cluster.kube_cluster, aws_iam_role.eks_admin_iam_role]
   cluster_name  = aws_eks_cluster.kube_cluster.name
@@ -108,7 +113,6 @@ resource "aws_eks_access_policy_association" "eks_admin" {
   cluster_name  = aws_eks_cluster.kube_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = aws_iam_role.eks_admin_iam_role.arn
-
   access_scope {
     type = "cluster"
   }
@@ -117,7 +121,7 @@ resource "aws_eks_access_policy_association" "eks_admin" {
 ## Create Identity Policy eks policy for role
 
 resource "aws_iam_policy" "eks-admin" {
-  name   = "policy-admin-eks-${local.eks_cluster_name}-${var.region}"
+  name   = "policy-admin-eks-${var.cluster_name}-${var.region}"
   path   = "/"
   policy = <<EOF
 {
@@ -152,19 +156,16 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
 }
 
 
-
-
 ##################
 ## OIDC Config ###
 ##################
+
 # Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
 # Get tls certificate from EKS cluster identity issuer
 data "tls_certificate" "cluster" {
+  depends_on = [aws_eks_cluster.kube_cluster]
   url = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
-  depends_on = [
-    aws_eks_cluster.kube_cluster
-  ]
 }
 
 # To associate default OIDC provider to Kube cluster
@@ -243,7 +244,7 @@ node group managed by eks, this contains the ec2 instances that will be the work
 ec2 instances has associated the node role created before
 */
 resource "aws_eks_node_group" "worker-node-group" {
-  cluster_name    = local.eks_cluster_name
+  cluster_name    = var.cluster_name
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
   subnet_ids      = var.subnet_ids
@@ -278,7 +279,7 @@ resource "aws_eks_node_group" "worker-node-group" {
 // IAM role for CNI add-on
 
 resource "aws_iam_role" "vpc_cni_role" {
-  name               = "vpc-cni-${local.eks_cluster_name}-${var.region}"
+  name               = "vpc-cni-${var.cluster_name}-${var.region}"
   path               = "/"
   assume_role_policy = <<EOF
 {
@@ -316,7 +317,7 @@ resource "aws_eks_addon" "vpc-cni" {
   service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
-         enableNetworkPolicy = "true"
+    enableNetworkPolicy = "true"
   })
 }
 
@@ -325,10 +326,10 @@ resource "aws_eks_addon" "vpc-cni" {
 ### EBS CSI  ###
 ################
 
-// IAM role for CNI add-on
+// IAM role for CSI add-on
 
 resource "aws_iam_role" "ebs_csi_role" {
-  name               = "ebs-cni-role-${local.eks_cluster_name}-${var.region}"
+  name               = "ebs-cni-role-${var.cluster_name}-${var.region}"
   path               = "/"
   assume_role_policy = <<EOF
 {
@@ -358,6 +359,7 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
   role       = aws_iam_role.ebs_csi_role.name
 }
 
+/*
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name                = aws_eks_cluster.kube_cluster.name
@@ -366,6 +368,7 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
 }
+*/
 
 
 

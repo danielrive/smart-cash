@@ -17,5 +17,5 @@ variable "namespace" {
 }
 
 variable "service_account" {
-    type = string
+  type = string
 }
