@@ -226,7 +226,7 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
 	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
 		TableName: aws.String(r.expensesTable),
 		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: id},
+			"expenseId": &types.AttributeValueMemberS{Value: id},
 		},
 	})
 	if err != nil {

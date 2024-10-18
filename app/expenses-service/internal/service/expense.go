@@ -58,6 +58,22 @@ func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, erro
 	return expense, nil
 }
 
+// Delete expense
+
+func (s *ExpensesService) DeleteExpense(expenseId string) (string, error) {
+
+	expense, err := s.GetExpenseById(expenseId)
+	if err != nil {
+		return "", err
+	}
+
+	err = s.expensesRepository.DeleteExpenseById(expense.ExpenseId)
+	if err != nil {
+		return "", err
+	}
+	return expense.ExpenseId, nil
+}
+
 // Function to get expenses by userId or category
 
 func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]models.Expense, error) {
@@ -72,7 +88,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]model
 func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
 	baseURL := "http://bank/bank/"
 	// get the expense from DB
-	expense, err := s.expensesRepository.GetExpenseById(expensesId.ExpenseId)
+	expense, err := s.GetExpenseById(expensesId.ExpenseId)
 	if err != nil {
 		return models.Expense{}, common.ErrInternalError
 	}

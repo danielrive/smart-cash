@@ -23,6 +23,23 @@ func NewExpensesHandler(expensesService *service.ExpensesService, logger *slog.L
 	}
 }
 
+// Handler for delete expense
+
+func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
+	expenseId := c.Param("expenseId")
+	expense, err := h.expensesService.DeleteExpense(expenseId)
+
+	if err != nil {
+		if err == common.ErrExpenseNotFound {
+
+			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrExpenseNotFound})
+		} else {
+			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"expenseId": expense})
+}
+
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {

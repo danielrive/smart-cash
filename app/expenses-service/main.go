@@ -71,6 +71,8 @@ func main() {
 
 	router.POST("/expenses/pay/", expensesHandler.PayExpenses)
 
+	router.DELETE("/expenses/:expenseId", expensesHandler.DeleteExpense)
+
 	// Endpoint to test health check
 	router.GET("/expenses/health", expensesHandler.HealthCheck)
 
