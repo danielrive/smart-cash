@@ -168,7 +168,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 				"error", err.Error(),
 			)
 			//// HOW to manage this kind of errors when the request already was procesed by another service but
-			// for some situation like server error faild in the service that caalled
+			// for some situation like server error faild in the service that called
 			return models.Expense{}, common.ErrInternalError
 		}
 		err = json.Unmarshal(resBody, &paymentRequest)
