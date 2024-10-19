@@ -17,7 +17,7 @@ on:
   push:
     branches:
       - develop
-      - feature/*
+      - feat/*
     paths:
       - "app/**"
       - '!app/utils/**'
