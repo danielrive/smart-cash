@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const category = document.getElementById('category').value;
 
             try {
-                const response = await fetch(process.env.API_URL+'/expenses', {
+                const response = await fetch('https://api.develop.smartcash.danielrive.site/expenses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name,description,amount,userId, category })
