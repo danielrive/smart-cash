@@ -55,7 +55,7 @@ func main() {
 		gin.Recovery(),
 		// CORS middleware configuration
 		cors.New(cors.Config{
-			AllowOrigins:     []string{"http://your-frontend-domain.com", "http://another-allowed-origin.com"},
+			AllowOrigins:     []string{"https://develop.smartcash.danielrive.site"},
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 			ExposeHeaders:    []string{"Content-Length"},
