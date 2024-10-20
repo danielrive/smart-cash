@@ -8,11 +8,9 @@ import (
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/utils"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,19 +48,6 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
 	router := gin.New()
-	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
-		gin.Recovery(),
-		// CORS middleware configuration
-		cors.New(cors.Config{
-			AllowOrigins:     []string{"https://develop.smartcash.danielrive.site"},
-			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}),
-	)
 	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
 
