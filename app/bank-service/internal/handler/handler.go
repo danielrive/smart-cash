@@ -47,6 +47,21 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+func (h *BankHandler) ValidateUser(c *gin.Context) {
+	userId := c.Param("userId")
+
+	user, err := h.bankService.GetUser(userId)
+
+	if err != nil {
+		h.logger.Error("error getting user",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
 func (h *BankHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }

@@ -34,7 +34,7 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
 		gin.Recovery(),
 	)
 	// // Initialize bank repository
@@ -47,10 +47,10 @@ func main() {
 	bankHandler := handler.NewBankHandler(bankService, logger)
 
 	// create bank
-	router.POST("/pay", bankHandler.HandlePayment)
+	router.POST("/bank/pay", bankHandler.HandlePayment)
 
 	// Endpoint to test health check
-	router.GET("/health", bankHandler.HealthCheck)
+	router.GET("/bank/health", bankHandler.HealthCheck)
 
 	router.Run(":8585")
 

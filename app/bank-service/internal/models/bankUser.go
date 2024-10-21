@@ -8,4 +8,5 @@ type BankUser struct {
 	LastName  string  `json:"lastName" dynamodbav:"lastName"`
 	Currency  string  `json:"currency" dynamodbav:"currency"`
 	Savings   float64 `json:"savings" dynamodbav:"savings"`
+	Blocked   bool    `json:"blocked" dynamodbav:"blocked"`
 }

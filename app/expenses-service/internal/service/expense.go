@@ -86,32 +86,14 @@ func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]model
 
 // Function to process expenses
 func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
-	baseURL := "http://bank/bank/"
+	baseURL := "http://bank/bank/pay"
 	// get the expense from DB
 	expense, err := s.GetExpenseById(expensesId.ExpenseId)
 	if err != nil {
 		return models.Expense{}, common.ErrInternalError
 	}
-	// Validate user in bank
-	// get user from bank
-	req1, err := http.Get(baseURL + expense.UserId)
-	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", baseURL,
-		)
-		return models.Expense{}, common.ErrInternalError
-	}
-	_, err = io.ReadAll(req1.Body)
-	req1.Body.Close()
-	if req1.StatusCode > 299 {
-		s.logger.Error("error in response",
-			"error", err.Error(),
-			"status_code", req1.StatusCode,
-			"user", expense.UserId,
-		)
-	}
-	s.logger.Info("user exist in bank, preparing request to pay",
+
+	s.logger.Info("preparing request to pay",
 		"user", expense.UserId,
 	)
 
@@ -125,6 +107,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 		Status:    expense.Status,
 	}
 	jsonData, err := json.Marshal(paymentRequest)
+
 	if err != nil {
 		s.logger.Error("Error marshalling data to JSON",
 			"error", err.Error(),
