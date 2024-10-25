@@ -55,6 +55,15 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
         Effect   = "Allow"
         Resource = ["arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/expenses-table", "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/bank-table", "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/user-table"]
       },
+    ],
+    Statement = [
+      {
+        Action = [
+          "s3:GetObject",
+        ]
+        Effect   = "Allow"
+        Resource = ["arn:aws:s3:::smart-cash-fake-data/*"]
+      },
     ]
   })
 }
