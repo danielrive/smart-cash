@@ -165,7 +165,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
 # Get tls certificate from EKS cluster identity issuer
 data "tls_certificate" "cluster" {
   depends_on = [aws_eks_cluster.kube_cluster]
-  url = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
+  url        = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
 
 # To associate default OIDC provider to Kube cluster

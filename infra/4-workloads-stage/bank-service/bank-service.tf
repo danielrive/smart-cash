@@ -165,7 +165,7 @@ resource "github_repository_file" "base_manifests" {
     {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
-      SERVICE_PATH_HEALTH_CHECKS = "/health"
+      SERVICE_PATH_HEALTH_CHECKS = "${local.this_service_name}/health"
       TIER                       = local.tier
     }
   )

@@ -52,8 +52,8 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
           "dynamodb:DescribeTable",
           "dynamodb:UpdateItem"
         ]
-        Effect = "Allow"
-        Resource = ["arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/expenses-table","arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/bank-table","arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/user-table"]
+        Effect   = "Allow"
+        Resource = ["arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/expenses-table", "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/bank-table", "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.id_account.id}:table/user-table"]
       },
     ]
   })
@@ -108,7 +108,7 @@ resource "github_repository_file" "kustomization" {
 }
 
 #####  manifests
-resource "github_repository_file" "base_manifests" {
+resource "github_repository_file" "manifests" {
   for_each   = fileset("./k8-manifests/", "*.yaml")
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -116,31 +116,13 @@ resource "github_repository_file" "base_manifests" {
   content = templatefile(
     "./k8-manifests/${each.key}",
     {
-      SERVICE_NAME               = local.this_service_name
-      SERVICE_PORT               = local.this_service_port
-      TIER                       = local.tier
-      AWS_REGION                 = var.region
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
-
-##### Images Updates automation
-resource "github_repository_file" "image_updates" {
-  for_each   = fileset("${local.path_tf_repo_services}/flux-image-update", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "services/${local.this_service_name}-service/base/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_services}/flux-image-update/${each.key}",
-    {
       SERVICE_NAME    = local.this_service_name
+      SERVICE_PORT    = local.this_service_port
+      TIER            = local.tier
+      AWS_REGION      = var.region
       ECR_REPO        = module.ecr_registry.repo_url
       ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/kustomization.yaml"
     }
   )
   commit_message      = "Managed by Terraform"
