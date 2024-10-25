@@ -16,7 +16,7 @@ COPY go.sum .
 COPY  utils/*.go ./utils/
 COPY  bank-service/internal/common/* ./bank-service/internal/common/
 COPY  bank-service/internal/handler/* ./bank-service/internal/handler/
-COPY  bank-service/internal/models/* ./bank-service/internal/models/
+COPY  bank-service/models/* ./bank-service/models/
 COPY  bank-service/internal/repositories/* ./bank-service/internal/repositories/
 COPY  bank-service/internal/service/* ./bank-service/internal/service/
 COPY  bank-service/main.go ./bank-service/main.go

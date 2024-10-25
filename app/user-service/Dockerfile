@@ -16,7 +16,7 @@ COPY go.sum .
 COPY  utils/*.go ./utils/
 COPY  user-service/internal/common/* ./user-service/internal/common/
 COPY  user-service/internal/handler/* ./user-service/internal/handler/
-COPY  user-service/internal/models/* ./user-service/internal/models/
+COPY  user-service/models/* ./user-service/models/
 COPY  user-service/internal/repositories/* ./user-service/internal/repositories/
 COPY  user-service/internal/service/* ./user-service/internal/service/
 COPY  user-service/main.go ./user-service/main.go
