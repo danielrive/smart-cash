@@ -119,6 +119,7 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
       TIER                       = local.tier
+      AWS_REGION                 = var.region
     }
   )
   commit_message      = "Managed by Terraform"
