@@ -3,8 +3,8 @@ package service
 import (
 	"log"
 	"net/http"
-	"smart-cash/user-service/internal/models"
 	"smart-cash/user-service/internal/repositories"
+	"smart-cash/user-service/models"
 )
 
 type UserService struct {

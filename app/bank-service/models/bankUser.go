@@ -4,7 +4,7 @@ package models
 
 type BankUser struct {
 	UserId    string  `json:"userId" dynamodbav:"userId"` // Primary key
-	FirstName string  `json:"name" dynamodbav:"firstName"`
+	FirstName string  `json:"firstName" dynamodbav:"firstName"`
 	LastName  string  `json:"lastName" dynamodbav:"lastName"`
 	Currency  string  `json:"currency" dynamodbav:"currency"`
 	Savings   float64 `json:"savings" dynamodbav:"savings"`

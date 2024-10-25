@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"smart-cash/user-service/internal/common"
-	"smart-cash/user-service/internal/models"
+	"smart-cash/user-service/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"

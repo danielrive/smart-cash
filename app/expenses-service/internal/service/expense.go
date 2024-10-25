@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"smart-cash/expenses-service/internal/common"
-	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
+	"smart-cash/expenses-service/models"
 	"time"
 )
 

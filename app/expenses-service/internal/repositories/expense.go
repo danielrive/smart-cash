@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"smart-cash/expenses-service/internal/common"
 
-	"smart-cash/expenses-service/internal/models"
+	"smart-cash/expenses-service/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"

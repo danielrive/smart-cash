@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"smart-cash/user-service/internal/common"
-	"smart-cash/user-service/internal/models"
 	"smart-cash/user-service/internal/service"
+	"smart-cash/user-service/models"
 
 	"github.com/gin-gonic/gin"
 )

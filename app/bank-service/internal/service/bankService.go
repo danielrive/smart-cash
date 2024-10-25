@@ -2,8 +2,8 @@ package service
 
 import (
 	"smart-cash/bank-service/internal/common"
-	"smart-cash/bank-service/internal/models"
 	"smart-cash/bank-service/internal/repositories"
+	"smart-cash/bank-service/models"
 
 	"log/slog"
 )
