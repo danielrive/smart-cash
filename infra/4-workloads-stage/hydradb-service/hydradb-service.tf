@@ -114,7 +114,7 @@ resource "github_repository_file" "base_manifests" {
   branch     = local.brach_gitops_repo
   file       = "services/${local.this_service_name}-service/${each.key}"
   content = templatefile(
-    "../microservices-templates/${each.key}",
+    "./k8-manifests/${each.key}",
     {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
