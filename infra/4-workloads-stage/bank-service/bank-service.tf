@@ -13,35 +13,13 @@ locals {
 resource "aws_dynamodb_table" "dynamo_table" {
   name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "expenseId"
-
-  attribute {
-    name = "expenseId"
-    type = "S"
-  }
-
-  attribute {
-    name = "category"
-    type = "S"
-  }
+  hash_key     = "userId"
 
   attribute {
     name = "userId"
     type = "S"
   }
-  global_secondary_index {
-    name               = "by_userId"
-    hash_key           = "userId"
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["expenseId", "currency", "date", "amount"]
-  }
 
-  global_secondary_index {
-    name            = "by_category"
-    hash_key        = "userId"
-    range_key       = "category"
-    projection_type = "ALL"
-  }
   tags = {
     Name = "${local.this_service_name}-table"
   }
@@ -98,8 +76,6 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
         Effect = "Allow"
         Resource = [
           aws_dynamodb_table.dynamo_table.arn,
-          "${aws_dynamodb_table.dynamo_table.arn}/index/by_userId",
-          "${aws_dynamodb_table.dynamo_table.arn}/index/by_category"
         ]
       },
     ]
