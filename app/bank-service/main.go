@@ -24,6 +24,13 @@ func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("us-west-2"),
 	)
+
+	bankTable := os.Getenv("DYNAMODB_BANK_TABLE")
+	if bankTable == "" {
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_BANK_TABLE"))
+		os.Exit(1)
+	}
+
 	if err != nil {
 		slog.Error("unable to load SDK config",
 			"error", err.Error())
@@ -38,7 +45,7 @@ func main() {
 		gin.Recovery(),
 	)
 	// // Initialize bank repository
-	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, "bank-test", logger) // Harcoded dynamotable to use data already uploaded
+	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, bankTable, logger) // Harcoded dynamotable to use data already uploaded
 
 	// Initialize bank service
 	bankService := service.NewBankService(bankRepo, logger)
