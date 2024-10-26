@@ -29,8 +29,6 @@ var Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 func main() {
 	// services in project
 
-	services := [3]string{"bank", "user", "expenses"}
-
 	awsRegion := os.Getenv("AWS_REGION")
 
 	if awsRegion == "" {
@@ -50,12 +48,15 @@ func main() {
 
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 
-	// Get files
-
-	for _, svc := range services {
-		data := getData[expense.Expense]("smart-cash-fake-data", svc+"_service_HYDRA.json", s3Client)
-		hydraDynamodb(svc+"-table", dynamoClient, data)
-	}
+	// hydra expenses
+	expensesData := getData[expense.Expense]("smart-cash-fake-data", "expenses_service_HYDRA.json", s3Client)
+	hydraDynamodb("expenses-table", dynamoClient, expensesData)
+	// hydra bank users
+	bankData := getData[bank.BankUser]("smart-cash-fake-data", "bank_service_HYDRA.json", s3Client)
+	hydraDynamodb("bank-table", dynamoClient, bankData)
+	// hydra users
+	userData := getData[user.User]("smart-cash-fake-data", "user_service_HYDRA.json", s3Client)
+	hydraDynamodb("user-table", dynamoClient, userData)
 
 }
 
