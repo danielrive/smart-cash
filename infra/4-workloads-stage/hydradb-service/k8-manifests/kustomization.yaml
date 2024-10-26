@@ -9,6 +9,6 @@ images:
     newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
 
 resources:
-- deployment.yaml
+- job.yaml
 - service-account.yaml
 - image-update-automation.yaml
