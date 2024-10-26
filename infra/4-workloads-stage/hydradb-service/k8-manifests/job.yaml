@@ -1,5 +1,5 @@
 apiVersion: batch/v1
-kind: job
+kind: Job
 metadata:
   name: job-${SERVICE_NAME}
   labels:
