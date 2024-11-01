@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 
 	"smart-cash/user-service/internal/common"
@@ -12,10 +13,14 @@ import (
 
 type UserHandler struct {
 	userService *service.UserService
+	logger      *slog.Logger
 }
 
-func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService *service.UserService, logger *slog.Logger) *UserHandler {
+	return &UserHandler{
+		userService: userService,
+		logger:      logger,
+	}
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
@@ -82,24 +87,27 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": response})
 }
 
+// login
+
+func (h *UserHandler) Login(c *gin.Context) {
+	loginData := models.LoginRequest{}
+
+	if err := c.ShouldBindJSON(&loginData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.userService.Login(loginData.Username, loginData.Password)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"token": token})
+}
+
 /// Health check
 
 func (h *UserHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
-}
-
-// Handler to connect to other svc (just test)
-
-func (h *UserHandler) ConnectToOtherSvc(c *gin.Context) {
-
-	uri := c.Request.URL.Query()
-
-	err := h.userService.ConnectOtherSVC(uri["svcName"][0], uri["port"][0])
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, "ok")
-
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	"smart-cash/user-service/internal/handler"
@@ -17,15 +17,23 @@ import (
 )
 
 func main() {
+	//set-up logger handler
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+	slog.SetDefault(logger)
+
 	// validate if env variables exists
 	usersTable := os.Getenv("DYNAMODB_USER_TABLE")
 	if usersTable == "" {
-		panic("DYNAMODB_USER_TABLE cannot be empty")
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_USER_TABLE"))
+		os.Exit(1)
 	}
 
 	awsRegion := os.Getenv("AWS_REGION")
 	if awsRegion == "" {
-		panic("AWS_REGION cannot be empty")
+		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+		os.Exit(1)
 	}
 
 	// configure the SDK
@@ -33,35 +41,38 @@ func main() {
 		config.WithRegion(awsRegion),
 	)
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
 	}
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
 
 	router := gin.New()
-	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
-		gin.Recovery(),
-	)
+
+	// logging for gin
+
+	router.Use(gin.Recovery())
+
 	// new UUID helper
 	uuidHelper := utils.NewUUIDHelper()
 
 	// Initialize user repository
-	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper)
+	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper, logger)
 
 	// Initialize user service
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, logger)
 
 	// Init user handler
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, logger)
 
 	// GET user/userID
 	router.GET("/user/:userId", userHandler.GetUserById)
 	// GET user?username=username user?email=email
-	router.GET("/user", userHandler.GetUserByQuery)
+	//router.GET("/user", userHandler.GetUserByQuery)
 
 	// GET api/v1/[controller]/user[?userID=0]
 	router.POST("/user", userHandler.CreateUser)
+
+	router.POST("/user/login", userHandler.Login)
 
 	// Health check
 	router.GET("/user/health", userHandler.HealthCheck)

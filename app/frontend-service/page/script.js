@@ -89,6 +89,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // List expenses 
+
+    // Handle expense registration
+    const payExpense = document.getElementById('payExpense');
+    if (payExpense) {
+        payExpense.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const expenseId = document.getElementById('expenseId').value;
+            try {
+                const response = await fetch('/expenses/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expenseId })
+                });
+                if (response.ok) {
+                    alert('Payment successful');
+                    payExpense.reset();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Payment failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                alert('An error occurred during registration');
+            }
+        });
+    }
     
 });
 
