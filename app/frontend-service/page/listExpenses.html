@@ -4,37 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List Expense</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Register Expense</h1>
-        <form id="expenseForm">
-            <label for="name">Expense Name:</label>
-            <input type="text" id="name" name="name" required>
+        <h1>List Expenses</h1>
+        <form id="expenseList">
+            <label for="name">Username:</label>
+            <input type="text" id="username" name="username" required>
 
-            <label for="date">Date:</label>
-            <input type="date" id="date" name="date" required>
-
-            <label for="value">Value:</label>
-            <input type="number" id="value" name="value" step="0.01" required>
-
-            <label for="currency">Currency:</label>
-            <select id="currency" name="currency" required>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
-                <!-- Add more currencies as needed -->
-            </select>
-
-            <button type="submit">Add Expense</button>
+            <button type="submit">list</button>
         </form>
 
         <h2>Expenses List</h2>
         <ul id="expensesList"></ul>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" type="application/javascript"></script>
 </body>
 </html>

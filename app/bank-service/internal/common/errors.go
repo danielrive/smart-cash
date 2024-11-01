@@ -11,4 +11,5 @@ var (
 	ErrInternalError          = errors.New("internal error")
 	ErrWrongCredentials       = errors.New("wrong credentials")
 	ErrInsufficientFundsError = errors.New("insufficient funds")
+	ErrUserBlocked            = errors.New("user is blocked, contact support center")
 )

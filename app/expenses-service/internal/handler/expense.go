@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"smart-cash/expenses-service/internal/common"
-	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/service"
+	"smart-cash/expenses-service/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +21,23 @@ func NewExpensesHandler(expensesService *service.ExpensesService, logger *slog.L
 		expensesService: expensesService,
 		logger:          logger,
 	}
+}
+
+// Handler for delete expense
+
+func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
+	expenseId := c.Param("expenseId")
+	expense, err := h.expensesService.DeleteExpense(expenseId)
+
+	if err != nil {
+		if err == common.ErrExpenseNotFound {
+
+			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrExpenseNotFound})
+		} else {
+			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"expenseId": expense})
 }
 
 // Handler for creating new user

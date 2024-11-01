@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"smart-cash/bank-service/internal/common"
-	"smart-cash/bank-service/internal/models"
 	"smart-cash/bank-service/internal/service"
+	"smart-cash/bank-service/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +45,21 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, response)
+}
+
+func (h *BankHandler) ValidateUser(c *gin.Context) {
+	userId := c.Param("userId")
+
+	user, err := h.bankService.GetUser(userId)
+
+	if err != nil {
+		h.logger.Error("error getting user",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *BankHandler) HealthCheck(c *gin.Context) {

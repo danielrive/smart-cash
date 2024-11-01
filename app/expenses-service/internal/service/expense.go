@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"smart-cash/expenses-service/internal/common"
-	"smart-cash/expenses-service/internal/models"
 	"smart-cash/expenses-service/internal/repositories"
+	"smart-cash/expenses-service/models"
 	"time"
 )
 
@@ -58,6 +58,22 @@ func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, erro
 	return expense, nil
 }
 
+// Delete expense
+
+func (s *ExpensesService) DeleteExpense(expenseId string) (string, error) {
+
+	expense, err := s.GetExpenseById(expenseId)
+	if err != nil {
+		return "", err
+	}
+
+	err = s.expensesRepository.DeleteExpenseById(expense.ExpenseId)
+	if err != nil {
+		return "", err
+	}
+	return expense.ExpenseId, nil
+}
+
 // Function to get expenses by userId or category
 
 func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]models.Expense, error) {
@@ -70,32 +86,14 @@ func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]model
 
 // Function to process expenses
 func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
-	baseURL := "http://bank/bank/"
+	baseURL := "http://bank/bank/pay"
 	// get the expense from DB
-	expense, err := s.expensesRepository.GetExpenseById(expensesId.ExpenseId)
+	expense, err := s.GetExpenseById(expensesId.ExpenseId)
 	if err != nil {
 		return models.Expense{}, common.ErrInternalError
 	}
-	// Validate user in bank
-	// get user from bank
-	req1, err := http.Get(baseURL + expense.UserId)
-	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", baseURL,
-		)
-		return models.Expense{}, common.ErrInternalError
-	}
-	_, err = io.ReadAll(req1.Body)
-	req1.Body.Close()
-	if req1.StatusCode > 299 {
-		s.logger.Error("error in response",
-			"error", err.Error(),
-			"status_code", req1.StatusCode,
-			"user", expense.UserId,
-		)
-	}
-	s.logger.Info("user exist in bank, preparing request to pay",
+
+	s.logger.Info("preparing request to pay",
 		"user", expense.UserId,
 	)
 
@@ -109,6 +107,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 		Status:    expense.Status,
 	}
 	jsonData, err := json.Marshal(paymentRequest)
+
 	if err != nil {
 		s.logger.Error("Error marshalling data to JSON",
 			"error", err.Error(),
@@ -152,7 +151,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 				"error", err.Error(),
 			)
 			//// HOW to manage this kind of errors when the request already was procesed by another service but
-			// for some situation like server error faild in the service that caalled
+			// for some situation like server error faild in the service that called
 			return models.Expense{}, common.ErrInternalError
 		}
 		err = json.Unmarshal(resBody, &paymentRequest)

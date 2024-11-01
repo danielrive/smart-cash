@@ -48,10 +48,6 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
 	router := gin.New()
-	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
-		gin.Recovery(),
-	)
 	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
 
@@ -70,6 +66,8 @@ func main() {
 	router.GET("/expenses", expensesHandler.GetExpensesByQuery)
 
 	router.POST("/expenses/pay/", expensesHandler.PayExpenses)
+
+	router.DELETE("/expenses/:expenseId", expensesHandler.DeleteExpense)
 
 	// Endpoint to test health check
 	router.GET("/expenses/health", expensesHandler.HealthCheck)

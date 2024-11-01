@@ -24,6 +24,13 @@ func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("us-west-2"),
 	)
+
+	bankTable := os.Getenv("DYNAMODB_BANK_TABLE")
+	if bankTable == "" {
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_BANK_TABLE"))
+		os.Exit(1)
+	}
+
 	if err != nil {
 		slog.Error("unable to load SDK config",
 			"error", err.Error())
@@ -34,11 +41,11 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
 		gin.Recovery(),
 	)
 	// // Initialize bank repository
-	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, "bank-test", logger) // Harcoded dynamotable to use data already uploaded
+	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, bankTable, logger) // Harcoded dynamotable to use data already uploaded
 
 	// Initialize bank service
 	bankService := service.NewBankService(bankRepo, logger)
@@ -47,10 +54,10 @@ func main() {
 	bankHandler := handler.NewBankHandler(bankService, logger)
 
 	// create bank
-	router.POST("/pay", bankHandler.HandlePayment)
+	router.POST("/bank/pay", bankHandler.HandlePayment)
 
 	// Endpoint to test health check
-	router.GET("/health", bankHandler.HealthCheck)
+	router.GET("/bank/health", bankHandler.HealthCheck)
 
 	router.Run(":8585")
 

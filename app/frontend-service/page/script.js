@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // Handle user registration
@@ -12,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch(process.env.API_URL+'/user', {
+                const response = await fetch('/user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ firstname,lastname,username, email,password })
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const category = document.getElementById('category').value;
 
             try {
-                const response = await fetch(process.env.API_URL+'/expenses', {
+                const response = await fetch('/expenses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name,description,amount,userId, category })
@@ -71,7 +72,34 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const expenseId = document.getElementById('expenseId').value;
             try {
-                const response = await fetch(process.env.API_URL+'/expenses/pay', {
+                const response = await fetch('/expenses/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expenseId })
+                });
+                if (response.ok) {
+                    alert('Payment successful');
+                    payExpense.reset();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Payment failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                alert('An error occurred during registration');
+            }
+        });
+    }
+
+    // List expenses 
+
+    // Handle expense registration
+    const payExpense = document.getElementById('payExpense');
+    if (payExpense) {
+        payExpense.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const expenseId = document.getElementById('expenseId').value;
+            try {
+                const response = await fetch('/expenses/pay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expenseId })
@@ -90,3 +118,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
 });
+

@@ -2,8 +2,8 @@ package service
 
 import (
 	"smart-cash/bank-service/internal/common"
-	"smart-cash/bank-service/internal/models"
 	"smart-cash/bank-service/internal/repositories"
+	"smart-cash/bank-service/models"
 
 	"log/slog"
 )
@@ -26,15 +26,16 @@ func NewBankService(bankRepository *repositories.DynamoDBBankRepository, logger 
 func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.PaymentRequest, error) {
 	// proccess expenses
 	// validate user in bank
-	user, err := s.bankRepository.GetUser(transaction.UserId)
-	if err != nil {
-		s.logger.Error("user not exist",
+	user, err := s.GetUser(transaction.UserId)
+	if err != nil || user.Blocked {
+		s.logger.Error("payment can not be processed",
 			"error", err.Error(),
 			"userId", transaction.UserId,
 		)
 		transaction.Status = "NotPaid"
 		return transaction, common.ErrTransactionFailed
 	}
+
 	s.logger.Info("processing transaction for expense",
 		"expenseId", transaction.ExpenseId,
 		"userId", transaction.UserId,
@@ -74,12 +75,21 @@ func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.
 // Function to get bank by Id
 func (s *BankService) GetUser(userId string) (models.BankUser, error) {
 	user, err := s.bankRepository.GetUser(userId)
+
 	if err != nil {
 		s.logger.Error("error getting the user",
 			"error", err.Error(),
 			"user", userId,
 		)
 		return models.BankUser{}, err
+	}
+
+	if user.Blocked {
+		s.logger.Error("not transactions allowed",
+			"error", common.ErrUserBlocked,
+			"user", userId,
+		)
+		return models.BankUser{}, common.ErrUserBlocked
 	}
 
 	return user, nil

@@ -16,7 +16,7 @@ COPY go.sum .
 COPY  utils/*.go ./utils/
 COPY  expenses-service/internal/common/* ./expenses-service/internal/common/
 COPY  expenses-service/internal/handler/* ./expenses-service/internal/handler/
-COPY  expenses-service/internal/models/* ./expenses-service/internal/models/
+COPY  expenses-service/models/* ./expenses-service/models/
 COPY  expenses-service/internal/repositories/* ./expenses-service/internal/repositories/
 COPY  expenses-service/internal/service/* ./expenses-service/internal/service/
 COPY  expenses-service/main.go ./expenses-service/main.go

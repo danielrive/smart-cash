@@ -14,10 +14,11 @@ on:
           - expenses-service
           - bank-service
           - frontend-service
+          - hydradb-service
   push:
     branches:
       - develop
-      - feature/*
+      - feat/*
     paths:
       - "app/**"
       - '!app/utils/**'
