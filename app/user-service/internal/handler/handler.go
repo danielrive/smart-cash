@@ -9,6 +9,7 @@ import (
 	"smart-cash/user-service/models"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 )
 
 type UserHandler struct {
@@ -24,8 +25,11 @@ func NewUserHandler(userService *service.UserService, logger *slog.Logger) *User
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
+	tr := otel.Tracer("user")
+	trContext, childSpan := tr.Start(c.Request.Context(), "handler-get-by-id")
+	defer childSpan.End()
 	userId := c.Param("userId")
-	user, err := h.userService.GetUserById(userId)
+	user, err := h.userService.GetUserById(trContext, userId)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
@@ -35,6 +39,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 			return
 		}
 	}
+
 	c.JSON(http.StatusOK, user)
 }
 

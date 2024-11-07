@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"log/slog"
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/repositories"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"go.opentelemetry.io/otel"
 )
 
 type UserService struct {
@@ -29,9 +31,11 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository, logger
 	}
 }
 
-func (us *UserService) GetUserById(userId string) (models.UserResponse, error) {
-
-	user, err := us.userRepository.GetUserById(userId)
+func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
+	tr := otel.Tracer("user")
+	trContext, childSpan := tr.Start(ctx, "svc-get-by-id")
+	defer childSpan.End()
+	user, err := us.userRepository.GetUserById(trContext, userId)
 
 	if err != nil {
 		return models.UserResponse{}, err

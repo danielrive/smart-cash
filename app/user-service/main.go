@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
@@ -11,17 +12,33 @@ import (
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
+var logger *slog.Logger
+
+var tracer trace.Tracer
+
 func main() {
-	//set-up logger handler
+	// Set-up Logger handler
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
+
+	// Init OTel TracerProvider
+	tp := initOpenTelemetry()
+
+	otel.SetTracerProvider(tp)
+	// create a trace
+
+	tracer = tp.Tracer("user")
 
 	// validate if env variables exists
 	usersTable := os.Getenv("DYNAMODB_USER_TABLE")
@@ -44,9 +61,12 @@ func main() {
 		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
 	}
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+
 	// create a router with gin
 
 	router := gin.New()
+
+	router.Use(otelgin.Middleware("user-service"))
 
 	// logging for gin
 
@@ -78,4 +98,10 @@ func main() {
 	router.GET("/user/health", userHandler.HealthCheck)
 
 	router.Run(":8181")
+}
+
+func simulateMoreJob(c *gin.Context) {
+	_, childSpan := tracer.Start(c.Request.Context(), "starting 2nd job")
+	time.Sleep(30 * time.Second) // simulate some work
+	childSpan.End()
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.opentelemetry.io/otel"
 )
 
 // define UUID interface
@@ -36,7 +37,10 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid
 }
 
 // Function to Get user by ID
-func (r *DynamoDBUsersRepository) GetUserById(id string) (models.UserResponse, error) {
+func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (models.UserResponse, error) {
+	tr := otel.Tracer("user")
+	_, childSpan := tr.Start(ctx, "repository-get-by-id")
+	defer childSpan.End()
 	output := models.UserResponse{}
 
 	// create input for get item
