@@ -22,6 +22,7 @@ on:
     branches:
       - develop
       - feat/*
+      - feature/*
     paths:
       - "infra/**"
       - '!infra/modules/**'

@@ -19,6 +19,7 @@ on:
     branches:
       - develop
       - feat/*
+      - feature/*
     paths:
       - "app/**"
       - '!app/utils/**'
