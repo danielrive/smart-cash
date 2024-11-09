@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type UserService struct {
@@ -33,7 +34,8 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository, logger
 
 func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
 	tr := otel.Tracer("user")
-	trContext, childSpan := tr.Start(ctx, "svc-get-by-id")
+	trContext, childSpan := tr.Start(ctx, "SVCGetUserById")
+	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 	user, err := us.userRepository.GetUserById(trContext, userId)
 
@@ -44,9 +46,13 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 	return user, nil
 }
 
-func (us *UserService) GetUserByEmailorUsername(key string, value string) (models.User, error) {
-	// Find user
-	user, err := us.userRepository.GetUserByEmailorUsername(key, value)
+func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string, value string) (models.User, error) {
+	tr := otel.Tracer("user")
+	trContext, childSpan := tr.Start(ctx, "SVCGetUserByEmailorUsername")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
+	user, err := us.userRepository.GetUserByEmailorUsername(trContext, key, value)
 
 	if err != nil {
 		return models.User{}, err
@@ -55,10 +61,13 @@ func (us *UserService) GetUserByEmailorUsername(key string, value string) (model
 	return user, err
 }
 
-func (us *UserService) CreateUser(u models.User) (models.UserResponse, error) {
-	// generate UUID for the user
+func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
+	tr := otel.Tracer("user")
+	trContext, childSpan := tr.Start(ctx, "SVCCreateUser")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
 
-	user, err := us.userRepository.CreateUser(u)
+	user, err := us.userRepository.CreateUser(trContext, u)
 
 	if err != nil {
 		return models.UserResponse{}, err
@@ -69,9 +78,12 @@ func (us *UserService) CreateUser(u models.User) (models.UserResponse, error) {
 
 // communicate with another service
 
-func (us *UserService) Login(user string, password string) (string, error) {
-	// validate password
-	response, err := us.GetUserByEmailorUsername("username", user)
+func (us *UserService) Login(ctx context.Context, user string, password string) (string, error) {
+	tr := otel.Tracer("user")
+	trContext, childSpan := tr.Start(ctx, "SVCLogin")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+	response, err := us.GetUserByEmailorUsername(trContext, "username", user)
 
 	if err != nil {
 		return "", common.ErrWrongCredentials

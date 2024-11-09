@@ -12,31 +12,35 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
 )
 
-var Logger *slog.Logger
-
-func init() {
-	// Set-up logger handler
-	Logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(Logger)
-}
+var logger *slog.Logger
 
 func main() {
+	// Set-up logger handler
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
+	}))
+	slog.SetDefault(logger)
+
+	// Init OTel TracerProvider
+	tp := initOpenTelemetry()
+
+	otel.SetTracerProvider(tp)
 
 	// validate if env variables exists
 	expensesTable := os.Getenv("DYNAMODB_EXPENSES_TABLE")
 	if expensesTable == "" {
-		Logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
 		os.Exit(1)
 	}
 
 	awsRegion := os.Getenv("AWS_REGION")
 
 	if awsRegion == "" {
-		Logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
 		os.Exit(1)
 	}
 
@@ -45,7 +49,7 @@ func main() {
 		config.WithRegion(awsRegion),
 	)
 	if err != nil {
-		Logger.Error("unable to load SDK config", slog.String("error", err.Error()))
+		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
 	}
 	// define uuid helper
 	uuidHelper := utils.NewUUIDHelper()
@@ -53,14 +57,17 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
 	router := gin.New()
+
+	router.Use(otelgin.Middleware("expenses-service"))
+
 	// // Initialize expenses repository
-	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, Logger)
+	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
 
 	// Initialize expenses service
-	expensesService := service.NewExpensesService(expensesRepo, Logger)
+	expensesService := service.NewExpensesService(expensesRepo, logger)
 
 	// Init expenses handler
-	expensesHandler := handler.NewExpensesHandler(expensesService, Logger)
+	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
 	// create expenses
 	router.POST("/expenses/", expensesHandler.CreateExpense)

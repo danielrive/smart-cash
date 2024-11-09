@@ -171,6 +171,28 @@ resource "github_repository_file" "core_resources" {
   overwrite_on_create = true
 }
 
+##### jaeger resources
+resource "github_repository_file" "jaeger_resources" {
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  for_each   = fileset("${local.path_tf_repo_flux_core}/jaeger", "*.yaml")
+  repository = data.github_repository.flux-gitops.name
+  branch     = local.brach_gitops_repo
+  file       = "clusters/${local.cluster_name}/core/jaeger/${each.key}"
+  content = templatefile(
+    "${local.path_tf_repo_flux_core}/jaeger/${each.key}",
+    {
+      ## Common variables for manifests
+      AWS_REGION            = var.region
+      ENVIRONMENT           = var.environment
+    }
+  )
+  commit_message      = "Managed by Terraform"
+  commit_author       = "From terraform"
+  commit_email        = "gitops@smartcash.com"
+  overwrite_on_create = true
+}
+
+
 module "fuent-bit-role" {
   source         = "../modules/fluent-bit-role"
   environment    = var.environment

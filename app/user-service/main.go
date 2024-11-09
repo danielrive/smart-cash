@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"time"
 
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
@@ -18,12 +17,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var logger *slog.Logger
-
-var tracer trace.Tracer
 
 func main() {
 	// Set-up Logger handler
@@ -36,9 +32,6 @@ func main() {
 	tp := initOpenTelemetry()
 
 	otel.SetTracerProvider(tp)
-	// create a trace
-
-	tracer = tp.Tracer("user")
 
 	// validate if env variables exists
 	usersTable := os.Getenv("DYNAMODB_USER_TABLE")
@@ -98,10 +91,4 @@ func main() {
 	router.GET("/user/health", userHandler.HealthCheck)
 
 	router.Run(":8181")
-}
-
-func simulateMoreJob(c *gin.Context) {
-	_, childSpan := tracer.Start(c.Request.Context(), "starting 2nd job")
-	time.Sleep(30 * time.Second) // simulate some work
-	childSpan.End()
 }

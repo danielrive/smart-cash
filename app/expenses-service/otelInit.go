@@ -40,7 +40,7 @@ func initOpenTelemetry() *sdktrace.TracerProvider {
 		trace.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String("user-service"),
+				semconv.ServiceNameKey.String("expenses-service"),
 			),
 		),
 	)
