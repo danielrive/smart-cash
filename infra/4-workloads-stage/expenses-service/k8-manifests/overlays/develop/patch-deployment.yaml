@@ -14,3 +14,4 @@ spec:
           value: ${AWS_REGION}
         - name: JAEGER_COLLECTOR
           value: jaeger-traces-collector.observability.svc.cluster.local
+          
