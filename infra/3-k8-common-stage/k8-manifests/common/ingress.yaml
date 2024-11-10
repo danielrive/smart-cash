@@ -65,10 +65,10 @@ spec:
             name: frontend
             port:
               number: 80
-  #tls: 
-  #  - hosts:
-  #    - ${ENVIRONMENT}.smartcash.rootkit.site
-  #    secretName: frontend-tls
+  tls: 
+    - hosts:
+      - ${ENVIRONMENT}.smartcash.rootkit.site
+      secretName: frontend-tls
 
 ---
 
