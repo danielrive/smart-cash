@@ -9,6 +9,7 @@ import (
 	"smart-cash/bank-service/models"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 )
 
 type BankHandler struct {
@@ -26,6 +27,10 @@ func NewBankHandler(bankService *service.BankService, logger *slog.Logger) *Bank
 // Handler for creating new user
 
 func (h *BankHandler) HandlePayment(c *gin.Context) {
+	tr := otel.Tracer("bank-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerHandlePayment")
+	defer childSpan.End()
+
 	transaction := models.PaymentRequest{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&transaction); err != nil {
@@ -36,7 +41,7 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		return
 	}
 	// init payment
-	response, err := h.bankService.ProcessPayment(transaction)
+	response, err := h.bankService.ProcessPayment(trContext, transaction)
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
@@ -48,9 +53,13 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 }
 
 func (h *BankHandler) ValidateUser(c *gin.Context) {
+	tr := otel.Tracer("bank-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerValidateUser")
+	defer childSpan.End()
+
 	userId := c.Param("userId")
 
-	user, err := h.bankService.GetUser(userId)
+	user, err := h.bankService.GetUser(trContext, userId)
 
 	if err != nil {
 		h.logger.Error("error getting user",

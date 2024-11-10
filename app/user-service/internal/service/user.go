@@ -33,7 +33,7 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository, logger
 }
 
 func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer("user-service")
 	trContext, childSpan := tr.Start(ctx, "SVCGetUserById")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -47,7 +47,7 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 }
 
 func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string, value string) (models.User, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer("user-service")
 	trContext, childSpan := tr.Start(ctx, "SVCGetUserByEmailorUsername")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -62,7 +62,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 }
 
 func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer("user-service")
 	trContext, childSpan := tr.Start(ctx, "SVCCreateUser")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -79,7 +79,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 // communicate with another service
 
 func (us *UserService) Login(ctx context.Context, user string, password string) (string, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer("user-service")
 	trContext, childSpan := tr.Start(ctx, "SVCLogin")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()

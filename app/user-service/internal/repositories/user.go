@@ -60,7 +60,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 			"error", err.Error(),
 			"userId", id,
 		)
-		return output, err
+		return output, common.ErrInternalError
 	}
 	if len(response.Item) == 0 {
 		r.logger.Error("user not found",
@@ -96,7 +96,7 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
-		return output, err
+		return output, common.ErrInternalError
 	}
 	input := &dynamodb.PutItemInput{
 		TableName:           aws.String(r.tableUsers),
@@ -136,7 +136,7 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
-		return output, err
+		return output, common.ErrInternalError
 	}
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(r.tableUsers),

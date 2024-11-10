@@ -6,7 +6,7 @@ metadata:
     app: ${SERVICE_NAME}
     tier: ${TIER}
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,6 +22,13 @@ spec:
         tier: ${TIER}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: ${SERVICE_NAME}
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone 
+          whenUnsatisfiable: ScheduleAnyway
       enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
