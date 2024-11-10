@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -19,7 +20,7 @@ func initOpenTelemetry() *sdktrace.TracerProvider {
 	// define exporter for traces
 	exporter, err := otlptracehttp.New(
 		context.Background(),
-		otlptracehttp.WithEndpoint("127.0.0.1:4318"),
+		otlptracehttp.WithEndpoint(os.Getenv("JAEGER_COLLECTOR")+":4318"),
 		otlptracehttp.WithInsecure(),
 	)
 
