@@ -15,8 +15,8 @@ COPY go.sum .
 
 COPY  utils/*.go ./utils/
 COPY  bank-service/models/* ./bank-service/models/
-COPY  bank-service/internal/ ./bank-service/internal
-COPY  bank-service/*.go ./bank-service/*.go
+COPY  bank-service/internal ./bank-service/internal
+COPY  bank-service/*.go ./bank-service/
 
 # Build the Go application statically
 
