@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"slices"
 	"smart-cash/expenses-service/internal/handler"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
@@ -17,6 +19,8 @@ import (
 )
 
 var logger *slog.Logger
+
+var notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
 
 func main() {
 	// Set-up logger handler
@@ -58,7 +62,11 @@ func main() {
 	// create a router with gin
 	router := gin.New()
 
-	router.Use(otelgin.Middleware("expenses-service"))
+	router.Use(
+		otelgin.Middleware("expenses-service", otelgin.WithFilter(filterTraces)),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
+		gin.Recovery(), gin.Recovery(),
+	)
 
 	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
@@ -86,4 +94,8 @@ func main() {
 
 	router.Run(":8282")
 
+}
+
+func filterTraces(req *http.Request) bool {
+	return slices.Index(notToLogEndpoints, req.URL.Path) == -1
 }

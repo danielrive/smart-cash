@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"slices"
 
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
@@ -21,9 +23,11 @@ import (
 
 var logger *slog.Logger
 
+var notToLogEndpoints = []string{"/user/health", "/user/metrics"}
+
 func main() {
 	// Set-up Logger handler
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
@@ -59,11 +63,11 @@ func main() {
 
 	router := gin.New()
 
-	router.Use(otelgin.Middleware("user-service"))
-
-	// logging for gin
-
-	router.Use(gin.Recovery())
+	router.Use(
+		otelgin.Middleware("user-service", otelgin.WithFilter(filterTraces)),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
+		gin.Recovery(), gin.Recovery(),
+	)
 
 	// new UUID helper
 	uuidHelper := utils.NewUUIDHelper()
@@ -91,4 +95,8 @@ func main() {
 	router.GET("/user/health", userHandler.HealthCheck)
 
 	router.Run(":8181")
+}
+
+func filterTraces(req *http.Request) bool {
+	return slices.Index(notToLogEndpoints, req.URL.Path) == -1
 }
