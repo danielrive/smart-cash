@@ -19,6 +19,21 @@ spec:
     presets:
       kubernetesAttributes:
         enabled: true
+    image:
+      # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
+      repository: "otel/opentelemetry-collector-k8s"
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+      digest: ""
+    imagePullSecrets: []
+
+    # OpenTelemetry Collector executable
+    command:
+      name: "otelcol-k8s"
+      extraArgs: []
+
     config:
       exporters:
         debug:
@@ -46,3 +61,10 @@ spec:
           protocols:
             http:
               endpoint: otel-collector.observability.svc.cluster.local:4318
+      service:
+        pipelines:
+          traces:
+            receivers:
+              - otlp
+            exporters: 
+              - otlp/jaeger
