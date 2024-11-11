@@ -61,4 +61,4 @@ spec:
             receivers:
               - otlp
             exporters: 
-              - otlp/jaeger
+              - otlphttp
