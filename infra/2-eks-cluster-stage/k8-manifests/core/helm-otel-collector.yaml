@@ -33,7 +33,9 @@ spec:
         debug:
           verbosity: detailed
         otlphttp:
-          endpoint:  jaeger-traces-collector.observability.svc.cluster.local:4318
+          endpoint:  jaeger-traces-collector.observability.svc.cluster.local:4317
+          tls:
+            insecure: true
       extensions:
         # The health_check extension is mandatory for this chart.
         # Without the health_check extension the collector will fail the readiness and liveliness probes.
