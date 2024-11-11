@@ -10,3 +10,4 @@ resources:
 - helm-prometheus.yaml
 - helm-cert-manager.yaml
 - fluent-bit.yaml
+- helm-otel-collector.yaml

@@ -1,0 +1,48 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: 0.109.0
+      sourceRef:
+        kind: HelmRepository
+        name: otel-collector
+        namespace: flux-system
+  values:
+    mode: "deployment"
+    namespaceOverride: "observability"
+    presets:
+      kubernetesAttributes:
+        enabled: true
+    config:
+      exporters:
+        debug:
+          verbosity: detailed
+        jaeger:
+          endpoint:  jaeger-traces-collector.observability.svc.cluster.local:"simplest-collector.default.svc.cluster.local:14250"
+      extensions:
+        # The health_check extension is mandatory for this chart.
+        # Without the health_check extension the collector will fail the readiness and liveliness probes.
+        # The health_check extension can be modified, but should never be removed.
+        health_check:
+          endpoint: ${env:MY_POD_IP}:13133
+      processors:
+        batch: {}
+        # Default memory limiter configuration for the collector based on k8s resource limits.
+        memory_limiter:
+          # check_interval is the time between measurements of memory usage.
+          check_interval: 5s
+          # By default limit_mib is set to 80% of ".Values.resources.limits.memory"
+          limit_percentage: 80
+          # By default spike_limit_mib is set to 25% of ".Values.resources.limits.memory"
+          spike_limit_percentage: 25
+      receivers:
+        otlp:
+          protocols:
+            http:
+              endpoint: otel-collector.observability.svc.cluster.local:4318
