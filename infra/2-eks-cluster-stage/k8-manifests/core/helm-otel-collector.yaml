@@ -32,7 +32,7 @@ spec:
       exporters:
         debug:
           verbosity: detailed
-        otlp/jaeger:
+        otlphttp:
           endpoint:  jaeger-traces-collector.observability.svc.cluster.local:4318
       extensions:
         # The health_check extension is mandatory for this chart.
