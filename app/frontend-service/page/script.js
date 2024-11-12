@@ -59,10 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
    
     // list expenses
-    document.getElementById("expenseForm").addEventListener("submit", event => {
-        event.preventDefault(); // Prevents form from reloading page
-        fetchExpense();
-    });
+    const expenseForm = document.getElementById("expenseForm");
+    if (expenseForm) {
+        expenseForm.addEventListener("submit", event => {
+            event.preventDefault();
+            fetchExpense();
+        });
+    }
 
 
     // Pay expense
