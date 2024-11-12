@@ -33,7 +33,7 @@ spec:
         debug:
           verbosity: detailed
         otlphttp:
-          endpoint:  "http://jaeger-traces-collector.observability.svc.cluster.local:4317"
+          endpoint:  "http://jaeger-traces-collector.observability.svc.cluster.local:4318"
           tls:
             insecure: true
       extensions:
