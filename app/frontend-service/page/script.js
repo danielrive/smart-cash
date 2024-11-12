@@ -59,54 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
    
     // list expenses
-
-    async function fetchExpense() {
-        // Get the expense ID from the form input
-        const expenseId = document.getElementById("expenseId").value;
-
-        // Replace 'YOUR_API_ENDPOINT' with the actual endpoint URL
-        const apiUrl = `/expenses/${expenseId}`;
-
-        // Clear any previous results
-        document.getElementById("expenseResult").innerHTML = "Loading...";
-
-        try {
-            // Make the GET request to the API
-            const response = await fetch(apiUrl, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-
-            // Check if the response is successful
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status} ${response.statusText}`);
-            }
-
-            // Parse the JSON response
-            const expenseData = await response.json();
-
-            // Display the expense data
-            document.getElementById("expenseResult").innerHTML = `
-                <h3>Expense Details</h3>
-                <p><strong>ID:</strong> ${expenseData.expenseId}</p>
-                <p><strong>Amount:</strong> ${expenseData.amount}</p>
-                <p><strong>Description:</strong> ${expenseData.description}</p>
-                <p><strong>Date:</strong> ${expenseData.date}</p>
-            `;
-        } catch (error) {
-            // Display an error message if something goes wrong
-            document.getElementById("expenseResult").innerHTML = `<p style="color: red;">${error.message}</p>`;
-        }
-    }
-
-    // Attach the fetchExpense function to the button click
-    document.getElementById("expenseForm").addEventListener("submit", (event) => {
-        event.preventDefault();  // Prevent the form from submitting traditionally
-        fetchExpense();          // Call the function to fetch expense
+    document.getElementById("expenseForm").addEventListener("submit", event => {
+        event.preventDefault(); // Prevents form from reloading page
+        fetchExpense();
     });
-
 
 
     // Pay expense
@@ -141,4 +97,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle expense registration
    
 });
+
+
+async function fetchExpense() {
+    // Get the expense ID from the form input
+    const expenseId = document.getElementById("expenseId").value;
+
+    // Replace 'YOUR_API_ENDPOINT' with the actual endpoint URL
+    const apiUrl = `/expenses/${expenseId}`;
+
+    // Clear any previous results
+    document.getElementById("expenseResult").innerHTML = "Loading...";
+
+    try {
+        // Make the GET request to the API
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        // Check if the response is successful
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        // Parse the JSON response
+        const expenseData = await response.json();
+
+        // Display the expense data
+        document.getElementById("expenseResult").innerHTML = `
+            <h3>Expense Details</h3>
+            <p><strong>ID:</strong> ${expenseData.expenseId}</p>
+            <p><strong>Amount:</strong> ${expenseData.amount}</p>
+            <p><strong>Description:</strong> ${expenseData.description}</p>
+            <p><strong>Date:</strong> ${expenseData.date}</p>
+        `;
+    } catch (error) {
+        // Display an error message if something goes wrong
+        document.getElementById("expenseResult").innerHTML = `<p style="color: red;">${error.message}</p>`;
+    }
+}
 
