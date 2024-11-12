@@ -23,7 +23,7 @@ on:
       TRIVY_VERSION:
         required: false
         type: string
-        default: '0.52.0'
+        default: '0.57.0'
     secrets:
       AWS_ACCOUNT_NUMBER:
         required: true
