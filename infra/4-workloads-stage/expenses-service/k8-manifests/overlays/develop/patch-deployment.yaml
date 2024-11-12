@@ -13,5 +13,5 @@ spec:
         - name: AWS_REGION
           value: ${AWS_REGION}
         - name: JAEGER_COLLECTOR
-          value: jaeger-traces-collector.observability.svc.cluster.local
+          value: otel-collector-opentelemetry-collector.observability.svc.cluster.local
           
