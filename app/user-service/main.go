@@ -33,7 +33,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
-	tp := initOpenTelemetry()
+	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
 
 	otel.SetTracerProvider(tp)
 
@@ -64,7 +64,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware("user-service", otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(os.Getenv("SERVICE_NAME"), otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
 		gin.Recovery(), gin.Recovery(),
 	)
