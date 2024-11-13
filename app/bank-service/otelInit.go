@@ -20,7 +20,7 @@ func initOpenTelemetry() *sdktrace.TracerProvider {
 	// define exporter for traces
 	exporter, err := otlptracehttp.New(
 		context.Background(),
-		otlptracehttp.WithEndpoint(os.Getenv("JAEGER_COLLECTOR")+":4318"),
+		otlptracehttp.WithEndpoint(os.Getenv("OTEL_COLLECTOR")+":4318"),
 		otlptracehttp.WithInsecure(),
 	)
 
@@ -41,7 +41,7 @@ func initOpenTelemetry() *sdktrace.TracerProvider {
 		trace.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String("user-service"),
+				semconv.ServiceNameKey.String("bank-service"),
 			),
 		),
 	)
