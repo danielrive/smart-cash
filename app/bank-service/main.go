@@ -9,6 +9,7 @@ import (
 	"smart-cash/bank-service/internal/handler"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
+	"smart-cash/utils"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -29,7 +30,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
-	tp := initOpenTelemetry()
+	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
 
 	otel.SetTracerProvider(tp)
 
@@ -56,7 +57,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware("bank-service", otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(os.Getenv("OTEL_COLLECTOR"), otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
 		gin.Recovery(), gin.Recovery(),
 	)

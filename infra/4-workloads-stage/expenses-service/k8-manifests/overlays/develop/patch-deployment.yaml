@@ -14,4 +14,6 @@ spec:
           value: ${AWS_REGION}
         - name: OTEL_COLLECTOR
           value: otel-collector-opentelemetry-collector.observability.svc.cluster.local
+        - name: SERVICE_NAME
+          value: ${SERVICE_NAME}
           
