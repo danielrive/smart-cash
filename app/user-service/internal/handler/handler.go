@@ -9,6 +9,7 @@ import (
 	"smart-cash/user-service/models"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 )
 
 type UserHandler struct {
@@ -24,8 +25,11 @@ func NewUserHandler(userService *service.UserService, logger *slog.Logger) *User
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
+	tr := otel.Tracer("user-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById")
+	defer childSpan.End()
 	userId := c.Param("userId")
-	user, err := h.userService.GetUserById(userId)
+	user, err := h.userService.GetUserById(trContext, userId)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
@@ -35,12 +39,16 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 			return
 		}
 	}
+
 	c.JSON(http.StatusOK, user)
 }
 
 // Handler for Get user by email or username
 
 func (h *UserHandler) GetUserByQuery(c *gin.Context) {
+	tr := otel.Tracer("user-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserByQuery")
+	defer childSpan.End()
 
 	query := c.Request.URL.Query()
 	var key, value string
@@ -54,7 +62,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 		return
 	}
 	// Get user info by the query
-	user, err := h.userService.GetUserByEmailorUsername(key, value)
+	user, err := h.userService.GetUserByEmailorUsername(trContext, key, value)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound.Error()})
@@ -71,6 +79,9 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 // Handler for creating new user
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
+	tr := otel.Tracer("user-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
+	defer childSpan.End()
 	user := models.User{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -78,7 +89,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 	// create the user
-	response, err := h.userService.CreateUser(user)
+	response, err := h.userService.CreateUser(trContext, user)
 	if err != nil {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
@@ -90,6 +101,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // login
 
 func (h *UserHandler) Login(c *gin.Context) {
+	tr := otel.Tracer("user-service")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
+	defer childSpan.End()
 	loginData := models.LoginRequest{}
 
 	if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -97,7 +111,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.userService.Login(loginData.Username, loginData.Password)
+	token, err := h.userService.Login(trContext, loginData.Username, loginData.Password)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

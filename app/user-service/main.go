@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"slices"
 
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
@@ -11,17 +13,29 @@ import (
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 )
 
+var logger *slog.Logger
+
+var notToLogEndpoints = []string{"/user/health", "/user/metrics"}
+
 func main() {
-	//set-up logger handler
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+	// Set-up Logger handler
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
+
+	// Init OTel TracerProvider
+	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
+
+	otel.SetTracerProvider(tp)
 
 	// validate if env variables exists
 	usersTable := os.Getenv("DYNAMODB_USER_TABLE")
@@ -44,13 +58,16 @@ func main() {
 		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
 	}
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+
 	// create a router with gin
 
 	router := gin.New()
 
-	// logging for gin
-
-	router.Use(gin.Recovery())
+	router.Use(
+		otelgin.Middleware(os.Getenv("SERVICE_NAME"), otelgin.WithFilter(filterTraces)),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
+		gin.Recovery(), gin.Recovery(),
+	)
 
 	// new UUID helper
 	uuidHelper := utils.NewUUIDHelper()
@@ -78,4 +95,8 @@ func main() {
 	router.GET("/user/health", userHandler.HealthCheck)
 
 	router.Run(":8181")
+}
+
+func filterTraces(req *http.Request) bool {
+	return slices.Index(notToLogEndpoints, req.URL.Path) == -1
 }

@@ -1,11 +1,15 @@
 package service
 
 import (
+	"context"
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/models"
 
 	"log/slog"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Define service interface
@@ -23,10 +27,14 @@ func NewBankService(bankRepository *repositories.DynamoDBBankRepository, logger 
 	}
 }
 
-func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.PaymentRequest, error) {
-	// proccess expenses
+func (s *BankService) ProcessPayment(ctx context.Context, transaction models.PaymentRequest) (models.PaymentRequest, error) {
+	tr := otel.Tracer("bank-service")
+	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
 	// validate user in bank
-	user, err := s.GetUser(transaction.UserId)
+	user, err := s.GetUser(trContext, transaction.UserId)
 	if err != nil || user.Blocked {
 		s.logger.Error("payment can not be processed",
 			"error", err.Error(),
@@ -52,7 +60,7 @@ func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.
 	}
 	// update saving in user account
 	user.Savings = newSaldo
-	err = s.bankRepository.UpdateSavingsUser(user)
+	err = s.bankRepository.UpdateSavingsUser(trContext, user)
 	if err != nil {
 		// Use retry ?
 		s.logger.Error("transaction failed",
@@ -73,8 +81,13 @@ func (s *BankService) ProcessPayment(transaction models.PaymentRequest) (models.
 }
 
 // Function to get bank by Id
-func (s *BankService) GetUser(userId string) (models.BankUser, error) {
-	user, err := s.bankRepository.GetUser(userId)
+func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUser, error) {
+	tr := otel.Tracer("bank-service")
+	trContext, childSpan := tr.Start(ctx, "SVCGetUser")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
+	user, err := s.bankRepository.GetUser(trContext, userId)
 
 	if err != nil {
 		s.logger.Error("error getting the user",

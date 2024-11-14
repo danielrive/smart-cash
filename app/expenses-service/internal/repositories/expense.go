@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.opentelemetry.io/otel"
 )
 
 // Define DynamoDB repository struct
@@ -37,7 +38,10 @@ func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string
 
 // Function to Create a new expense
 
-func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (models.ExpensesReturn, error) {
+func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
+	tr := otel.Tracer("expenses-service")
+	_, childSpan := tr.Start(ctx, "RepositoryCreateExpense")
+	defer childSpan.End()
 	// Create a new expense item
 	output := models.ExpensesReturn{}
 	expense.ExpenseId = r.uuid.New()
@@ -66,7 +70,10 @@ func (r *DynamoDBExpensesRepository) CreateExpense(expense models.Expense) (mode
 }
 
 // Function to update expense
-func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense) (models.ExpensesReturn, error) {
+func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
+	tr := otel.Tracer("expenses-service")
+	_, childSpan := tr.Start(ctx, "RepositoryUpdateExpenseStatus")
+	defer childSpan.End()
 
 	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
@@ -130,7 +137,11 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(expense models.Expense)
 
 // Function to get a expense by id
 
-func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, error) {
+func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id string) (models.Expense, error) {
+	tr := otel.Tracer("expenses-service")
+	_, childSpan := tr.Start(ctx, "RepositoryGetExpenseById")
+	defer childSpan.End()
+
 	output := models.Expense{}
 	// Get expense item by id
 	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
@@ -167,7 +178,11 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(id string) (models.Expense, 
 }
 
 // Function get expense by userID
-func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(k string, v string) ([]models.Expense, error) {
+func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k string, v string) ([]models.Expense, error) {
+	tr := otel.Tracer("expenses-service")
+	_, childSpan := tr.Start(ctx, "RepositoryGetExpByUserIdorCat")
+	defer childSpan.End()
+
 	// create keycondition for userId
 	output := []models.Expense{}
 
@@ -221,7 +236,11 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(k string, v string) ([]
 
 // Function to delete a expense by id
 
-func (r *DynamoDBExpensesRepository) DeleteExpenseById(id string) error {
+func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id string) error {
+	tr := otel.Tracer("expenses-service")
+	_, childSpan := tr.Start(ctx, "RepositoryDeleteExpenseById")
+	defer childSpan.End()
+
 	// Delete expense item by id
 	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
 		TableName: aws.String(r.expensesTable),

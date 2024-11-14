@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -10,6 +11,9 @@ import (
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Define service interface
@@ -27,7 +31,11 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 	}
 }
 
-func (s *ExpensesService) CreateExpense(expense models.Expense) (models.ExpensesReturn, error) {
+func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
+	tr := otel.Tracer("expenses-service")
+	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
@@ -36,7 +44,7 @@ func (s *ExpensesService) CreateExpense(expense models.Expense) (models.Expenses
 	if expense.Category == "" {
 		expense.Category = "none"
 	}
-	response, err := s.expensesRepository.CreateExpense(expense)
+	response, err := s.expensesRepository.CreateExpense(trContext, expense)
 
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
@@ -49,8 +57,13 @@ func (s *ExpensesService) CreateExpense(expense models.Expense) (models.Expenses
 
 // Function to get expenses by Id
 
-func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, error) {
-	expense, err := s.expensesRepository.GetExpenseById(expenseId)
+func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) (models.Expense, error) {
+	tr := otel.Tracer("expenses-service")
+	trContext, childSpan := tr.Start(ctx, "SVCGetExpenseById")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
+	expense, err := s.expensesRepository.GetExpenseById(trContext, expenseId)
 	if err != nil {
 		return models.Expense{}, err
 	}
@@ -60,14 +73,18 @@ func (s *ExpensesService) GetExpenseById(expenseId string) (models.Expense, erro
 
 // Delete expense
 
-func (s *ExpensesService) DeleteExpense(expenseId string) (string, error) {
+func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (string, error) {
+	tr := otel.Tracer("expenses-service")
+	trContext, childSpan := tr.Start(ctx, "SVCDeleteExpense")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
 
-	expense, err := s.GetExpenseById(expenseId)
+	expense, err := s.GetExpenseById(trContext, expenseId)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.expensesRepository.DeleteExpenseById(expense.ExpenseId)
+	err = s.expensesRepository.DeleteExpenseById(trContext, expense.ExpenseId)
 	if err != nil {
 		return "", err
 	}
@@ -76,8 +93,13 @@ func (s *ExpensesService) DeleteExpense(expenseId string) (string, error) {
 
 // Function to get expenses by userId or category
 
-func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]models.Expense, error) {
-	expenses, err := s.expensesRepository.GetExpByUserIdorCat(key, value)
+func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, value string) ([]models.Expense, error) {
+	tr := otel.Tracer("expenses-service")
+	trContext, childSpan := tr.Start(ctx, "SVCGetExpByUserIdorCat")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
+	expenses, err := s.expensesRepository.GetExpByUserIdorCat(trContext, key, value)
 	if err != nil {
 		return expenses, err
 	}
@@ -85,10 +107,15 @@ func (s *ExpensesService) GetExpByUserIdorCat(key string, value string) ([]model
 }
 
 // Function to process expenses
-func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Expense, error) {
+func (s *ExpensesService) PayExpenses(ctx context.Context, expensesId models.ExpensesPay) (models.Expense, error) {
+	tr := otel.Tracer("expenses-service")
+	trContext, childSpan := tr.Start(ctx, "SVCPayExpenses")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
 	baseURL := "http://bank/bank/pay"
 	// get the expense from DB
-	expense, err := s.GetExpenseById(expensesId.ExpenseId)
+	expense, err := s.GetExpenseById(trContext, expensesId.ExpenseId)
 	if err != nil {
 		return models.Expense{}, common.ErrInternalError
 	}
@@ -167,7 +194,7 @@ func (s *ExpensesService) PayExpenses(expensesId models.ExpensesPay) (models.Exp
 	s.logger.Info("updating expense status to paid",
 		"expensesId", expense.ExpenseId,
 	)
-	s.expensesRepository.UpdateExpenseStatus(expense)
+	s.expensesRepository.UpdateExpenseStatus(trContext, expense)
 
 	return expense, nil
 }

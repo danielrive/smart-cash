@@ -1,0 +1,29 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    name: jaeger-operator
+  name: jaeger-operator-serving-cert
+  namespace: observability
+spec:
+  dnsNames:
+  - jaeger-operator-webhook-service.observability.svc
+  - jaeger-operator-webhook-service.observability.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: jaeger-operator-selfsigned-issuer
+  secretName: jaeger-operator-service-cert
+  subject:
+    organizationalUnits:
+    - jaeger-operator
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    name: jaeger-operator
+  name: jaeger-operator-selfsigned-issuer
+  namespace: observability
+spec:
+  selfSigned: {}
+---

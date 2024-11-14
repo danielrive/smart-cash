@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"slices"
 	"smart-cash/expenses-service/internal/handler"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
@@ -12,7 +14,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
 )
+
+var logger *slog.Logger
+
+var notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
 
 func main() {
 	// Set-up logger handler
@@ -20,6 +28,11 @@ func main() {
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
+
+	// Init OTel TracerProvider
+	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
+
+	otel.SetTracerProvider(tp)
 
 	// validate if env variables exists
 	expensesTable := os.Getenv("DYNAMODB_EXPENSES_TABLE")
@@ -48,6 +61,13 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	// create a router with gin
 	router := gin.New()
+
+	router.Use(
+		otelgin.Middleware(os.Getenv("SERVICE_NAME"), otelgin.WithFilter(filterTraces)),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
+		gin.Recovery(), gin.Recovery(),
+	)
+
 	// // Initialize expenses repository
 	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
 
@@ -74,4 +94,8 @@ func main() {
 
 	router.Run(":8282")
 
+}
+
+func filterTraces(req *http.Request) bool {
+	return slices.Index(notToLogEndpoints, req.URL.Path) == -1
 }
