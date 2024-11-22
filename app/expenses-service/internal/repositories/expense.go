@@ -39,7 +39,7 @@ func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string
 // Function to Create a new expense
 
 func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryCreateExpense")
 	defer childSpan.End()
 	// Create a new expense item
@@ -71,7 +71,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 
 // Function to update expense
 func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryUpdateExpenseStatus")
 	defer childSpan.End()
 
@@ -138,7 +138,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 // Function to get a expense by id
 
 func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id string) (models.Expense, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryGetExpenseById")
 	defer childSpan.End()
 
@@ -179,7 +179,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 
 // Function get expense by userID
 func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k string, v string) ([]models.Expense, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryGetExpByUserIdorCat")
 	defer childSpan.End()
 
@@ -237,7 +237,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 // Function to delete a expense by id
 
 func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id string) error {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryDeleteExpenseById")
 	defer childSpan.End()
 

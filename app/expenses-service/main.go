@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/handler"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
@@ -23,6 +24,7 @@ var logger *slog.Logger
 var notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
 
 func main() {
+	common.ServiceName = os.Getenv("SERVICE_NAME")
 	// Set-up logger handler
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
@@ -30,7 +32,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
+	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), common.ServiceName, logger)
 
 	otel.SetTracerProvider(tp)
 
@@ -63,7 +65,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(os.Getenv("SERVICE_NAME"), otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
 		gin.Recovery(), gin.Recovery(),
 	)

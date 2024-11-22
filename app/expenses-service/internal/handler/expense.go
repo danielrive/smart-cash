@@ -27,7 +27,7 @@ func NewExpensesHandler(expensesService *service.ExpensesService, logger *slog.L
 // Handler for delete expense
 
 func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerDeleteExpense")
 	defer childSpan.End()
 
@@ -36,7 +36,6 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
-
 			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrExpenseNotFound})
 		} else {
 			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
@@ -48,7 +47,7 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
@@ -78,7 +77,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 // Handler to pay expenses
 
 func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerPayExpenses")
 	defer childSpan.End()
 
@@ -104,7 +103,7 @@ func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
 // Handler for Get expense by expenseID
 
 func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetExpensesById")
 	defer childSpan.End()
 
@@ -124,7 +123,7 @@ func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetExpensesByQuery")
 	defer childSpan.End()
 

@@ -32,7 +32,7 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -58,7 +58,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 // Function to get expenses by Id
 
 func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) (models.Expense, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetExpenseById")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -74,7 +74,7 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 // Delete expense
 
 func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (string, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCDeleteExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -94,7 +94,7 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 // Function to get expenses by userId or category
 
 func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, value string) ([]models.Expense, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetExpByUserIdorCat")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
@@ -108,7 +108,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 
 // Function to process expenses
 func (s *ExpensesService) PayExpenses(ctx context.Context, expensesId models.ExpensesPay) (models.Expense, error) {
-	tr := otel.Tracer("expenses-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCPayExpenses")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
