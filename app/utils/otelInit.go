@@ -27,7 +27,7 @@ func InitOpenTelemetry(otelUrl string, serviceName string, logger *slog.Logger) 
 		//resource.WithProcess(),      // Discover and provide process information.
 		//resource.WithContainer(),    // Discover and provide container information.
 		//resource.WithHost(),         // Discover and provide host information.
-		resource.WithAttributes(attribute.String("serviceName", serviceName)), // Add custom resource attributes.
+		resource.WithAttributes(attribute.String("ServiceName", serviceName)), // Add custom resource attributes.
 		// resource.WithDetectors(thirdparty.Detector{}), // Bring your own external Detector implementation.
 	)
 
