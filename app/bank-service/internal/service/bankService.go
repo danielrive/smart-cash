@@ -9,7 +9,6 @@ import (
 	"log/slog"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // Define service interface
@@ -27,27 +26,25 @@ func NewBankService(bankRepository *repositories.DynamoDBBankRepository, logger 
 	}
 }
 
-func (s *BankService) ProcessPayment(ctx context.Context, transaction models.PaymentRequest) (models.PaymentRequest, error) {
-	tr := otel.Tracer("bank-service")
+func (s *BankService) ProcessPayment(ctx context.Context, transaction models.TransactionRequest) (models.TransactionRequest, error) {
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
-
-	// validate user in bank
-	user, err := s.GetUser(trContext, transaction.UserId)
-	if err != nil || user.Blocked {
-		s.logger.Error("payment can not be processed",
-			"error", err.Error(),
-			"userId", transaction.UserId,
-		)
-		transaction.Status = "NotPaid"
-		return transaction, common.ErrTransactionFailed
-	}
 
 	s.logger.Info("processing transaction for expense",
 		"expenseId", transaction.ExpenseId,
 		"userId", transaction.UserId,
 	)
+
+	user, err := s.bankRepository.GetUser(trContext, transaction.UserId)
+
+	if err != nil {
+		s.logger.Info("failed getting user",
+			"userId", transaction.UserId,
+			"error", err.Error())
+		transaction.Status = "NotPaid"
+		return transaction, common.ErrTransactionFailed
+	}
 	newSaldo, err := processPayment(transaction.Amount, user.Savings)
 	if err != nil {
 		s.logger.Error("transaction failed",
@@ -82,9 +79,8 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Pay
 
 // Function to get bank by Id
 func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUser, error) {
-	tr := otel.Tracer("bank-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetUser")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
 	user, err := s.bankRepository.GetUser(trContext, userId)

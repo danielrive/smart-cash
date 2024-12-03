@@ -19,12 +19,49 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-var logger *slog.Logger
+var (
+	otelCollector     string
+	expensesTable     string
+	awsRegion         string
+	notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
+	logger            *slog.Logger
+)
 
-var notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
+func init() {
+	// validate ENV variables
+
+	common.DomainName = os.Getenv("DOMAIN_NAME")
+	if common.DomainName == "" {
+		common.DomainName = "localhost"
+	}
+
+	expensesTable = os.Getenv("DYNAMODB_EXPENSES_TABLE")
+	if expensesTable == "" {
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
+		os.Exit(1)
+	}
+
+	otelCollector = os.Getenv("OTEL_COLLECTOR")
+	if otelCollector == "" {
+		logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
+		os.Exit(1)
+	}
+
+	awsRegion = os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+		os.Exit(1)
+	}
+
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+	if otelCollector == "" {
+		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
+		os.Exit(1)
+	}
+
+}
 
 func main() {
-	common.ServiceName = os.Getenv("SERVICE_NAME")
 	// Set-up logger handler
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
@@ -32,23 +69,9 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), common.ServiceName, logger)
+	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
 
 	otel.SetTracerProvider(tp)
-
-	// validate if env variables exists
-	expensesTable := os.Getenv("DYNAMODB_EXPENSES_TABLE")
-	if expensesTable == "" {
-		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
-		os.Exit(1)
-	}
-
-	awsRegion := os.Getenv("AWS_REGION")
-
-	if awsRegion == "" {
-		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
-		os.Exit(1)
-	}
 
 	// configure the SDK
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
@@ -71,10 +94,10 @@ func main() {
 	)
 
 	// // Initialize expenses repository
-	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, uuidHelper, logger)
+	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, logger)
 
 	// Initialize expenses service
-	expensesService := service.NewExpensesService(expensesRepo, logger)
+	expensesService := service.NewExpensesService(expensesRepo, uuidHelper, logger)
 
 	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
@@ -86,8 +109,6 @@ func main() {
 	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)
 	// define router for get expenses by category or userId
 	router.GET("/expenses", expensesHandler.GetExpensesByQuery)
-
-	router.POST("/expenses/pay/", expensesHandler.PayExpenses)
 
 	router.DELETE("/expenses/:expenseId", expensesHandler.DeleteExpense)
 

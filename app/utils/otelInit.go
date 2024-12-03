@@ -24,11 +24,8 @@ func InitOpenTelemetry(otelUrl string, serviceName string, logger *slog.Logger) 
 		context.Background(),
 		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
 		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
-		//resource.WithProcess(),      // Discover and provide process information.
-		resource.WithContainer(), // Discover and provide container information.
-		//resource.WithHost(),         // Discover and provide host information.
+		resource.WithContainer(),    // Discover and provide container information.
 		resource.WithAttributes(semconv.ServiceNameKey.String(serviceName)), // Add custom resource attributes.
-		// resource.WithDetectors(thirdparty.Detector{}), // Bring your own external Detector implementation.
 	)
 
 	if errors.Is(err, resource.ErrPartialResource) || errors.Is(err, resource.ErrSchemaURLConflict) {
@@ -46,6 +43,7 @@ func InitOpenTelemetry(otelUrl string, serviceName string, logger *slog.Logger) 
 
 	if err != nil {
 		logger.Error("error creating exporter",
+			"component", "otel",
 			"error", err)
 		panic(err)
 	}

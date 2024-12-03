@@ -25,7 +25,7 @@ func NewUserHandler(userService *service.UserService, logger *slog.Logger) *User
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById")
 	defer childSpan.End()
 	userId := c.Param("userId")
@@ -46,7 +46,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 // Handler for Get user by email or username
 
 func (h *UserHandler) GetUserByQuery(c *gin.Context) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserByQuery")
 	defer childSpan.End()
 
@@ -79,7 +79,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 // Handler for creating new user
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
 	defer childSpan.End()
 	user := models.User{}
@@ -101,7 +101,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // login
 
 func (h *UserHandler) Login(c *gin.Context) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
 	defer childSpan.End()
 	loginData := models.LoginRequest{}

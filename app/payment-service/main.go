@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 	"slices"
-	"smart-cash/bank-service/internal/common"
-	"smart-cash/bank-service/internal/handler"
-	"smart-cash/bank-service/internal/repositories"
-	"smart-cash/bank-service/internal/service"
+	"smart-cash/payment-service/internal/common"
+	"smart-cash/payment-service/internal/handler"
+	"smart-cash/payment-service/internal/repositories"
+	"smart-cash/payment-service/internal/service"
 	"smart-cash/utils"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -20,24 +20,30 @@ import (
 )
 
 var (
+	otelCollector     string
+	paymentTable      string
+	awsRegion         string
+	notToLogEndpoints = []string{"/payment/health", "/payment/metrics"}
 	logger            *slog.Logger
 	domainName        string
-	bankTable         string
-	awsRegion         string
-	notToLogEndpoints = []string{"/bank/health", "/bank/metrics"}
-	otelCollector     string
 )
 
 func init() {
+	// start logger
+
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
+	}))
+	slog.SetDefault(logger)
 	// validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if domainName == "" {
 		common.DomainName = "localhost"
 	}
 
-	bankTable = os.Getenv("DYNAMODB_BANK_TABLE")
-	if bankTable == "" {
-		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_BANK_TABLE"))
+	paymentTable = os.Getenv("DYNAMODB_PAYMENT_TABLE")
+	if paymentTable == "" {
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_PAYMENT_TABLE"))
 		os.Exit(1)
 	}
 
@@ -54,7 +60,6 @@ func init() {
 	}
 
 	common.ServiceName = os.Getenv("SERVICE_NAME")
-
 	if otelCollector == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
@@ -63,11 +68,6 @@ func init() {
 }
 
 func main() {
-	// Set-up logger handler
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
 	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
@@ -92,27 +92,33 @@ func main() {
 
 	router.Use(
 		otelgin.Middleware(otelCollector, otelgin.WithFilter(filterTraces)),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/payment/health"),
 		gin.Recovery(), gin.Recovery(),
 	)
-	// // Initialize bank repository
-	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, bankTable, logger) // Harcoded dynamotable to use data already uploaded
 
-	// Initialize bank service
-	bankService := service.NewBankService(bankRepo, logger)
+	// uuid helper
+	uuid := utils.NewUUIDHelper()
 
-	// Init bank handler
-	bankHandler := handler.NewBankHandler(bankService, logger)
+	// Initialize Payment repository
+	paymentRepo := repositories.NewDynamoDBPaymentRepository(dynamoClient, paymentTable, logger) // Harcoded dynamotable to use data already uploaded
 
-	// create bank
-	router.POST("/bank/pay", bankHandler.HandlePayment)
+	// Initialize Payment service
+	paymentService := service.NewPaymentService(paymentRepo, uuid, logger)
 
-	// Get user saldo
-	router.GET("/bank/user", bankHandler.GetUser)
+	// Init Payment handler
+	paymentHandler := handler.NewPaymentHandler(paymentService, logger)
+
+	// create Payment
+	router.GET("/payment/:transactionId", paymentHandler.GetTransaction)
+
+	// create Payment
+	router.POST("/payment", paymentHandler.ProcessPayment)
 
 	// Endpoint to test health check
-	router.GET("/bank/health", bankHandler.HealthCheck)
-	router.Run(":8585")
+	router.GET("/payment/health", paymentHandler.HealthCheck)
+
+	router.Run(":8989")
+
 }
 
 func filterTraces(req *http.Request) bool {

@@ -38,7 +38,7 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid
 
 // Function to Get user by ID
 func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (models.UserResponse, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryGetUserById")
 	defer childSpan.End()
 	output := models.UserResponse{}
@@ -83,7 +83,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 // Function to Create user
 
 func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryCreateUser")
 	defer childSpan.End()
 
@@ -124,7 +124,7 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 // Function to Update User
 
 func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryUpdateUser")
 	defer childSpan.End()
 
@@ -162,7 +162,7 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 
 // Function to Get user by email
 func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, k string, v string) (models.User, error) {
-	tr := otel.Tracer("user")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryGetUserByEmailorUsername")
 	defer childSpan.End()
 
