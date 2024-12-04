@@ -65,7 +65,6 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) (models.Expense, error) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetExpenseById")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
 	expense, err := s.expensesRepository.GetExpenseById(trContext, expenseId)
@@ -81,12 +80,11 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (string, error) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCDeleteExpense")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
 	expense, err := s.GetExpenseById(trContext, expenseId)
 	if err != nil {
-		return "", err
+		return "", common.ErrExpenseNotFound
 	}
 
 	err = s.expensesRepository.DeleteExpenseById(trContext, expense.ExpenseId)

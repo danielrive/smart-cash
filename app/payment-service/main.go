@@ -31,6 +31,11 @@ var (
 func init() {
 	// start logger
 
+	// Init OTel TracerProvider
+	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
+
+	otel.SetTracerProvider(tp)
+
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
@@ -68,11 +73,6 @@ func init() {
 }
 
 func main() {
-
-	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
-
-	otel.SetTracerProvider(tp)
 
 	// configure the SDK
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

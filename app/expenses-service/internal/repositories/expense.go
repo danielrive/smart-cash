@@ -152,7 +152,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	}
 	if len(item.Item) == 0 {
 		r.logger.Info("expense not found",
-			"expenseId", id,
+			"expenseId", "test",
 		)
 		return output, common.ErrExpenseNotFound
 	}

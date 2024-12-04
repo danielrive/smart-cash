@@ -28,7 +28,12 @@ var (
 )
 
 func init() {
-	// validate ENV variables
+	// Set-up logger handler
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
+	}))
+
+	slog.SetDefault(logger)
 
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if common.DomainName == "" {
@@ -62,12 +67,6 @@ func init() {
 }
 
 func main() {
-	// Set-up logger handler
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
-
 	// Init OTel TracerProvider
 	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
 

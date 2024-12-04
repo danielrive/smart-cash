@@ -43,7 +43,9 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	defer childSpan.End()
 	user := models.User{}
 	expense := models.Expense{}
+	//userBaseURL := fmt.Sprintf("http://127.0.0.1:8181/user/%s", paymentRequest.UserId)
 	userBaseURL := fmt.Sprintf("http://user.%s/%s", common.DomainName, paymentRequest.UserId)
+	//expenseBaseURL := fmt.Sprintf("http://127.0.0.1:8282/expenses/%s", paymentRequest.ExpenseId)
 	expenseBaseURL := fmt.Sprintf("http://expenses.%s/%s", common.DomainName, paymentRequest.ExpenseId)
 
 	// Validate if User exist and is not blocked
@@ -57,16 +59,17 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
+
 	err = json.Unmarshal(respBody, &user)
 	if err != nil {
-		s.logger.Error("error could not parse response body",
+		s.logger.Error("error could not parse response body for user",
 			"error", err.Error(),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
 
-	if user.Status == "blocked" {
+	if !user.Active {
 		return models.TransactionRequest{}, common.ErrUserBlocked
 	}
 
@@ -80,11 +83,11 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
-	respBody, err = io.ReadAll(resp.Body)
+	respBody, _ = io.ReadAll(resp.Body)
 
-	err = json.Unmarshal(respBody, &user)
+	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
-		s.logger.Error("error could not parse response body",
+		s.logger.Error("error could not parse response body for expense",
 			"error", err.Error(),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
@@ -96,7 +99,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		TransactionId: s.uuid.New(),
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		ExpenseId:     expense.ExpenseId,
-		UserId:        expense.UserId,
+		UserId:        user.UserId,
 		Amount:        expense.Amount,
 		Status:        "pending",
 	}
