@@ -14,24 +14,24 @@ COPY go.sum .
 # Copy the application source code to the container
 
 COPY  utils/*.go ./utils/
-COPY  bank-service/models/* ./bank-service/models/
-COPY  bank-service/internal ./bank-service/internal
-COPY  bank-service/*.go ./bank-service/
+COPY  payment-service/models/* ./payment-service/models/
+COPY  payment-service/internal ./payment-service/internal
+COPY  payment-service/*.go ./payment-service/
 
 # Build the Go application statically
 
-WORKDIR /app/bank-service
+WORKDIR /app/payment-service
 # Build the Go application statically
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/bank_service .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/payment_service .
 
 # Use a minimal base image for the runtime stage
 FROM gcr.io/distroless/base
 
 # Copy the binary from the build stage
-COPY --from=build  /bin/bank_service /bin/bank_service
+COPY --from=build  /bin/payment_service /bin/payment_service
 
 # Expose the port on which the application will listen
-EXPOSE 8282
+EXPOSE 8989
 
 # Set the command to run the application when the container starts
-ENTRYPOINT ["/bin/bank_service"]
+ENTRYPOINT ["/bin/payment_service"]

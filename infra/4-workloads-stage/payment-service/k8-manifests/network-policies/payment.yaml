@@ -1,0 +1,25 @@
+### Rule Description
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-ingress-expenses
+spec:
+  podSelector:
+    matchLabels:
+      app: expenses
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: nginx-ingress
+    ports:
+    - protocol: TCP
+      port: ${SERVICE_PORT}
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: nginx-ingress
