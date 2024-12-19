@@ -88,6 +88,11 @@ jobs:
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
+      - name: trivy-scan
+        uses: ./.github/actions/trivy-static-scan
+        with:
+          STAGE: ${{ inputs.STAGE }}
+          WORKING_DIR: "${{ needs.validate-working-dir.outputs.WORKING_DIR }}"
       - name: configure-aws-credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

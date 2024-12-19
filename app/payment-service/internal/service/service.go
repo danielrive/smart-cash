@@ -59,6 +59,8 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	}
 	defer resp.Body.Close()
 
+	defer resp.Body.Close()
+
 	respBody, _ := io.ReadAll(resp.Body)
 
 	err = json.Unmarshal(respBody, &user)
