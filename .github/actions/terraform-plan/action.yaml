@@ -55,7 +55,7 @@ runs:
       - name: trivy-scan-tf-plan
         uses: ./.github/actions/trivy-static-scan
         with:
-          WORKING_DIR: "${{ github.workspace }}/infra/${{ inputs.WORKING_DIR}}/${{ github.run_id }}-${{ inputs.STAGE}}.tfplan"
+          WORKING_DIR: "./infra/${{ inputs.WORKING_DIR}}/${{ github.run_id }}-${{ inputs.STAGE}}.tfplan"
       - name: Publish Artifact
         uses: actions/upload-artifact@v4
         with:
