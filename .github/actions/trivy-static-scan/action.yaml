@@ -17,3 +17,4 @@ runs:
         with:
           scan-type: 'fs'
           scan-ref: './infra/${{ inputs.WORKING_DIR}}'
+          trivy-config: ./.github/actions/trivy-static-scan/trivy.yaml
