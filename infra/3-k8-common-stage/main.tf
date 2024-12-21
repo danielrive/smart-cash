@@ -40,6 +40,7 @@ resource "github_repository_file" "common_resources" {
       ENVIRONMENT = var.environment
       PROJECT     = var.project_name
       DOMAIN_NAME = local.domain_name
+      CLUSTER_NAME = local.cluster_name
 
     }
   )
