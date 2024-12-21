@@ -4,5 +4,6 @@ metadata:
   name: karpenter
   namespace: flux-system
 spec:
+  type: "oci"
   interval: 10m0s
-  oci: oci://public.ecr.aws/karpenter/karpenter
+  url: oci://public.ecr.aws/karpenter/karpenter
