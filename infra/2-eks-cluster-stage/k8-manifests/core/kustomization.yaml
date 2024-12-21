@@ -11,3 +11,4 @@ resources:
 - helm-cert-manager.yaml
 - fluent-bit.yaml
 - helm-otel-collector.yaml
+- helm-karpenter.yaml
