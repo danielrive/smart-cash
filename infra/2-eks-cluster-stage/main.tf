@@ -54,6 +54,16 @@ module "flux_imageupdate_role" {
   namespace       = "flux-system"
 }
 
+###############################
+### Karpenter core components
+
+module "karpenter_core" {
+  depends_on      = [module.eks_cluster]
+  source          = "../modules/karpenter-core"
+  cluster_name    = local.cluster_name
+  karpenter_version = "1.1.1"
+}
+
 ######################
 ### cert manager role
 
