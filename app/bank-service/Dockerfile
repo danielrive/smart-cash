@@ -14,18 +14,15 @@ COPY go.sum .
 # Copy the application source code to the container
 
 COPY  utils/*.go ./utils/
-COPY  bank-service/internal/common/* ./bank-service/internal/common/
-COPY  bank-service/internal/handler/* ./bank-service/internal/handler/
-COPY  bank-service/internal/models/* ./bank-service/internal/models/
-COPY  bank-service/internal/repositories/* ./bank-service/internal/repositories/
-COPY  bank-service/internal/service/* ./bank-service/internal/service/
-COPY  bank-service/main.go ./bank-service/main.go
+COPY  bank-service/models/* ./bank-service/models/
+COPY  bank-service/internal ./bank-service/internal
+COPY  bank-service/*.go ./bank-service/
 
 # Build the Go application statically
 
 WORKDIR /app/bank-service
 # Build the Go application statically
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/bank_service main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/bank_service .
 
 # Use a minimal base image for the runtime stage
 FROM gcr.io/distroless/base

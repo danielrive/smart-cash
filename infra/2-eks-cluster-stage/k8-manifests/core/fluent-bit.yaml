@@ -98,7 +98,11 @@ spec:
             Labels              On
             Annotations         Off
             Buffer_Size         0
-            
+
+        [FILTER]
+            Name          grep
+            Match         applications.*
+            Exclude       log    kube-probe
 
       outputs: |
         [OUTPUT]

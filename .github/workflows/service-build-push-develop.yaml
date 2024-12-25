@@ -14,9 +14,13 @@ on:
           - expenses-service
           - bank-service
           - frontend-service
+          - payment-service
+          - hydradb-service
+          
   push:
     branches:
       - develop
+      - feat/*
       - feature/*
     paths:
       - "app/**"
@@ -77,7 +81,7 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@main
+    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@develop
     with:
       AWS_REGION: us-west-2
       ENVIRONMENT: develop

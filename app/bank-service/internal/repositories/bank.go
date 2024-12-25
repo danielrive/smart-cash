@@ -5,13 +5,14 @@ import (
 	"smart-cash/bank-service/internal/common"
 
 	"log/slog"
-	"smart-cash/bank-service/internal/models"
+	"smart-cash/bank-service/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.opentelemetry.io/otel"
 )
 
 type DynamoDBBankRepository struct {
@@ -30,7 +31,11 @@ func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string, logger
 
 // Function to get a user by id
 
-func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
+func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models.BankUser, error) {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryGetUser")
+	defer childSpan.End()
+
 	output := models.BankUser{}
 	// Get bank item by id
 	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
@@ -67,7 +72,10 @@ func (r *DynamoDBBankRepository) GetUser(id string) (models.BankUser, error) {
 }
 
 // Func to update user
-func (r *DynamoDBBankRepository) UpdateSavingsUser(user models.BankUser) error {
+func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user models.BankUser) error {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryUpdateSavingsUser")
+	defer childSpan.End()
 	// Marshal the bank item
 	update := expression.Set(expression.Name("savings"), expression.Value(user.Savings))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()

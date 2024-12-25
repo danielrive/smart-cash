@@ -3,7 +3,7 @@ locals {
   path_tf_repo_flux_common = "./k8-manifests/common"
   cluster_name             = "${var.project_name}-${var.environment}"
   gh_username              = "danielrive"
-  domain_name              = "danielrive.site"
+  domain_name              = "rootkit.site"
 }
 
 
@@ -40,6 +40,7 @@ resource "github_repository_file" "common_resources" {
       ENVIRONMENT = var.environment
       PROJECT     = var.project_name
       DOMAIN_NAME = local.domain_name
+      CLUSTER_NAME = local.cluster_name
 
     }
   )

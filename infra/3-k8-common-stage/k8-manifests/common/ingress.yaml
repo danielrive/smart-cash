@@ -4,12 +4,11 @@ metadata:
   name: api-gw-ingress
   namespace: ${ENVIRONMENT}
   annotations:
-    #cert-manager.io/cluster-issuer: danielrive-letsencrypt2
-   # nginx.ingress.kubernetes.io/rewrite-target: /
+   nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-  - host: api.${ENVIRONMENT}.smartcash.danielrive.site
+  - host: api.${ENVIRONMENT}.smartcash.rootkit.site
     http:
       paths:
       - path: /user
@@ -40,10 +39,10 @@ spec:
             name: payment
             port:
               number: 80
-  #tls: 
-  #- hosts:
-  #  - api.${ENVIRONMENT}.smartcash.danielrive.site
-  #  secretName: frontend-tls
+  tls: 
+    - hosts:
+      - api.${ENVIRONMENT}.smartcash.rootkit.site
+      secretName: frontend-tls
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -52,12 +51,11 @@ metadata:
   name: frontend-ingress
   namespace: ${ENVIRONMENT}
   annotations:
-    cert-manager.io/cluster-issuer: danielrive-letsencrypt2
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-  - host: ${ENVIRONMENT}.smartcash.danielrive.site
+  - host: ${ENVIRONMENT}.smartcash.rootkit.site
     http:
       paths:
       - path: /
@@ -69,7 +67,7 @@ spec:
               number: 80
   tls: 
     - hosts:
-      - ${ENVIRONMENT}.smartcash.danielrive.site
+      - ${ENVIRONMENT}.smartcash.rootkit.site
       secretName: frontend-tls
 
 ---
@@ -79,12 +77,10 @@ kind: Ingress
 metadata:
   name: grafana-ingress
   namespace: monitoring
- # annotations:
- #   cert-manager.io/cluster-issuer: danielrive-letsencrypt2
 spec:
   ingressClassName: nginx
   rules:
-  - host: monitoring.${ENVIRONMENT}.smartcash.danielrive.site
+  - host: monitoring.${ENVIRONMENT}.smartcash.rootkit.site
     http:
       paths:
       - path: /
@@ -94,7 +90,7 @@ spec:
             name: prometheus-grafana
             port:
               number: 80
-  #tls: 
-  #- hosts:
-  #  - monitoring.${ENVIRONMENT}.smartcash.danielrive.site
-  #  secretName: grafana-tls
+  tls: 
+   - hosts:
+      - monitoring.${ENVIRONMENT}.smartcash.rootkit.site
+     secretName: grafana-tls

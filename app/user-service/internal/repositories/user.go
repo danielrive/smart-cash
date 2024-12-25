@@ -2,15 +2,16 @@ package repositories
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"smart-cash/user-service/internal/common"
-	"smart-cash/user-service/internal/models"
+	"smart-cash/user-service/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.opentelemetry.io/otel"
 )
 
 // define UUID interface
@@ -23,23 +24,28 @@ type DynamoDBUsersRepository struct {
 	client     *dynamodb.Client
 	tableUsers string
 	uuid       UUIDHelper
+	logger     *slog.Logger
 }
 
-func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid UUIDHelper) *DynamoDBUsersRepository {
+func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid UUIDHelper, logger *slog.Logger) *DynamoDBUsersRepository {
 	return &DynamoDBUsersRepository{
 		client:     client,
 		tableUsers: tableUsers,
 		uuid:       uuid,
+		logger:     logger,
 	}
 }
 
 // Function to Get user by ID
-func (c *DynamoDBUsersRepository) GetUserById(id string) (models.UserResponse, error) {
+func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (models.UserResponse, error) {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryGetUserById")
+	defer childSpan.End()
 	output := models.UserResponse{}
 
 	// create input for get item
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(c.tableUsers),
+		TableName: aws.String(r.tableUsers),
 		Key: map[string]types.AttributeValue{
 			"userId": &types.AttributeValueMemberS{
 				Value: id,
@@ -47,20 +53,28 @@ func (c *DynamoDBUsersRepository) GetUserById(id string) (models.UserResponse, e
 		},
 	}
 	// call dynamoDB GetItem
-	response, err := c.client.GetItem(context.TODO(), input)
+	response, err := r.client.GetItem(context.TODO(), input)
 
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
-		return output, err
+		r.logger.Error("dynamodb get item failed",
+			"error", err.Error(),
+			"userId", id,
+		)
+		return output, common.ErrInternalError
 	}
 	if len(response.Item) == 0 {
-		log.Println(common.ErrUserNotFound, err)
+		r.logger.Error("user not found",
+			"userId", id,
+		)
 		return output, common.ErrUserNotFound
 	}
 	// unmarshal item to models.user struct
-	err2 := attributevalue.UnmarshalMap(response.Item, &output)
-	if err2 != nil {
-		log.Println(common.ErrInternalError, err2)
+	err = attributevalue.UnmarshalMap(response.Item, &output)
+	if err != nil {
+		r.logger.Error("error unmashaling map",
+			"error", err.Error(),
+			"userId", id,
+		)
 		return output, common.ErrInternalError
 	}
 	return output, nil
@@ -68,26 +82,35 @@ func (c *DynamoDBUsersRepository) GetUserById(id string) (models.UserResponse, e
 
 // Function to Create user
 
-func (c *DynamoDBUsersRepository) CreateUser(u models.User) (models.UserResponse, error) {
+func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryCreateUser")
+	defer childSpan.End()
 
 	output := models.UserResponse{}
-	u.UserId = c.uuid.New()
+	u.UserId = r.uuid.New()
 
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
-		return output, err
+		r.logger.Error("error marshaling map",
+			"error", err.Error(),
+			"userId", u.UserId,
+		)
+		return output, common.ErrInternalError
 	}
 	input := &dynamodb.PutItemInput{
-		TableName:           aws.String(c.tableUsers),
+		TableName:           aws.String(r.tableUsers),
 		Item:                item,
 		ConditionExpression: aws.String("attribute_not_exists(userId)"),
 	}
 	// call dynamodb put item
-	_, err = c.client.PutItem(context.TODO(), input)
+	_, err = r.client.PutItem(context.TODO(), input)
 
 	if err != nil {
-		log.Println(common.ErrUserNoCreated, err)
+		r.logger.Error("dynamodb error put item",
+			"error", err.Error(),
+			"userId", u.UserId,
+		)
 		return output, common.ErrUserNoCreated
 	}
 	// create output response
@@ -100,23 +123,33 @@ func (c *DynamoDBUsersRepository) CreateUser(u models.User) (models.UserResponse
 
 // Function to Update User
 
-func (c *DynamoDBUsersRepository) UpdateUser(u models.User) (models.UserResponse, error) {
+func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryUpdateUser")
+	defer childSpan.End()
+
 	output := models.UserResponse{}
 
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
-		log.Println(err)
-		return output, err
+		r.logger.Error("error marshaling map",
+			"error", err.Error(),
+			"userId", u.UserId,
+		)
+		return output, common.ErrInternalError
 	}
 	input := &dynamodb.PutItemInput{
-		TableName: aws.String(c.tableUsers),
+		TableName: aws.String(r.tableUsers),
 		Item:      item,
 	}
 	// call dynamodb put item
-	_, err = c.client.PutItem(context.TODO(), input)
+	_, err = r.client.PutItem(context.TODO(), input)
 
 	if err != nil {
-		log.Println(common.ErrUserNoCreated, err)
+		r.logger.Error("dynamodb error put item",
+			"error", err.Error(),
+			"userId", u.UserId,
+		)
 		return output, common.ErrUserNoCreated
 	}
 	// create output response
@@ -128,8 +161,12 @@ func (c *DynamoDBUsersRepository) UpdateUser(u models.User) (models.UserResponse
 }
 
 // Function to Get user by email
-func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (models.UserResponse, error) {
-	output := models.UserResponse{}
+func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, k string, v string) (models.User, error) {
+	tr := otel.Tracer(common.ServiceName)
+	_, childSpan := tr.Start(ctx, "RepositoryGetUserByEmailorUsername")
+	defer childSpan.End()
+
+	output := models.User{}
 
 	// create keycondition dynamodb expression for the query
 	keyCondition := expression.Key(k).Equal(expression.Value(v))
@@ -138,13 +175,16 @@ func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb error building expression",
+			"error", err.Error(),
+			k, v,
+		)
 		return output, common.ErrInternalError
 	}
 
 	// Create the input for the dynamodb query
 	queryInput := &dynamodb.QueryInput{
-		TableName:                 aws.String(c.tableUsers),
+		TableName:                 aws.String(r.tableUsers),
 		IndexName:                 aws.String("by_" + k),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
@@ -152,22 +192,30 @@ func (c *DynamoDBUsersRepository) GetUserByEmailorUsername(k string, v string) (
 	}
 	// Execute the query
 
-	response, err := c.client.Query(context.TODO(), queryInput)
+	response, err := r.client.Query(context.TODO(), queryInput)
 
 	if err != nil {
-		log.Println(common.ErrInternalError, err)
+		r.logger.Error("dynamodb error query item",
+			"error", err.Error(),
+			k, v,
+		)
 		return output, common.ErrInternalError
 	}
 
 	if len(response.Items) == 0 {
-		log.Println(common.ErrUserNotFound, err)
+		r.logger.Error("user not found",
+			k, v,
+		)
 		return output, common.ErrUserNotFound
 	}
 	//unmarshall dynamodb output
-	err2 := attributevalue.UnmarshalMap(response.Items[0], &output)
-	if err2 != nil {
-		log.Println(common.ErrInternalError, err2)
-		return models.UserResponse{}, common.ErrInternalError
+	err = attributevalue.UnmarshalMap(response.Items[0], &output)
+	if err != nil {
+		r.logger.Error("error unmashaling map",
+			"error", err.Error(),
+			k, v,
+		)
+		return output, common.ErrInternalError
 	}
 	return output, nil
 

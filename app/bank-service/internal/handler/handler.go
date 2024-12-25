@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"smart-cash/bank-service/internal/common"
-	"smart-cash/bank-service/internal/models"
 	"smart-cash/bank-service/internal/service"
+	"smart-cash/bank-service/models"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 )
 
 type BankHandler struct {
@@ -26,7 +27,11 @@ func NewBankHandler(bankService *service.BankService, logger *slog.Logger) *Bank
 // Handler for creating new user
 
 func (h *BankHandler) HandlePayment(c *gin.Context) {
-	transaction := models.PaymentRequest{}
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerHandlePayment")
+	defer childSpan.End()
+
+	transaction := models.TransactionRequest{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&transaction); err != nil {
 		h.logger.Error("error binding json",
@@ -36,7 +41,7 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		return
 	}
 	// init payment
-	response, err := h.bankService.ProcessPayment(transaction)
+	response, err := h.bankService.ProcessPayment(trContext, transaction)
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
@@ -45,6 +50,25 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, response)
+}
+
+func (h *BankHandler) GetUser(c *gin.Context) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUser")
+	defer childSpan.End()
+
+	userId := c.Param("userId")
+
+	user, err := h.bankService.GetUser(trContext, userId)
+
+	if err != nil {
+		h.logger.Error("error getting user",
+			"error", err.Error(),
+		)
+		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *BankHandler) HealthCheck(c *gin.Context) {

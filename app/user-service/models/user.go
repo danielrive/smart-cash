@@ -18,3 +18,8 @@ type UserResponse struct {
 	Email    string `json:"email" dynamodbav:"email"` // global secondary index
 	Active   bool   `json:"active" dynamodbav:"active"`
 }
+
+type LoginRequest struct {
+	Username string `json:"username" dynamodbav:"username"`
+	Password string `json:"password" dynamodbav:"password"`
+}

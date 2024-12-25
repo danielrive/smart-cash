@@ -1,73 +1,72 @@
 package service
 
 import (
-	"log"
-	"net/http"
-	"smart-cash/user-service/internal/models"
+	"context"
+	"log/slog"
+	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/repositories"
+	"smart-cash/user-service/models"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type UserService struct {
 	userRepository *repositories.DynamoDBUsersRepository
+	logger         *slog.Logger
 }
 
-func NewUserService(userRepository *repositories.DynamoDBUsersRepository) *UserService {
-	return &UserService{userRepository: userRepository}
+var jwtKey = []byte("123456")
+
+type claims = struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
 }
 
-// Function to generate random string
-/**
-func generateRandomToken(length int) (string, error) {
-	// Calculate the byte length required for the given token length
-	byteLength := length / 2 // Each byte encodes 2 hexadecimal characters
-
-	// Create a byte slice to hold the random bytes
-	randomBytes := make([]byte, byteLength)
-
-	// Fill the byte slice with random bytes
-	_, err := rand.Read(randomBytes)
-	if err != nil {
-		log.Println("error", err)
-		return "", err
+func NewUserService(userRepository *repositories.DynamoDBUsersRepository, logger *slog.Logger) *UserService {
+	return &UserService{
+		userRepository: userRepository,
+		logger:         logger,
 	}
-
-	// Encode the random bytes to a hexadecimal string
-	token := hex.EncodeToString(randomBytes)
-
-	return token, nil
 }
-**/
-func (us *UserService) GetUserById(userId string) (models.UserResponse, error) {
 
-	user, err := us.userRepository.GetUserById(userId)
+func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "SVCGetUserById")
+	defer childSpan.End()
+	user, err := us.userRepository.GetUserById(trContext, userId)
 
 	if err != nil {
-		log.Println("error ", err)
 		return models.UserResponse{}, err
 	}
 
 	return user, nil
 }
 
-func (us *UserService) GetUserByEmailorUsername(key string, value string) (models.UserResponse, error) {
-	// Find user
-	user, err := us.userRepository.GetUserByEmailorUsername(key, value)
+func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string, value string) (models.User, error) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "SVCGetUserByEmailorUsername")
+	defer childSpan.End()
+
+	user, err := us.userRepository.GetUserByEmailorUsername(trContext, key, value)
 
 	if err != nil {
-		log.Println("error ", err)
-		return models.UserResponse{}, err
+		return models.User{}, err
 	}
 
 	return user, err
 }
 
-func (us *UserService) CreateUser(u models.User) (models.UserResponse, error) {
-	// generate UUID for the user
+func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "SVCCreateUser")
+	defer childSpan.End()
 
-	user, err := us.userRepository.CreateUser(u)
+	user, err := us.userRepository.CreateUser(trContext, u)
 
 	if err != nil {
-		log.Println("error ", err)
 		return models.UserResponse{}, err
 	}
 
@@ -76,19 +75,55 @@ func (us *UserService) CreateUser(u models.User) (models.UserResponse, error) {
 
 // communicate with another service
 
-func (us *UserService) ConnectOtherSVC(svc_name string, port string) error {
-	baseURL := "http://" + svc_name + ":" + port + "/health"
-	resp, err := http.Get(baseURL)
+func (us *UserService) Login(ctx context.Context, user string, password string) (string, error) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "SVCLogin")
+	defer childSpan.End()
+
+	response, err := us.GetUserByEmailorUsername(trContext, "username", user)
+
 	if err != nil {
-		log.Println("Error creating request:", err)
-		return err
+		childSpan.SetAttributes(attribute.String("error", err.Error()))
+		return "", common.ErrWrongCredentials
 	}
 
-	// Close the response body after reading
-	defer resp.Body.Close()
+	if response.Password != password {
+		us.logger.Error("authentication failed, wrong password",
+			"username", user,
+		)
+		return "", common.ErrWrongCredentials
 
-	// Call the internal function to validate the user token
-	log.Println("response from http call ", resp.StatusCode)
-	return nil
+	}
+	token, err := generateJWT(response.UserId)
 
+	if err != nil {
+		us.logger.Error("error generating token",
+			"error", err.Error(),
+			"username", user,
+		)
+		return "", common.ErrInternalError
+	}
+
+	// Update token in user table
+	// response, err = us.UpdateUser(trContext, )
+	return token, nil
+
+}
+
+func generateJWT(userID string) (string, error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }

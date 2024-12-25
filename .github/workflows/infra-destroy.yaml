@@ -9,9 +9,11 @@ on:
         required: true
         type: choice
         options:
+          -  hydradb-service
           -  user-service
           -  frontend-service
           -  expenses-service
+          -  payment-service
           -  bank-service
           -  3-k8-common-stage
           -  2-eks-cluster-stage

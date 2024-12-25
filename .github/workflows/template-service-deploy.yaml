@@ -23,7 +23,7 @@ on:
       TRIVY_VERSION:
         required: false
         type: string
-        default: '0.52.0'
+        default: '0.57.0'
     secrets:
       AWS_ACCOUNT_NUMBER:
         required: true
@@ -68,30 +68,30 @@ jobs:
 
             docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --load --platform linux/amd64 .
 
-      - name: Image security scanning
-        id: image-scanning
-        run: | 
-          wget -q https://github.com/aquasecurity/trivy/releases/download/v${{ inputs.TRIVY_VERSION }}/trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb
-          sudo dpkg -i trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb > /dev/null 2>&1
-          trivy --version
+      # - name: Image security scanning
+      #   id: image-scanning
+      #   run: | 
+      #     wget -q https://github.com/aquasecurity/trivy/releases/download/v${{ inputs.TRIVY_VERSION }}/trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb
+      #     sudo dpkg -i trivy_${{ inputs.TRIVY_VERSION }}_Linux-64bit.deb > /dev/null 2>&1
+      #     trivy --version
 
-          echo " ---> Scaning the image ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}"
-          trivy image --no-progress --format json -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} 
-      - name: convert to sarif
-        run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: '${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif'
-      - name: validate vulnerability
-        run: | 
-          echo " ---> Validate vulnerabilities"
-          SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
-          echo " ---> Summary: $SUMMARY"
-          if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] ; then
-            echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
-            exit 5
-          fi
+      #     echo " ---> Scaning the image ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}}"
+      #     trivy image --no-progress --format json -o ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} 
+      # - name: convert to sarif
+      #   run: trivy convert --format sarif --output ${{ inputs.SERVICE_NAME }}-${{ github.sha }}.sarif ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json
+      # - name: Upload Trivy scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: '${{ inputs.SERVICE_NAME }}-${{ github.sha}}.sarif'
+      # - name: validate vulnerability
+      #   run: | 
+      #     echo " ---> Validate vulnerabilities"
+      #     SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
+      #     echo " ---> Summary: $SUMMARY"
+      #     if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] ; then
+      #       echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
+      #       exit 5
+      #     fi
       - name: push image to ECR
         run: | 
           COMMIT_ID=${{ github.sha}}

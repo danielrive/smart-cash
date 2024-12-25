@@ -14,18 +14,15 @@ COPY go.sum .
 # Copy the application source code to the container
 
 COPY  utils/*.go ./utils/
-COPY  expenses-service/internal/common/* ./expenses-service/internal/common/
-COPY  expenses-service/internal/handler/* ./expenses-service/internal/handler/
-COPY  expenses-service/internal/models/* ./expenses-service/internal/models/
-COPY  expenses-service/internal/repositories/* ./expenses-service/internal/repositories/
-COPY  expenses-service/internal/service/* ./expenses-service/internal/service/
-COPY  expenses-service/main.go ./expenses-service/main.go
+COPY  expenses-service/models/* ./expenses-service/models/
+COPY  expenses-service/internal ./expenses-service/internal
+COPY  expenses-service/*.go ./expenses-service/
 
 # Build the Go application statically
 
 WORKDIR /app/expenses-service
 # Build the Go application statically
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/expenses_service main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o /bin/expenses_service .
 
 # Use a minimal base image for the runtime stage
 FROM gcr.io/distroless/base

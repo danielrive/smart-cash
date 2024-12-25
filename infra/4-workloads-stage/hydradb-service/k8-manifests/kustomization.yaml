@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ${ENVIRONMENT}
+
+images:
+  - name: service-image
+    newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
+    newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
+
+resources:
+- job.yaml
+- service-account.yaml
+- image-update-automation.yaml

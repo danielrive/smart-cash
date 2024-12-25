@@ -165,7 +165,7 @@ resource "github_repository_file" "base_manifests" {
     {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
-      SERVICE_PATH_HEALTH_CHECKS = "/health" ## don't include the / at the beginning
+      SERVICE_PATH_HEALTH_CHECKS = "${local.this_service_name}/health" ## don't include the / at the beginning
       TIER                       = local.tier
     }
   )
@@ -215,9 +215,6 @@ resource "github_repository_file" "overlays_svc_kustomization" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
 }
 
 

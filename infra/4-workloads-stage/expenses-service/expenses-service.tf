@@ -216,9 +216,6 @@ resource "github_repository_file" "overlays_svc_kustomization" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
 }
 
 ##### Network Policies

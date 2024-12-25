@@ -3,38 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>List Expense</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <title>Expense Lookup</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Register Expense</h1>
-        <form id="expenseForm">
-            <label for="name">Expense Name:</label>
-            <input type="text" id="name" name="name" required>
+    <h2>Check Expense by ID</h2>
+    <form id="expenseForm">
+        <label for="expenseId">Expense ID:</label>
+        <input type="text" id="expenseId" name="expenseId" required>
+        <button type="button" onclick="fetchExpense()">Get Expense</button>
+    </form>
+    <div id="expenseResult"></div>
 
-            <label for="date">Date:</label>
-            <input type="date" id="date" name="date" required>
-
-            <label for="value">Value:</label>
-            <input type="number" id="value" name="value" step="0.01" required>
-
-            <label for="currency">Currency:</label>
-            <select id="currency" name="currency" required>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
-                <!-- Add more currencies as needed -->
-            </select>
-
-            <button type="submit">Add Expense</button>
-        </form>
-
-        <h2>Expenses List</h2>
-        <ul id="expensesList"></ul>
-    </div>
-
-    <script src="script.js"></script>
+    <script src="script.js" type="application/javascript"></script>
 </body>
 </html>

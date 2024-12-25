@@ -1,0 +1,20 @@
+name: 'Trivy Static Sec Scan'
+description: 'Running Trivy security scan'
+
+inputs:
+  STAGE:
+    description: 'stage to deploy, start from base'
+    required: true
+  WORKING_DIR:
+    description: 'workign directory where trivy will perform the security scan'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'config'
+          scan-ref: './infra/${{ inputs.WORKING_DIR}}'
+          trivy-config: ./.github/actions/trivy-static-scan/trivy.yaml
