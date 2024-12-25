@@ -61,7 +61,7 @@ module "karpenter_core" {
   depends_on      = [module.eks_cluster]
   source          = "../modules/karpenter-core"
   cluster_name    = local.cluster_name
-  karpenter_version = "1.1.1"
+  karpenter_version = "v1.1.1"
 }
 
 ######################
