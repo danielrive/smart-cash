@@ -33,9 +33,8 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository, logger
 }
 
 func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetUserById")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 	user, err := us.userRepository.GetUserById(trContext, userId)
 
@@ -47,9 +46,8 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 }
 
 func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string, value string) (models.User, error) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCGetUserByEmailorUsername")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
 	user, err := us.userRepository.GetUserByEmailorUsername(trContext, key, value)
@@ -62,9 +60,8 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 }
 
 func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCCreateUser")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
 	user, err := us.userRepository.CreateUser(trContext, u)
@@ -79,15 +76,17 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 // communicate with another service
 
 func (us *UserService) Login(ctx context.Context, user string, password string) (string, error) {
-	tr := otel.Tracer("user-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCLogin")
-	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
+
 	response, err := us.GetUserByEmailorUsername(trContext, "username", user)
 
 	if err != nil {
+		childSpan.SetAttributes(attribute.String("error", err.Error()))
 		return "", common.ErrWrongCredentials
 	}
+
 	if response.Password != password {
 		us.logger.Error("authentication failed, wrong password",
 			"username", user,
@@ -105,7 +104,9 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 		return "", common.ErrInternalError
 	}
 
-	return token, common.ErrWrongCredentials
+	// Update token in user table
+	// response, err = us.UpdateUser(trContext, )
+	return token, nil
 
 }
 

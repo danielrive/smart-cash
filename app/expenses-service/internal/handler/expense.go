@@ -74,32 +74,6 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 
 }
 
-// Handler to pay expenses
-
-func (h *ExpensesHandler) PayExpenses(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerPayExpenses")
-	defer childSpan.End()
-
-	expenses := models.ExpensesPay{}
-	if err := c.ShouldBindJSON(&expenses); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
-		return
-	}
-	response, err := h.expensesService.PayExpenses(trContext, expenses)
-	if err != nil {
-		h.logger.Error("error processing expense",
-			"error", err.Error(),
-		)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
-		return
-	}
-	c.JSON(http.StatusCreated, response)
-}
-
 // Handler for Get expense by expenseID
 
 func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {

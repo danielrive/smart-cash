@@ -27,11 +27,11 @@ func NewBankHandler(bankService *service.BankService, logger *slog.Logger) *Bank
 // Handler for creating new user
 
 func (h *BankHandler) HandlePayment(c *gin.Context) {
-	tr := otel.Tracer("bank-service")
+	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerHandlePayment")
 	defer childSpan.End()
 
-	transaction := models.PaymentRequest{}
+	transaction := models.TransactionRequest{}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&transaction); err != nil {
 		h.logger.Error("error binding json",
@@ -52,9 +52,9 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-func (h *BankHandler) ValidateUser(c *gin.Context) {
-	tr := otel.Tracer("bank-service")
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerValidateUser")
+func (h *BankHandler) GetUser(c *gin.Context) {
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUser")
 	defer childSpan.End()
 
 	userId := c.Param("userId")

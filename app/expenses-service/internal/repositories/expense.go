@@ -15,23 +15,16 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-// Define DynamoDB repository struct
-type UUIDHelper interface {
-	New() string
-}
-
 type DynamoDBExpensesRepository struct {
 	client        *dynamodb.Client
 	expensesTable string
-	uuid          UUIDHelper
 	logger        *slog.Logger
 }
 
-func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string, uuid UUIDHelper, logger *slog.Logger) *DynamoDBExpensesRepository {
+func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string, logger *slog.Logger) *DynamoDBExpensesRepository {
 	return &DynamoDBExpensesRepository{
 		client:        client,
 		expensesTable: expensesTable,
-		uuid:          uuid,
 		logger:        logger,
 	}
 }
@@ -44,14 +37,13 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	defer childSpan.End()
 	// Create a new expense item
 	output := models.ExpensesReturn{}
-	expense.ExpenseId = r.uuid.New()
+
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
 		r.logger.Error("error while unmarshaling DynamoDB item",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
-		return output, common.ErrInternalError
 	}
 
 	// Create a new expense item
@@ -66,6 +58,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 		)
 		return output, common.ErrExpenseNoCreated
 	}
+
 	return createExpenserReturn(expense), nil
 }
 
@@ -159,7 +152,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	}
 	if len(item.Item) == 0 {
 		r.logger.Info("expense not found",
-			"expenseId", id,
+			"expenseId", "test",
 		)
 		return output, common.ErrExpenseNotFound
 	}

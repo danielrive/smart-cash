@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/handler"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
@@ -18,9 +19,48 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-var logger *slog.Logger
+var (
+	logger            *slog.Logger
+	domainName        string
+	bankTable         string
+	awsRegion         string
+	notToLogEndpoints = []string{"/bank/health", "/bank/metrics"}
+	otelCollector     string
+)
 
-var notToLogEndpoints = []string{"/bank/health", "/bank/metrics"}
+func init() {
+	// validate ENV variables
+	common.DomainName = os.Getenv("DOMAIN_NAME")
+	if domainName == "" {
+		common.DomainName = "localhost"
+	}
+
+	bankTable = os.Getenv("DYNAMODB_BANK_TABLE")
+	if bankTable == "" {
+		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_BANK_TABLE"))
+		os.Exit(1)
+	}
+
+	otelCollector = os.Getenv("OTEL_COLLECTOR")
+	if otelCollector == "" {
+		logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
+		os.Exit(1)
+	}
+
+	awsRegion = os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+		os.Exit(1)
+	}
+
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+
+	if otelCollector == "" {
+		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
+		os.Exit(1)
+	}
+
+}
 
 func main() {
 	// Set-up logger handler
@@ -30,20 +70,14 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
+	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
 
 	otel.SetTracerProvider(tp)
 
 	// configure the SDK
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("us-west-2"),
+		config.WithRegion(awsRegion),
 	)
-
-	bankTable := os.Getenv("DYNAMODB_BANK_TABLE")
-	if bankTable == "" {
-		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_BANK_TABLE"))
-		os.Exit(1)
-	}
 
 	if err != nil {
 		slog.Error("unable to load SDK config",
@@ -57,7 +91,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(os.Getenv("OTEL_COLLECTOR"), otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(otelCollector, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
 		gin.Recovery(), gin.Recovery(),
 	)
@@ -73,11 +107,12 @@ func main() {
 	// create bank
 	router.POST("/bank/pay", bankHandler.HandlePayment)
 
+	// Get user saldo
+	router.GET("/bank/user", bankHandler.GetUser)
+
 	// Endpoint to test health check
 	router.GET("/bank/health", bankHandler.HealthCheck)
-
 	router.Run(":8585")
-
 }
 
 func filterTraces(req *http.Request) bool {

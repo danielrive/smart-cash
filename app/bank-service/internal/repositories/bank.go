@@ -32,7 +32,7 @@ func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string, logger
 // Function to get a user by id
 
 func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models.BankUser, error) {
-	tr := otel.Tracer("bank-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryGetUser")
 	defer childSpan.End()
 
@@ -73,7 +73,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 
 // Func to update user
 func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user models.BankUser) error {
-	tr := otel.Tracer("bank-service")
+	tr := otel.Tracer(common.ServiceName)
 	_, childSpan := tr.Start(ctx, "RepositoryUpdateSavingsUser")
 	defer childSpan.End()
 	// Marshal the bank item

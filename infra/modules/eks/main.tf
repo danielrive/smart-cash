@@ -225,7 +225,7 @@ resource "aws_launch_template" "node_group" {
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"
-    http_put_response_hop_limit = 1
+    http_put_response_hop_limit = 2
     instance_metadata_tags      = "enabled"
   }
   monitoring {
@@ -359,7 +359,7 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
   role       = aws_iam_role.ebs_csi_role.name
 }
 
-/*
+
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name                = aws_eks_cluster.kube_cluster.name
@@ -368,7 +368,6 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
   resolve_conflicts_on_update = "OVERWRITE"
 }
-*/
 
 
 

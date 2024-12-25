@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 
+	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
 
@@ -21,34 +22,58 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-var logger *slog.Logger
+var (
+	otelCollector     string
+	usersTable        string
+	awsRegion         string
+	notToLogEndpoints = []string{"/user/health", "/user/metrics"}
+	logger            *slog.Logger
+	domainName        string
+)
 
-var notToLogEndpoints = []string{"/user/health", "/user/metrics"}
-
-func main() {
-	// Set-up Logger handler
+func init() {
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
 
-	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(os.Getenv("OTEL_COLLECTOR"), os.Getenv("SERVICE_NAME"), logger)
+	// validate ENV variables
+	common.DomainName = os.Getenv("DOMAIN_NAME")
+	if domainName == "" {
+		common.DomainName = "localhost"
+	}
 
-	otel.SetTracerProvider(tp)
-
-	// validate if env variables exists
-	usersTable := os.Getenv("DYNAMODB_USER_TABLE")
+	usersTable = os.Getenv("DYNAMODB_USER_TABLE")
 	if usersTable == "" {
 		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_USER_TABLE"))
 		os.Exit(1)
 	}
 
-	awsRegion := os.Getenv("AWS_REGION")
+	otelCollector = os.Getenv("OTEL_COLLECTOR")
+	if otelCollector == "" {
+		logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
+		os.Exit(1)
+	}
+
+	awsRegion = os.Getenv("AWS_REGION")
 	if awsRegion == "" {
 		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
 		os.Exit(1)
 	}
+
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+	if common.ServiceName == "" {
+		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
+		os.Exit(1)
+	}
+
+}
+
+func main() {
+	// Init OTel TracerProvider
+	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
+
+	otel.SetTracerProvider(tp)
 
 	// configure the SDK
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
@@ -64,7 +89,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(os.Getenv("SERVICE_NAME"), otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
 		gin.Recovery(), gin.Recovery(),
 	)
