@@ -98,7 +98,7 @@ spec:
             Labels              On
             Annotations         Off
             Buffer_Size         0
-            
+
         [FILTER]
             Name          grep
             Match         applications.*

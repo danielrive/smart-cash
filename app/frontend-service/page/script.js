@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const expenseId = document.getElementById('expenseId').value;
             try {
-                const response = await fetch('/expenses/pay', {
+                const response = await fetch(process.env.API_URL+'/expenses/pay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ expenseId })
