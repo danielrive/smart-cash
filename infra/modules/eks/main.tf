@@ -75,6 +75,9 @@ resource "aws_eks_cluster" "kube_cluster" {
     endpoint_private_access = var.private_endpoint_api
     endpoint_public_access  = var.public_endpoint_api
   }
+  tags = {
+    "karpenter.sh/discovery" = var.cluster_name
+  }
 }
 
 #### IAM role used to manage the entire cluster, for now you need to pass one user that will be able to assume the role
@@ -205,6 +208,15 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   role       = aws_iam_role.worker_nodes.name
 }
 
+resource "aws_iam_role_policy_attachment" "cni_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.worker_nodes.name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.worker_nodes.name
+}
 
 ################################
 #####  EKS manage node group ###
