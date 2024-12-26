@@ -4,7 +4,7 @@ resource "aws_cloudformation_stack" "network" {
   parameters = {
     ClusterName = var.cluster_name
   }
-  template_url = "https://raw.githubusercontent.com/aws/karpenter-provider-aws/${var.karpenter_version}/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml"
+  template_url = "./cloudformation.yaml"
   capabilities = ["CAPABILITY_NAMED_IAM"]
 
 }
