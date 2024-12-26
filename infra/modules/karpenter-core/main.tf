@@ -41,7 +41,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 
 resource "aws_eks_pod_identity_association" "association" {
   cluster_name    = var.cluster_name
-  namespace       = var.environment
+  namespace       = "karpenter"
   service_account = "karpenter"
   role_arn        = aws_iam_role.iam_sa_role.arn
 }
