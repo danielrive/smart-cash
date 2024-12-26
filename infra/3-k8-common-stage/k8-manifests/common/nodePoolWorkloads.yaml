@@ -46,5 +46,6 @@ spec:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
         Environment: "develop"
+        aws:eks:cluster-name: "smart-cash-develop"
   amiSelectorTerms:
     - alias: al2023@latest # Amazon Linux 2023
