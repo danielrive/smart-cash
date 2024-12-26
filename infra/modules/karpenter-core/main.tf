@@ -4,7 +4,7 @@ resource "aws_cloudformation_stack" "network" {
   parameters = {
     ClusterName = var.cluster_name
   }
-  template_body = file("./cloudformation.yaml")
+  template_body = file("${path.module}/cloudformation.yaml")
   capabilities = ["CAPABILITY_NAMED_IAM"]
 
 }
