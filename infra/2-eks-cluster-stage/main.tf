@@ -58,10 +58,12 @@ module "flux_imageupdate_role" {
 ### Karpenter core components
 
 module "karpenter_core" {
-  depends_on      = [module.eks_cluster]
-  source          = "../modules/karpenter-core"
-  cluster_name    = local.cluster_name
+  depends_on        = [module.eks_cluster]
+  source            = "../modules/karpenter-core"
+  cluster_name      = local.cluster_name
   karpenter_version = "v1.1.1"
+  environment       = var.environment
+  account_number    = data.aws_caller_identity.id_account.id
 }
 
 ######################
@@ -192,8 +194,8 @@ resource "github_repository_file" "jaeger_resources" {
     "${local.path_tf_repo_flux_core}/jaeger/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION            = var.region
-      ENVIRONMENT           = var.environment
+      AWS_REGION  = var.region
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
