@@ -16,7 +16,7 @@ spec:
   values:
     serviceAccount:
       create: true
-      name: "sa-karpenter"
+      name: "karpenter"
     additionalClusterRoleRules: []
     serviceMonitor:
       enabled: false
