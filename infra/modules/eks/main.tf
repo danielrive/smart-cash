@@ -208,7 +208,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   role       = aws_iam_role.worker_nodes.name
 }
 
-resource "aws_iam_role_policy_attachment" "cni_policy" {
+resource "aws_iam_role_policy_attachment" "cni_policy_node" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.worker_nodes.name
 }
