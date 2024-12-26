@@ -1,4 +1,4 @@
-resource "aws_cloudformation_stack" "network" {
+resource "aws_cloudformation_stack" "karpenter_core" {
   name = "karpenter-core-${var.cluster_name}"
 
   parameters = {
@@ -35,7 +35,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "att_policy_role1" {
-  policy_arn = "arn:aws:iam::${var.account_number}:role/KarpenterControllerPolicy-${var.cluster_name}"
+  policy_arn = "arn:aws:iam::${var.account_number}:policy/KarpenterControllerPolicy-${var.cluster_name}"
   role       = aws_iam_role.iam_sa_role.name
 }
 
