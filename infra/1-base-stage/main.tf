@@ -16,6 +16,9 @@ module "networking" {
   single_nat_gw         = false
   enable_auto_public_ip = true
   account_id            = data.aws_caller_identity.current.id
+  tags                  = {
+    "karpenter.sh/discovery" = "${var.project_name}-${var.environment}"
+  }
 }
 
 ######################################################
