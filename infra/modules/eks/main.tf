@@ -247,11 +247,7 @@ resource "aws_launch_template" "node_group" {
     resource_type = "instance"
     tags = {
       Name = "template-eks-${local.eks_node_group_name}"
-      "karpenter.sh/discovery" = var.cluster_name
     }
-  }
-  tags = {
-    "karpenter.sh/discovery" = var.cluster_name
   }
 }
 
