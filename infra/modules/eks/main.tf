@@ -277,9 +277,6 @@ resource "aws_eks_node_group" "worker-node-group" {
     id      = aws_launch_template.node_group.id
     version = aws_launch_template.node_group.latest_version
   }
-  tags = {
-    "karpenter.sh/discovery" = var.cluster_name
-  }
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
