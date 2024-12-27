@@ -9,10 +9,8 @@ spec:
   subnetSelectorTerms:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
-        Environment: "develop"
   securityGroupSelectorTerms:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
-        Environment: "develop"
   amiSelectorTerms:
     - alias: al2023@latest # Amazon Linux 2023
