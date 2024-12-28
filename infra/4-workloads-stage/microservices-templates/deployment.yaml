@@ -6,7 +6,7 @@ metadata:
     app: ${SERVICE_NAME}
     tier: ${TIER}
 spec:
-  replicas: 10
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
