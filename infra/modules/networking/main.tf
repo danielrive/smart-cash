@@ -13,7 +13,7 @@ module "vpc" {
   enable_nat_gateway                     = var.enable_nat_gw
   single_nat_gateway                     = var.single_nat_gw
   one_nat_gateway_per_az                 = var.one_nat_per_az
-  tags                                   = var.tags
+  public_subnet_tags                     = var.tags
   enable_dns_hostnames                   = true
   enable_dns_support                     = true
   map_public_ip_on_launch                = var.enable_auto_public_ip
