@@ -18,7 +18,7 @@ module "eks_cluster" {
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = "1.29"
+  cluster_version              = "1.30"
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
   private_endpoint_api         = true
   public_endpoint_api          = true
