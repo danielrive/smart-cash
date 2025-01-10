@@ -40,6 +40,7 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
+/*
 
 ##############################
 ### Flux imageupdate role
@@ -54,17 +55,6 @@ module "flux_imageupdate_role" {
   namespace       = "flux-system"
 }
 
-###############################
-### Karpenter core components
-
-module "karpenter_core" {
-  depends_on        = [module.eks_cluster]
-  source            = "../modules/karpenter-core"
-  cluster_name      = local.cluster_name
-  karpenter_version = "v1.1.1"
-  environment       = var.environment
-  account_number    = data.aws_caller_identity.id_account.id
-}
 
 ######################
 ### cert manager role
@@ -213,3 +203,4 @@ module "fuent-bit-role" {
   cluster_oidc   = module.eks_cluster.cluster_oidc
   account_number = data.aws_caller_identity.id_account.id
 }
+*/

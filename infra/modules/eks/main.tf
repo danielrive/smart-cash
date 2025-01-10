@@ -3,11 +3,8 @@ locals {
   eks_node_group_name = "${var.project_name}-${var.environment}-eks-node-group"
 }
 
-#########################
-####  IAM EKS Role  ####
-########################
-
-# Role that will be used by the EKS cluster to make calls to aws services like ec2 instances, tag ec2 instances.
+####  IAM EKS Role  
+# Role that will be used by the EKS cluster to make calls to aws services.
 
 resource "aws_iam_role" "eks_iam_role" {
   name               = "role-eks-${var.cluster_name}-${var.region}"
@@ -34,9 +31,8 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_iam_role.name
 }
 
-#############################
-### cloudwatch logs group ###
-#############################
+
+### cloudwatch logs group 
 
 resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
   name              = "/aws/eks/${var.cluster_name}/cluster"
@@ -50,9 +46,8 @@ resource "aws_cloudwatch_log_group" "log_groups_workloads" {
   kms_key_id        = var.kms_arn
 }
 
-#######################
+
 ##### EKS Cluster  ####
-#######################
 
 resource "aws_eks_cluster" "kube_cluster" {
   depends_on                = [aws_cloudwatch_log_group.log_groups_control_plane]
@@ -158,10 +153,9 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
   role       = aws_iam_role.eks_admin_iam_role.name
 }
 
-
+/*
 ##################
 ## OIDC Config ###
-##################
 
 # Configure OIDC for IRSA(IAM Roles for Service Accounts)
 
@@ -178,10 +172,9 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
   url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
 
+*/
 
-################################
 #####  EKS worker node role ####
-################################
 
 resource "aws_iam_role" "worker_nodes" {
   name = "role-${local.eks_node_group_name}"
@@ -276,8 +269,6 @@ resource "aws_eks_node_group" "worker-node-group" {
   tags = {
     "karpenter.sh/discovery" = var.cluster_name
   }
-  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
-  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_eks_cluster.kube_cluster,
@@ -286,13 +277,9 @@ resource "aws_eks_node_group" "worker-node-group" {
   ]
 }
 
-
-################
 ### VPC CNI  ###
-################
 
 // IAM role for CNI add-on
-
 resource "aws_iam_role" "vpc_cni_role" {
   name               = "vpc-cni-${var.cluster_name}-${var.region}"
   path               = "/"
@@ -339,10 +326,8 @@ resource "aws_eks_addon" "vpc-cni" {
 
 ################
 ### EBS CSI  ###
-################
 
 // IAM role for CSI add-on
-
 resource "aws_iam_role" "ebs_csi_role" {
   name               = "ebs-cni-role-${var.cluster_name}-${var.region}"
   path               = "/"

@@ -1,6 +1,6 @@
 module "vpc" {
   source                                 = "terraform-aws-modules/vpc/aws"
-  version                                = "5.9.0"
+  version                                = "5.17.0"
   name                                   = "vpc-${var.project_name}-${var.environment}"
   cidr                                   = var.cidr
   azs                                    = var.availability_zones
@@ -48,7 +48,6 @@ resource "aws_security_group" "allow_tls" {
   }
 }
 
-###############################################
 ### AWS private link endpoint to ECR
 
 resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
@@ -77,7 +76,6 @@ resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
   }
 }
 
-
 ### AWS VPC S3 GATEWAY ENDPOINT
 
 resource "aws_vpc_endpoint" "s3" {
@@ -95,6 +93,7 @@ resource "aws_vpc_endpoint_route_table_association" "s3_endpoint_association" {
 }
 
 ### AWS VPC DynamoDB endpoint
+
 resource "aws_vpc_endpoint" "dynamodb" {
   vpc_id       = module.vpc.vpc_id
   service_name = "com.amazonaws.${var.region}.dynamodb"
