@@ -13,7 +13,7 @@ spec:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
   amiSelectorTerms:
-    - alias: al2023@latest # Amazon Linux 2023
+    - id: ami-0180cf1053ef6ce12 # Amazon Linux 2023
 
 --- 
 
