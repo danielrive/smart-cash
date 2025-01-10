@@ -6,6 +6,7 @@ metadata:
     kubernetes.io/description: "General purpose EC2NodeClass for running Amazon Linux 2 nodes"
 spec:
   role: "KarpenterNodeRole-${CLUSTER_NAME}" # replace with your cluster name
+  amiFamily: AL2
   subnetSelectorTerms:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
