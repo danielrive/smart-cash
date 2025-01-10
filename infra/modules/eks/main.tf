@@ -153,7 +153,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
   role       = aws_iam_role.eks_admin_iam_role.name
 }
 
-/*
+
 ##################
 ## OIDC Config ###
 
@@ -172,7 +172,7 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
   url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
 
-*/
+
 
 #####  EKS worker node role ####
 
@@ -265,9 +265,6 @@ resource "aws_eks_node_group" "worker-node-group" {
   launch_template {
     id      = aws_launch_template.node_group.id
     version = aws_launch_template.node_group.latest_version
-  }
-  tags = {
-    "karpenter.sh/discovery" = var.cluster_name
   }
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
