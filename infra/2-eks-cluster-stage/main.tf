@@ -24,9 +24,9 @@ module "eks_cluster" {
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
-  vpc_cni_version              = "v1.18.3-eksbuild.1"
+  vpc_cni_version              = "v1.19.2-eksbuild.1"
   ebs_csi_version              = "v1.34.0-eksbuild.1"
-  pod_identity_version         = "v1.3.2-eksbuild.2"
+  pod_identity_version         = "v1.3.4-eksbuild.2"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
   cluster_enabled_log_types    = ["audit", "api", "authenticator"]
@@ -34,9 +34,9 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 3
-  max_instances_node_group   = 3
-  min_instances_node_group   = 3
+  desired_nodes              = 2
+  max_instances_node_group   = 2
+  min_instances_node_group   = 2
   storage_nodes              = 20
 }
 
