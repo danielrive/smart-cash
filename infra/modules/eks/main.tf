@@ -313,7 +313,7 @@ resource "aws_eks_addon" "vpc-cni" {
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.vpc_cni_version
-  pod_identity_association    {
+  pod_identity_association     = {
     role_arn =  aws_iam_role.vpc_cni_role.arn
     service_account = "kube-system"
     }
