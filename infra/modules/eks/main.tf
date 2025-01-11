@@ -276,29 +276,26 @@ resource "aws_eks_addon" "pod_identity" {
   resolve_conflicts_on_update = "OVERWRITE"
 }
 
-/*
 ### VPC CNI  ###
 
 // IAM role for CNI add-on
 resource "aws_iam_role" "vpc_cni_role" {
   name               = "vpc-cni-${var.cluster_name}-${var.region}"
   path               = "/"
-  assume_role_policy = <<EOF
+ assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
             "Effect": "Allow",
             "Principal": {
-                "Federated": "arn:aws:iam::${var.account_number}:oidc-provider/${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}"
+                "Service": "pods.eks.amazonaws.com"
             },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-                "StringEquals": {
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com",
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-node"
-                }
-            }
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
         }
     ]
 }
@@ -316,13 +313,17 @@ resource "aws_eks_addon" "vpc-cni" {
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.vpc_cni_version
-  service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
+  pod_identity_association    {
+    role_arn =  aws_iam_role.vpc_cni_role.arn
+    service_account = "kube-system"
+    }
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
     enableNetworkPolicy = "true"
   })
 }
 
+/*
 
 ################
 ### EBS CSI  ###
