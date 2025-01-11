@@ -71,8 +71,9 @@ module "fuent-bit-role" {
   environment    = var.environment
   region         = var.region
   cluster_name   = local.cluster_name
-  cluster_oidc   = module.eks_cluster.cluster_oidc
-  account_number = data.aws_caller_identity.id_account.id
+  service_account = "fluent-bit"
+  account_number =   data.aws_caller_identity.id_account.id
+  namespace       = "fluent-bit"
 }
 
 ############################
@@ -95,7 +96,6 @@ resource "null_resource" "bootstrap-flux" {
     always_run = timestamp() # this will always run
   }
 }
-
 /*
 ### Force to update the Pod to take the changes in the SA
 resource "null_resource" "restart_image_reflector" {
@@ -112,7 +112,7 @@ resource "null_resource" "restart_image_reflector" {
     always_run = timestamp() # this will always run
   }
 }
-
+*/
 ###############################
 ####  GitOps Configuration 
 
@@ -199,7 +199,3 @@ resource "github_repository_file" "jaeger_resources" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
-
-
-
-*/
