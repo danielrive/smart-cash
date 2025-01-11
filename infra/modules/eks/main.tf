@@ -155,9 +155,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
 
 
 ##################
-## OIDC Config ###
-
-# Configure OIDC for IRSA(IAM Roles for Service Accounts)
+## OIDC Config 
 
 # Get tls certificate from EKS cluster identity issuer
 data "tls_certificate" "cluster" {
@@ -171,8 +169,6 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
   thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
   url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
-
-
 
 #####  EKS worker node role ####
 
@@ -212,8 +208,7 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
 }
 
 ################################
-#####  EKS manage node group ###
-################################
+#####  EKS manage node group
 
 // Launch configuration for Node Group
 
@@ -244,10 +239,6 @@ resource "aws_launch_template" "node_group" {
   }
 }
 
-/*
-node group managed by eks, this contains the ec2 instances that will be the worker nodes
-ec2 instances has associated the node role created before
-*/
 resource "aws_eks_node_group" "worker-node-group" {
   cluster_name    = var.cluster_name
   node_group_name = local.eks_node_group_name
@@ -274,6 +265,18 @@ resource "aws_eks_node_group" "worker-node-group" {
   ]
 }
 
+#####################
+### Pod Identity  
+
+## Install EBS add-on
+resource "aws_eks_addon" "pod_identity" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.pod_identity_version
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+/*
 ### VPC CNI  ###
 
 // IAM role for CNI add-on
@@ -366,16 +369,3 @@ resource "aws_eks_addon" "ebs_csi" {
   resolve_conflicts_on_update = "OVERWRITE"
 }
 */
-
-
-#####################
-### Pod Identity  ###
-#####################
-
-## Install EBS add-on
-resource "aws_eks_addon" "pod_identity" {
-  cluster_name                = aws_eks_cluster.kube_cluster.name
-  addon_name                  = "eks-pod-identity-agent"
-  addon_version               = var.pod_identity_version
-  resolve_conflicts_on_update = "OVERWRITE"
-}

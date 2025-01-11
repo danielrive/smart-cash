@@ -1,5 +1,5 @@
 ###############################
-#### IAM Role for Cert Manager
+#### Flux image update role
 
 resource "aws_iam_role" "pod_sa_role" {
   name               = "role-sa-${var.service_account}-${var.environment}-${var.region}"
@@ -23,7 +23,6 @@ resource "aws_iam_role" "pod_sa_role" {
 }
 EOF
 }
-
 
 ## Policy for the role
 resource "aws_iam_policy" "allow_ecr" {

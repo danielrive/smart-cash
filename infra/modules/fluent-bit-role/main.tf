@@ -1,7 +1,6 @@
 ###############################
 #### IAM Role for Fluent-bit
 
-
 resource "aws_iam_role" "fluent_bit" {
   name = "role-fluent-bit-${var.environment}"
   path = "/"

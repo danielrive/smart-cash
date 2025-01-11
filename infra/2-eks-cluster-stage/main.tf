@@ -40,21 +40,18 @@ module "eks_cluster" {
   storage_nodes              = 20
 }
 
-/*
-
 ##############################
 ### Flux imageupdate role
 
 module "flux_imageupdate_role" {
   depends_on      = [module.eks_cluster]
-  source          = "../modules/flux-image-repo-role"
+  source          = "../modules/flux-image-update-role"
   environment     = var.environment
   region          = var.region
   cluster_name    = local.cluster_name
   service_account = "image-reflector-controller"
   namespace       = "flux-system"
 }
-
 
 ######################
 ### cert manager role
@@ -69,9 +66,17 @@ module "cert_manager" {
   namespace       = "cert-manager"
 }
 
+module "fuent-bit-role" {
+  source         = "../modules/fluent-bit-role"
+  environment    = var.environment
+  region         = var.region
+  cluster_name   = local.cluster_name
+  cluster_oidc   = module.eks_cluster.cluster_oidc
+  account_number = data.aws_caller_identity.id_account.id
+}
+
 ############################
 #####  Flux Bootstrap 
-
 
 ### Get Kubeconfig, arguments in bash script bootstrap-flux.sh
 # $1 = CLUSTER_NAME
@@ -91,12 +96,13 @@ resource "null_resource" "bootstrap-flux" {
   }
 }
 
+/*
 ### Force to update the Pod to take the changes in the SA
 resource "null_resource" "restart_image_reflector" {
   depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
   provisioner "local-exec" {
     command = <<EOF
-    aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
+    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
     flux reconcile kustomization flux-system --with-source
     sleep 5
     kubectl rollout restart deployment image-reflector-controller -n flux-system
@@ -195,12 +201,5 @@ resource "github_repository_file" "jaeger_resources" {
 }
 
 
-module "fuent-bit-role" {
-  source         = "../modules/fluent-bit-role"
-  environment    = var.environment
-  region         = var.region
-  cluster_name   = local.cluster_name
-  cluster_oidc   = module.eks_cluster.cluster_oidc
-  account_number = data.aws_caller_identity.id_account.id
-}
+
 */
