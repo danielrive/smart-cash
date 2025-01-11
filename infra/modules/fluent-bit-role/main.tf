@@ -49,7 +49,6 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   role       = aws_iam_role.pod_sa_role.name
 }
 
-
 resource "aws_eks_pod_identity_association" "association" {
   cluster_name    = var.cluster_name
   namespace       = var.namespace
