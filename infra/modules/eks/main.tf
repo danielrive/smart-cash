@@ -315,7 +315,7 @@ resource "aws_eks_addon" "vpc-cni" {
   addon_version               = var.vpc_cni_version
   pod_identity_association      {
     role_arn =  aws_iam_role.vpc_cni_role.arn
-    service_account = "kube-system"
+    service_account = "aws-node"
     }
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
