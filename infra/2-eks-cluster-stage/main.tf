@@ -71,13 +71,11 @@ module "cert_manager" {
 
 module "fuent-bit-role" {
   source         = "../modules/fluent-bit-role"
-   depends_on = [module.eks_cluster]
   environment    = var.environment
   region         = var.region
   cluster_name   = local.cluster_name
-  service_account = "fluent-bit"
-  account_number =   data.aws_caller_identity.id_account.id
-  namespace       = "fluent-bit"
+  cluster_oidc   = module.eks_cluster.cluster_oidc
+  account_number = data.aws_caller_identity.id_account.id
 }
 
 ############################
