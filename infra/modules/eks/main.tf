@@ -250,7 +250,7 @@ resource "aws_eks_node_group" "worker-node-group" {
     max_unavailable = 1
   }
   scaling_config {
-    desired_size = var.min_instances_node_group
+    desired_size = var.desired_nodes
     max_size     = var.max_instances_node_group
     min_size     = var.min_instances_node_group
   }
