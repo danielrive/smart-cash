@@ -174,6 +174,7 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
 
 resource "aws_iam_role" "worker_nodes" {
   name = "role-${local.eks_node_group_name}"
+  depends_on = [aws_eks_cluster.kube_cluster]
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRole"
@@ -270,6 +271,7 @@ resource "aws_eks_node_group" "worker-node-group" {
 
 ## Install EBS add-on
 resource "aws_eks_addon" "pod_identity" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "eks-pod-identity-agent"
   addon_version               = var.pod_identity_version
@@ -310,6 +312,7 @@ resource "aws_iam_role_policy_attachment" "cni_policy" {
 
 ## Install CNI add-on
 resource "aws_eks_addon" "vpc-cni" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.vpc_cni_version
@@ -359,6 +362,7 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
 
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "aws-ebs-csi-driver"
   addon_version               = var.ebs_csi_version

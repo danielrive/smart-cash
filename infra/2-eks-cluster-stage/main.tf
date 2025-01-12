@@ -34,8 +34,8 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 2
-  max_instances_node_group   = 3
+  desired_nodes              = 3
+  max_instances_node_group   = 4
   min_instances_node_group   = 2
   storage_nodes              = 20
 }
@@ -66,8 +66,12 @@ module "cert_manager" {
   namespace       = "cert-manager"
 }
 
+######################
+### fluentbit role
+
 module "fuent-bit-role" {
   source         = "../modules/fluent-bit-role"
+   depends_on = [module.eks_cluster]
   environment    = var.environment
   region         = var.region
   cluster_name   = local.cluster_name
@@ -156,7 +160,7 @@ resource "github_repository_file" "sources" {
 
 ##### Core resources
 resource "github_repository_file" "core_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux,github_repository_file.kustomizations]
   for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
