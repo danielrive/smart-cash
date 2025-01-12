@@ -19,8 +19,8 @@ spec:
       enabled: false
     serviceAccount:
       create: true
-      annotations: 
-        eks.amazonaws.com/role-arn: arn:aws:iam::${ACCOUNT_NUMBER}:role/role-fluent-bit-${ENVIRONMENT}
+     # annotations: 
+     #   eks.amazonaws.com/role-arn: arn:aws:iam::${ACCOUNT_NUMBER}:role/role-fluent-bit-${ENVIRONMENT}
     rbac:
       create: true
       nodeAccess: false
