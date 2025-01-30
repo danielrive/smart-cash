@@ -43,9 +43,9 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           requests:
-            memory: "50Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            memory: "500Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
           limits:
-            memory: "50Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            memory: "1500Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:

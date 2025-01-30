@@ -11,7 +11,6 @@ variable "cluster_name" {
   type = string
 }
 
-
 variable "service_account" {
   type = string
 }

@@ -5,11 +5,9 @@ output "vpc_id" {
   value = module.networking.main.vpc_id
 }
 
-
 output "public_subnets" {
   value = module.networking.main.public_subnets
 }
-
 
 output "private_subnets" {
   value = module.networking.main.public_subnets
