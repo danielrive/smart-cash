@@ -95,6 +95,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle expense registration
+    const registerExpensesForm = document.getElementById('registerExpensesForm');
+    if (registerExpensesForm) {
+        registerExpensesForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const userId = document.getElementById('userId').value;
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+
+            try {
+                const response = await fetch('/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name,
+                        description,
+                        userId,
+                        amount: parseFloat(amount),
+                        category
+                    })
+                });
+                if (response.ok) {
+                    alert('Expense registered successfully');
+                    registerExpensesForm.reset();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Expense registration failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                alert('An error occurred during expense registration');
+                console.error('Error:', error);
+            }
+        });
+    }
+
     // List expenses 
 
     // Handle expense registration
@@ -142,4 +179,3 @@ async function fetchExpense() {
         document.getElementById("expenseResult").innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
 }
-
