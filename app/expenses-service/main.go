@@ -102,7 +102,7 @@ func main() {
 	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
 	// create expenses
-	router.POST("/expenses/", expensesHandler.CreateExpense)
+	router.POST("/expenses", expensesHandler.CreateExpense)
 
 	// define router for get expenses by tag
 	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)
