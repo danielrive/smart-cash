@@ -36,7 +36,7 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
+	trContext, childSpan := tr.Start(ctx, "CreateExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 	// set the expense status to unpaid
