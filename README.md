@@ -2,6 +2,13 @@
 
 This is a personal project to test some tools that I want to learn in a hands-on manner.
 
+Here are some blog posts created along this project
+
+- [AWS Infrastructure - Terraform and GitHub Actions](https://dev.to/aws-builders/smartcash-project-infrastructure-terraform-and-github-actions-2bo3)
+- [GitOps with FluxCD](https://dev.to/aws-builders/smartcash-project-gitops-with-fluxcd-3aep)
+- [Adding monitoring to EKS using Prometheus operator](https://dev.to/aws-builders/adding-monitoring-to-eks-using-prometheus-operator-3ke1)
+- [Configuring Logging in AWS EKS Using Fluent Bit and CloudWatch](https://dev.to/aws-builders/configuring-logging-in-aws-eks-using-fluent-bit-and-cloudwatch-1fpb)
+
 ## Folder structure
 
 This project contains two main folders:
