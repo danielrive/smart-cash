@@ -95,6 +95,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle expense registration
+    const registerExpensesForm = document.getElementById('registerExpensesForm');
+    if (registerExpensesForm) {
+        registerExpensesForm.addEventListener('submit', async (event) => {
+            event.preventDefault();  // Prevent form from submitting normally
+            event.stopPropagation(); // Stop event bubbling
+            
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const userId = document.getElementById('userId').value;
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+
+            try {
+                console.log('Sending POST request to /expenses');
+                const response = await fetch('/expenses', {
+                    method: 'POST',  // Explicitly set POST method
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name,
+                        description,
+                        userId,
+                        amount: parseFloat(amount),
+                        category
+                    })
+                });
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    alert('Expense registered successfully');
+                    registerExpensesForm.reset();
+                } else {
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData);
+                    alert(`Expense registration failed: ${errorData.message}`);
+                }
+            } catch (error) {
+                console.error('Error during expense registration:', error);
+                alert('An error occurred during expense registration');
+            }
+            
+            return false; // Prevent form submission
+        });
+    }
+
     // List expenses 
 
     // Handle expense registration
@@ -142,4 +190,3 @@ async function fetchExpense() {
         document.getElementById("expenseResult").innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
 }
-
