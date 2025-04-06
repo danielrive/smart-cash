@@ -44,9 +44,9 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	user := models.User{}
 	expense := models.Expense{}
 	//userBaseURL := fmt.Sprintf("http://127.0.0.1:8181/user/%s", paymentRequest.UserId)
-	userBaseURL := fmt.Sprintf("http://user.%s/%s", common.DomainName, paymentRequest.UserId)
+	userBaseURL := fmt.Sprintf("http://user/%s", paymentRequest.UserId)
 	//expenseBaseURL := fmt.Sprintf("http://127.0.0.1:8282/expenses/%s", paymentRequest.ExpenseId)
-	expenseBaseURL := fmt.Sprintf("http://expenses.%s/%s", common.DomainName, paymentRequest.ExpenseId)
+	expenseBaseURL := fmt.Sprintf("http://expenses/%s", paymentRequest.ExpenseId)
 
 	// Validate if User exist and is not blocked
 	resp, err := http.Get(userBaseURL)
@@ -57,8 +57,6 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
-	defer resp.Body.Close()
-
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
