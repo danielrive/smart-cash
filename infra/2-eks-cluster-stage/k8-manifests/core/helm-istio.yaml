@@ -7,7 +7,7 @@ spec:
   interval: 10m0s
   chart:
     spec:
-      chart: istio-base
+      chart: base
       version: 1.25.1
       sourceRef:
         kind: HelmRepository
