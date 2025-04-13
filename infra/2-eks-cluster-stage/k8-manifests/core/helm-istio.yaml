@@ -31,3 +31,39 @@ spec:
         kind: HelmRepository
         name: istio
         namespace: flux-system
+
+---
+
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: istio-cni
+  namespace: istio-system
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: cni
+      version: 1.25.1
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+
+---
+
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: istio-cni
+  namespace: istio-system
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: ztunnel
+      version: 1.25.1
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
