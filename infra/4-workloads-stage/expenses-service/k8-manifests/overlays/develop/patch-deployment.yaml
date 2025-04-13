@@ -2,10 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deployment-${SERVICE_NAME}
-  labels:
-    istio.io/dataplane-mode: ambient
 spec:
   template:
+    metadata:
+      labels:
+        istio.io/dataplane-mode: ambient
     spec:
       containers:
       - name: ${SERVICE_NAME}-container
