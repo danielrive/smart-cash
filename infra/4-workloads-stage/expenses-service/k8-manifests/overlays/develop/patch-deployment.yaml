@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deployment-${SERVICE_NAME}
+  labels:
+    istio.io/dataplane-mode: ambient
 spec:
   template:
     spec:
