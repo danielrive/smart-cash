@@ -47,11 +47,13 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
+	// OTel trace instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
 	expense := models.Expense{}
+	expense.UserId = c.GetHeader("UserId")
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		h.logger.Error("error binding json",
