@@ -155,8 +155,5 @@ func (s *ExpensesService) validateUser(userId string) bool {
 		return false
 	}
 
-	if !user.Active {
-		return false
-	}
 	return true
 }
