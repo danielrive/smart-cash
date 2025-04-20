@@ -56,14 +56,16 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	expense.UserId = c.GetHeader("UserId")
 	if expense.UserId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
-			"details": "no user ID in header"})
-		h.logger.Error("no user ID in header")
+			"details": "no UserId in header"})
+		h.logger.Error("no user ID in header",
+			"level", "Handler")
 		return
 	}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		h.logger.Error("error binding json",
 			"error", err.Error(),
+			"level", "Handler",
 		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -73,6 +75,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("error processing expense",
 			"error", err.Error(),
+			"level", "Handler",
 		)
 		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return

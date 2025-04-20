@@ -64,6 +64,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
+			"level", "service",
 		)
 		return models.ExpensesReturn{}, err
 	}
@@ -128,7 +129,7 @@ func (s *ExpensesService) validateUser(userId string) bool {
 	//childSpan.SetAttributes(attribute.String("component", "service"))
 	//defer childSpan.End()
 
-	userBaseURL := fmt.Sprintf("http://user/%s", userId)
+	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
 	user := models.User{}
 
 	// Validate if User exist and is not blocked
@@ -137,6 +138,7 @@ func (s *ExpensesService) validateUser(userId string) bool {
 		s.logger.Error("error creating the http request",
 			"error", err.Error(),
 			"url", userBaseURL,
+			"level", "service",
 		)
 		return false
 	}
@@ -148,6 +150,7 @@ func (s *ExpensesService) validateUser(userId string) bool {
 	if err != nil {
 		s.logger.Error("error could not parse response body for user",
 			"error", err.Error(),
+			"level", "service",
 		)
 		return false
 	}
