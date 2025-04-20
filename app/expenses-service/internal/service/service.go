@@ -55,7 +55,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	expense.Date = time.Now().UTC().Format("2006-01-02")
 	// Create UUID
 	expense.ExpenseId = s.uuid.New()
-	time.Sleep(2 * time.Second)
+
 	if expense.Category == "" {
 		expense.Category = "none"
 	}
