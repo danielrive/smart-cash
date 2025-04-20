@@ -54,6 +54,12 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 
 	expense := models.Expense{}
 	expense.UserId = c.GetHeader("UserId")
+	if expense.UserId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
+			"details": "no user ID in header"})
+		h.logger.Error("no user ID in header")
+		return
+	}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		h.logger.Error("error binding json",
