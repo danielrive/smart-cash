@@ -45,7 +45,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 
 	user := models.User{}
 	expense := models.Expense{}
-	expenseBaseURL := fmt.Sprintf("http://expenses/expense/%s", paymentRequest.ExpenseId)
+	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
 
 	// Validate if User exist and is not blocked
 	// Validate if user exist
