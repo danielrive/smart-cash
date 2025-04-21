@@ -145,8 +145,5 @@ func (s *PaymentService) validateUser(userId string) bool {
 		return false
 	}
 
-	if !user.Active {
-		return false
-	}
 	return true
 }
