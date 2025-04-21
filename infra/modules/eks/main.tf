@@ -244,6 +244,7 @@ resource "aws_eks_node_group" "worker-node-group" {
   cluster_name    = var.cluster_name
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
+  version =   var.cluster_version
   subnet_ids      = var.subnet_ids
   ami_type        = var.AMI_for_worker_nodes
   update_config {
