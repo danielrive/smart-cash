@@ -56,7 +56,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
-
+	s.logger.Info("calling" + expenseBaseURL)
 	resp, err := http.Get(expenseBaseURL)
 	if err != nil {
 		s.logger.Error("error creating the http request",
