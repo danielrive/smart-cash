@@ -50,6 +50,10 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	// Validate if User exist and is not blocked
 	// Validate if user exist
 	if !s.validateUser(paymentRequest.UserId) {
+		s.logger.Error("error user not found",
+			"userId", paymentRequest.UserId,
+			"level", "service",
+		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
 

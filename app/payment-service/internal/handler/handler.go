@@ -27,6 +27,7 @@ func NewPaymentHandler(paymentService *service.PaymentService, logger *slog.Logg
 // Handler for creating new user
 
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
+	// OTel Instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetTransaction")
 	defer childSpan.End()
