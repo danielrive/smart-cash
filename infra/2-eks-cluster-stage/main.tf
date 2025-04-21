@@ -34,9 +34,9 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 3
-  max_instances_node_group   = 3
-  min_instances_node_group   = 3
+  desired_nodes              = 4
+  max_instances_node_group   = 4
+  min_instances_node_group   = 4
   storage_nodes              = 20
 }
 
