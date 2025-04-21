@@ -43,8 +43,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           requests:
-            memory: "50Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
-            cpu: "0.1"
+            memory: "30Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            cpu: "1m"
           limits:
             memory: "50Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
