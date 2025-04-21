@@ -38,21 +38,20 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 }
 
 func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.TransactionRequest, error) {
+	// OTel instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
+
 	user := models.User{}
 	expense := models.Expense{}
-	//expenseBaseURL := fmt.Sprintf("http://127.0.0.1:8282/expenses/%s", paymentRequest.ExpenseId)
-	expenseBaseURL := fmt.Sprintf("http://expenses/%s", paymentRequest.ExpenseId)
+	expenseBaseURL := fmt.Sprintf("http://expenses/expense/%s", paymentRequest.ExpenseId)
 
 	// Validate if User exist and is not blocked
 	// Validate if user exist
 	if !s.validateUser(paymentRequest.UserId) {
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
-
-	// Validate expense
 
 	resp, err := http.Get(expenseBaseURL)
 	if err != nil {
@@ -118,7 +117,7 @@ func (s *PaymentService) validateUser(userId string) bool {
 	//childSpan.SetAttributes(attribute.String("component", "service"))
 	//defer childSpan.End()
 
-	userBaseURL := fmt.Sprintf("http://user/%s", userId)
+	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
 	user := models.User{}
 
 	// Validate if User exist and is not blocked
