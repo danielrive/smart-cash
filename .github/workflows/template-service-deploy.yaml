@@ -103,7 +103,6 @@ jobs:
           docker push ${{ env.ECR_REGISTRY }}/${ { env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
   update-image-tag:
     needs: [docker-build]
-    runs-on: ubuntu-latest
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
     with: 
       AWS_REGION: 'us-west-2'
