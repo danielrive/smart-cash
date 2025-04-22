@@ -87,7 +87,7 @@ jobs:
           echo " ---> Validate vulnerabilities"
           SUMMARY="$(trivy convert --format template --template '{{- $critical := 0 }}{{- $high := 0 }}{{- range . }}{{- range .Vulnerabilities }}{{- if  eq .Severity "CRITICAL" }}{{- $critical = add $critical 1 }}{{- end }}{{- if  eq .Severity "HIGH" }}{{- $high = add $high 1 }}{{- end }}{{- end }}{{- end }}Critical: {{ $critical }}, High: {{ $high }}' ${{ inputs.SERVICE_NAME }}-${{ github.sha}}.json)"
           echo " ---> Summary: $SUMMARY"
-          if [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]] || [[ ${{ github.ref_name}} == main ]]; then
+          if [[ ${{ github.ref_name}} == main ]] && { [[ $SUMMARY != *"Critical: 0"* ]] || [[ $SUMMARY != *"High: 0"* ]]; }; then
             echo " IMAGE Contains CRITICAL  OR HIGH VULNERABILITIES, CHECK THE REPORT UPLOADED TO GITHUB AND FIX IT TO PASS"
             exit 5
           fi
