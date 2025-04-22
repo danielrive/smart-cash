@@ -93,14 +93,13 @@ jobs:
           fi
       - name: push image to ECR
         run: | 
-          COMMIT_ID=${{ github.sha}}
+          COMMIT_ID=${{ github.sha }}
           TIMESTAMP=$(date +%s)
-
           SHORT_COMMIT_ID="${COMMIT_ID:0:5}"
 
           docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
 
-          docker push ${{ env.ECR_REGISTRY }}/${ { env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
   update-image-tag:
     needs: [docker-build]
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
