@@ -98,7 +98,7 @@ jobs:
 
           SHORT_COMMIT_ID="${COMMIT_ID:0:5}"
 
-          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
 
           docker push ${{ env.ECR_REGISTRY }}/${ { env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
   update-image-tag:
