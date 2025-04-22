@@ -5,6 +5,7 @@ metadata:
   labels:
     app: ${SERVICE_NAME}
     tier: ${TIER}
+    version: ${VERSION}
 spec:
   replicas: 1
   strategy:
