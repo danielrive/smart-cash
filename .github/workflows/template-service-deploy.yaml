@@ -66,7 +66,7 @@ jobs:
         run: |
             echo "${{ github.ref }}"
 
-            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --load --platform linux/amd64 .
+            docker buildx build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} --file ./${{ inputs.SERVICE_NAME }}/Dockerfile --load --platform linux/amd64 .
 
       - name: Image security scanning
         id: image-scanning
@@ -98,9 +98,9 @@ jobs:
 
           SHORT_COMMIT_ID="${COMMIT_ID:0:5}"
 
-          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha}} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
 
-          docker push ${{ env.ECR_REGISTRY }}/${ { env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
+          docker push ${{ env.ECR_REGISTRY }}/${ { env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
   update-image-tag:
     needs: [docker-build]
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
