@@ -101,12 +101,11 @@ jobs:
           docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$SHORT_COMMIT_ID-$TIMESTAMP
 
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
-  - Deploy-Prod:
-      needs: [docker-build]
-      # conditional to execute just in a release
-      if: ${{ github.ref_name == 'main2' }}
-      runs-on: ubuntu-latest
-      steps:
+  Deploy-Prod:
+    needs: [docker-build]
+    if: ${{ github.ref_name == 'main2' }}
+    runs-on: ubuntu-latest
+    steps:
         - name: configure aws credentials
           id: aws-creds-config
           uses: aws-actions/configure-aws-credentials@v4
