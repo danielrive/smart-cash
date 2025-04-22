@@ -111,7 +111,7 @@ jobs:
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: ${{ inputs.SERVICE_NAME }}
     secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
   # Deploy-Prod:
   #   needs: [docker-build]
