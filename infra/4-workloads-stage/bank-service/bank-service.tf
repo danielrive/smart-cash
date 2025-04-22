@@ -194,12 +194,6 @@ resource "github_repository_file" "overlays_svc_kustomization" {
   }
 }
 
-
-
-
-
-
-
 ##### Network Policies
 resource "github_repository_file" "network_policy" {
   repository = data.github_repository.flux-gitops.name

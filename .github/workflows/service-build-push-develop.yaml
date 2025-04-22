@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@feature/istio-mesh
     with:
       AWS_REGION: us-west-2
       ENVIRONMENT: develop
