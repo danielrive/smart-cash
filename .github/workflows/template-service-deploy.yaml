@@ -106,7 +106,7 @@ jobs:
           echo "IMAGE_TAG=$TAG" >> $GITHUB_OUTPUT
   update-image-tag:
     needs: [docker-build]
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@feature/istio-mesh
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'
