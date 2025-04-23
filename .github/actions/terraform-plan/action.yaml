@@ -46,12 +46,12 @@ runs:
         id: terraform-plan
         run: |
             echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
+            export TF_VAR_image_tag=${{ inputs.IMAGE_TAG }}
             terraform plan \
             -input=false \
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
-            -var 'image_tag=${{ inputs.IMAGE_TAG }}' \
             -out ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
         shell: bash
         working-directory: './infra/${{ inputs.WORKING_DIR}}'
