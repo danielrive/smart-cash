@@ -39,7 +39,7 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     outputs:
-      IMAGE_TAG: ${{ steps.build-and-push.outputs.IMAGE_TAG }}
+      IMAGE_TAG: ${{ steps.push-to-ecr.outputs.IMAGE_TAG }}
     steps:
       - name: checkout-repo
         id: checkout
@@ -92,6 +92,7 @@ jobs:
             exit 5
           fi
       - name: push image to ECR
+        id: push-to-ecr
         run: | 
           COMMIT_ID=${{ github.sha }}
           TIMESTAMP=$(date +%s)
