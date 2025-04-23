@@ -146,12 +146,17 @@ resource "github_repository_file" "kustomization" {
     {
       ENVIRONMENT  = var.environment
       SERVICE_NAME = local.this_service_name
+      SERVICE_NAME               = local.this_service_name
+      ECR_REPO                   = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
+  lifecycle {
+    ignore_changes = [content]
+  }
 }
 
 ##### Base manifests
@@ -167,8 +172,6 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_PORT               = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "${local.this_service_name}/health" ## don't include the / at the beginning
       TIER                       = local.tier
-      ECR_REPO                   = module.ecr_registry.repo_url
-      IMAGE_TAG                  = var.image_tag
     }
   )
   commit_message      = "Managed by Terraform"
@@ -196,9 +199,6 @@ resource "github_repository_file" "overlays_svc_patch" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
 }
 ## Kustomization
 resource "github_repository_file" "overlays_svc_kustomization" {

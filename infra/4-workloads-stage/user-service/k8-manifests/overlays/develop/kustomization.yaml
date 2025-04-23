@@ -8,3 +8,20 @@ images:
 
 patches:
   - path: patch-deployment.yaml
+  - target:
+      kind: Deployment
+      name: deployment-${SERVICE_NAME}
+    patch: |
+      - op: add
+        path: /metadata/labels/version
+        value: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
+      - op: add
+        path: /spec/template/metadata/labels/version
+        value: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
+  - target:
+      kind: Service
+      name: ${SERVICE_NAME}
+    patch: |
+      - op: add
+        path: /metadata/labels/version
+        value: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}

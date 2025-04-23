@@ -12,9 +12,3 @@ variable "project_name" {
   description = "project name"
   type        = string
 }
-
-variable "image_tag" {
-  description = "image tag"
-  type        = string
-  default     = "none"
-}

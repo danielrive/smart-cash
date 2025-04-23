@@ -46,7 +46,6 @@ runs:
         id: terraform-plan
         run: |
             echo "Running terraform plan in ${{ inputs.WORKING_DIR}} "
-            export TF_VAR_image_tag=${{ inputs.IMAGE_TAG }}
             terraform plan \
             -input=false \
             -var 'region=${{ env.AWS_REGION }}' \

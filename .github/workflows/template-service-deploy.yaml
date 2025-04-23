@@ -38,8 +38,6 @@ env:
 jobs:
   docker-build:
     runs-on: ubuntu-latest
-    outputs:
-      IMAGE_TAG: ${{ steps.push-to-ecr.outputs.IMAGE_TAG }}
     steps:
       - name: checkout-repo
         id: checkout
@@ -98,27 +96,10 @@ jobs:
           TIMESTAMP=$(date +%s)
           SHORT_COMMIT_ID="${COMMIT_ID:0:5}"
 
-          TAG=${{ inputs.ENVIRONMENT }}-$TIMESTAMP
-
           docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
 
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
           
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_OUTPUT
-  update-image-tag:
-    needs: [docker-build]
-    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@feature/istio-mesh
-    with: 
-      AWS_REGION: 'us-west-2'
-      ENVIRONMENT: 'develop'
-      PROJECT_NAME: 'smart-cash'
-      TERRAFORM_VERSION: '1.9.2'
-      AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
-      STAGE: ${{ inputs.SERVICE_NAME }}
-      IMAGE_TAG: ${{ needs.docker-build.outputs.IMAGE_TAG }}
-    secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER }}
-      GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}
   # Deploy-Prod:
   #   needs: [docker-build]
   #   if: ${{ github.ref_name == 'main' }}
