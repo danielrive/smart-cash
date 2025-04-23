@@ -167,6 +167,7 @@ resource "github_repository_file" "base_manifests" {
       SERVICE_PORT               = local.this_service_port
       SERVICE_PATH_HEALTH_CHECKS = "${local.this_service_name}/health" ## don't include the / at the beginning
       TIER                       = local.tier
+      IMAGE_TAG                  = var.image_tag
     }
   )
   commit_message      = "Managed by Terraform"

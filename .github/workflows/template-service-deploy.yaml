@@ -97,9 +97,13 @@ jobs:
           TIMESTAMP=$(date +%s)
           SHORT_COMMIT_ID="${COMMIT_ID:0:5}"
 
+          TAG=${{ inputs.ENVIRONMENT }}-$TIMESTAMP
+
           docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
 
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
+          
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_OUTPUT
   update-image-tag:
     needs: [docker-build]
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop

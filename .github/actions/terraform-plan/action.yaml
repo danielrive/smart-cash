@@ -11,6 +11,10 @@ inputs:
   WORKING_DIR:
     description: 'workign directory where terraform will run'
     required: true
+  IMAGE_TAG:
+    description: 'image tag to use in trivy scan'
+    required: false
+    default: 'none'
 
 runs:
   using: "composite"
@@ -47,6 +51,7 @@ runs:
             -var 'region=${{ env.AWS_REGION }}' \
             -var 'environment=${{ env.ENVIRONMENT }}' \
             -var 'project_name=${{ env.PROJECT_NAME }}' \
+            -var 'image_tag=${{ inputs.IMAGE_TAG }}' \
             -out ${{ github.run_id }}-${{ inputs.STAGE}}.tfplan
         shell: bash
         working-directory: './infra/${{ inputs.WORKING_DIR}}'

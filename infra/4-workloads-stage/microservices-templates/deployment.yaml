@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ${SERVICE_NAME}
     tier: ${TIER}
-    version: ${VERSION}
+    version: ${IMAGE_TAG}
 spec:
   replicas: 1
   strategy:
@@ -37,7 +37,7 @@ spec:
         runAsGroup: 30001
       containers:
       - name: ${SERVICE_NAME}-container
-        image: service-image
+        image: ${ECR_REPO}:${IMAGE_TAG}
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
