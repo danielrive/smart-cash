@@ -32,6 +32,7 @@ on:
         description: 'image for main container'
         required: false
         default: 'none'
+        type: string
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
