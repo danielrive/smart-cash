@@ -114,6 +114,7 @@ jobs:
       TERRAFORM_VERSION: '1.9.2'
       AWS_IAM_ROLE_GH: 'GitHubAction-smart-cash'
       STAGE: ${{ inputs.SERVICE_NAME }}
+      IMAGE_TAG: ${{ needs.docker-build.outputs.IMAGE_TAG }}
     secrets:
       AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

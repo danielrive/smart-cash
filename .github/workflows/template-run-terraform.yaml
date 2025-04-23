@@ -28,6 +28,10 @@ on:
         description: 'AWS IAM role used to deploy'
         required: true
         type: string
+      IMAGE_TAG:
+        description: 'image for main container'
+        required: false
+        default: 'none'
     secrets: 
       AWS_ACCOUNT_NUMBER:
         description: 'The AWS account number where the resources will be deployed, this is a GitHub secret and is used to pass IAM roles and avoid hardcode the number in the code'
@@ -106,6 +110,7 @@ jobs:
           STAGE: ${{ inputs.STAGE }}
           WORKING_DIR: "${{ needs.validate-working-dir.outputs.WORKING_DIR }}"
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FLUX }}
+          IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
 
 ## Execute the terraform Plan, this is a call to a composite action, this job only will be executed when the event is a push, this allow to review the plan in a PR and then execute the apply in the merge.
   terraform-apply:
