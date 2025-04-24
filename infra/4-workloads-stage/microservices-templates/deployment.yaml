@@ -5,6 +5,7 @@ metadata:
   labels:
     app: ${SERVICE_NAME}
     tier: ${TIER}
+    version: $${VERSION}
 spec:
   replicas: 1
   strategy:
@@ -20,6 +21,7 @@ spec:
       labels:
         app: ${SERVICE_NAME}
         tier: ${TIER}
+        version: ${VERSION}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       topologySpreadConstraints:

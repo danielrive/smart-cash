@@ -11,7 +11,7 @@ patches:
   - target:
       kind: Deployment
       name: deployment-${SERVICE_NAME}
-    patch: |
+    patch: 
       - op: add
         path: /metadata/labels/version
         value: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
