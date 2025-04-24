@@ -21,7 +21,7 @@ spec:
       labels:
         app: ${SERVICE_NAME}
         tier: ${TIER}
-        version: ${VERSION}
+        version: $${VERSION}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       topologySpreadConstraints:
