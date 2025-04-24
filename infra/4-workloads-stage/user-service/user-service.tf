@@ -112,12 +112,12 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   role       = aws_iam_role.iam_sa_role.name
 }
 
-resource "aws_eks_pod_identity_association" "association" {
-  cluster_name    = local.cluster_name
-  namespace       = var.environment
-  service_account = "sa-${local.this_service_name}-service"
-  role_arn        = aws_iam_role.iam_sa_role.arn
-}
+# resource "aws_eks_pod_identity_association" "association" {
+#   cluster_name    = local.cluster_name
+#   namespace       = var.environment
+#   service_account = "sa-${local.this_service_name}-service"
+#   role_arn        = aws_iam_role.iam_sa_role.arn
+# }
 
 #######################
 ####  ECR Repo
