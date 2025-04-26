@@ -112,12 +112,12 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
   role       = aws_iam_role.iam_sa_role.name
 }
 
-# resource "aws_eks_pod_identity_association" "association" {
-#   cluster_name    = local.cluster_name
-#   namespace       = var.environment
-#   service_account = "sa-${local.this_service_name}-service"
-#   role_arn        = aws_iam_role.iam_sa_role.arn
-# }
+resource "aws_eks_pod_identity_association" "association" {
+  cluster_name    = local.cluster_name
+  namespace       = var.environment
+  service_account = "sa-${local.this_service_name}-service"
+  role_arn        = aws_iam_role.iam_sa_role.arn
+}
 
 #######################
 ####  ECR Repo
@@ -251,7 +251,8 @@ resource "github_repository_file" "image_updates" {
       SERVICE_NAME    = local.this_service_name
       ECR_REPO        = module.ecr_registry.repo_url
       ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+      PATH_DEPLOYMENT = "cluster/${local.cluster_name}/bootstrap/flux-system/${local.this_service_name}-kustomize.yaml"
+      
     }
   )
   commit_message      = "Managed by Terraform"
@@ -259,3 +260,5 @@ resource "github_repository_file" "image_updates" {
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
 }
+
+#services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"

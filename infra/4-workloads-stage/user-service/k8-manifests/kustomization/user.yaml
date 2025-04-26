@@ -10,6 +10,10 @@ spec:
     name: flux-system
   path: "services/${SERVICE_NAME}-service/overlays/${ENVIRONMENT}"
   prune: true
+  images:
+  - name: service-image
+    newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
+    newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
   postBuild:
     substitute:
-      APP_Version: "test"
+      APP_VERSION: "none" # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
