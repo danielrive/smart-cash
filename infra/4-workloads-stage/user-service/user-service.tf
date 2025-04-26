@@ -154,9 +154,9 @@ resource "github_repository_file" "kustomization" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
+  # lifecycle {
+  #   ignore_changes = [content]
+  # }
 }
 
 ##### Base manifests
