@@ -251,7 +251,7 @@ resource "github_repository_file" "image_updates" {
       SERVICE_NAME    = local.this_service_name
       ECR_REPO        = module.ecr_registry.repo_url
       ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "clusters/${local.cluster_name}/bootstrap/flux-system/${local.this_service_name}-kustomize.yaml"
+      PATH_DEPLOYMENT = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
       
     }
   )
