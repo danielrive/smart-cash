@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
 - namespaces.yaml
-- helm-opa-gatekeeper.yaml
+#- helm-opa-gatekeeper.yaml
 - helm-nginx-ingress.yaml
 - ebs-storage-class.yaml
 - helm-prometheus.yaml

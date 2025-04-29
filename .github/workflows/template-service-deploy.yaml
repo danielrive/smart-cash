@@ -38,6 +38,8 @@ env:
 jobs:
   docker-build:
     runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.push-to-ecr.outputs.IMAGE_TAG }}
     steps:
       - name: checkout-repo
         id: checkout
@@ -99,23 +101,26 @@ jobs:
           docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
 
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.ENVIRONMENT }}-$TIMESTAMP
+
+          echo "IMAGE_TAG=${{ inputs.ENVIRONMENT }}-$TIMESTAMP" >> $GITHUB_OUTPUT
           
-  # Deploy-Prod:
-  #   needs: [docker-build]
-  #   if: ${{ github.ref_name == 'main' }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #       - name: configure aws credentials
-  #         id: aws-creds-config
-  #         uses: aws-actions/configure-aws-credentials@v4
-  #         with:
-  #           role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
-  #           role-session-name: GitHub_to_AWS_via_FederatedOIDC
-  #           aws-region: ${{ inputs.AWS_REGION }}
-  #       - name: Deploy
-  #         id: Get last Docker image from prod
-  #         run: |
-  #           echo " ---> Deploying to prod"
+  Deploy-Prod:
+    needs: [docker-build]
+    if: ${{ github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+        - name: configure aws credentials
+          id: aws-creds-config
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ env.AWS_IAM_ROLE_GH }}'
+            role-session-name: GitHub_to_AWS_via_FederatedOIDC
+            aws-region: ${{ inputs.AWS_REGION }}
+        - name: Deploy
+          id: Get last Docker image from prod
+          run: |
+            echo " ---> Deploying to prod"
+            echo "Deploying the image with tag ${{ needs.docker-build.outputs.IMAGE_TAG }}"
 
       
 
