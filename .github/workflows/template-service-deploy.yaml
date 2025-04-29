@@ -117,7 +117,7 @@ jobs:
             role-session-name: GitHub_to_AWS_via_FederatedOIDC
             aws-region: ${{ inputs.AWS_REGION }}
         - name: Deploy
-          id: Get last Docker image from prod
+          id: deploy
           run: |
             echo " ---> Deploying to prod"
             echo "Deploying the image with tag ${{ needs.docker-build.outputs.IMAGE_TAG }}"
