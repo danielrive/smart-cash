@@ -4,6 +4,9 @@ metadata:
   name: deployment-${SERVICE_NAME}
 spec:
   template:
+    metadata:
+        labels:
+          istio.io/dataplane-mode: ambient
     spec:
       containers:
       - name: ${SERVICE_NAME}-container

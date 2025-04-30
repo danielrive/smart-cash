@@ -13,7 +13,7 @@ spec:
   images:
   - name: service-image
     newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
-    newTag: develop # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
+    newTag: ${ENVIRONMENT} # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
   postBuild:
     substitute:
       APP_VERSION: "none" # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
