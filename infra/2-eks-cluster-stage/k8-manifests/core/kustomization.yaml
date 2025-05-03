@@ -5,9 +5,9 @@ resources:
 - namespaces.yaml
 #- helm-opa-gatekeeper.yaml
 - helm-nginx-ingress.yaml
-- ebs-storage-class.yaml
-- helm-prometheus.yaml
-- helm-cert-manager.yaml
-- helm-fluent-bit.yaml
-- helm-otel-collector.yaml
+#- ebs-storage-class.yaml
+#- helm-prometheus.yaml
+#- helm-cert-manager.yaml
+#- helm-fluent-bit.yaml
+#- helm-otel-collector.yaml
 #- helm-istio.yaml
