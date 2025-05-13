@@ -4,6 +4,7 @@ metadata:
   name: ${ENVIRONMENT}
   labels:
     project: ${PROJECT}
+    istio.io/dataplane-mode: ambient
 
 ---
 
