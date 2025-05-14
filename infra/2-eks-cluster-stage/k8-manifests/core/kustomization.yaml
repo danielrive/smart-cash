@@ -10,4 +10,4 @@ resources:
 - helm-cert-manager.yaml
 #- helm-fluent-bit.yaml
 #- helm-otel-collector.yaml
-#- helm-istio.yaml
+- helm-istio.yaml
