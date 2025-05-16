@@ -121,6 +121,7 @@ resource "github_repository_file" "kustomization" {
     {
       ENVIRONMENT  = var.environment
       SERVICE_NAME = local.this_service_name
+      ECR_REPO                   = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"
