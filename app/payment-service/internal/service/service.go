@@ -47,15 +47,6 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	expense := models.Expense{}
 	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
 
-	// Validate if User exist and is not blocked
-	// Validate if user exist
-	if !s.validateUser(paymentRequest.UserId) {
-		s.logger.Error("error user not found",
-			"userId", paymentRequest.UserId,
-			"level", "service",
-		)
-		return models.TransactionRequest{}, common.ErrUserNotFound
-	}
 	s.logger.Info("calling" + expenseBaseURL)
 	resp, err := http.Get(expenseBaseURL)
 	if err != nil {
@@ -73,6 +64,16 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 			"error", err.Error(),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
+	}
+
+	// Validate if User exist and is not blocked
+	// Validate if user exist
+	if !s.validateUser(expense.UserId) {
+		s.logger.Error("error user not found",
+			"userId", paymentRequest.UserId,
+			"level", "service",
+		)
+		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
 
 	// create transaction to bank
