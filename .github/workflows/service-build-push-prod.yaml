@@ -1,5 +1,5 @@
-name: DEVELOP Microservice deploy 
-run-name: Develop-services-deploy
+name: PROD Microservice deploy 
+run-name: Prod-services-deploy
 
 on:
   workflow_dispatch:
@@ -19,9 +19,7 @@ on:
           
   push:
     branches:
-      - develop
-      - feat/*
-      - feature/*
+      - main2
     paths:
       - "app/**"
       - '!app/utils/**'
@@ -81,12 +79,12 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.validate-service-updated.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
-    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@feature/istio-mesh
+    uses: danielrive/smart-cash/.github/workflows/template-service-deploy.yaml@develop
     with:
       AWS_REGION: us-west-2
-      ENVIRONMENT: develop
+      ENVIRONMENT: production
       PROJECT_NAME: smart-cash
       SERVICE_NAME: ${{ matrix.folders }}
     secrets:
-      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_DEVELOP }}
+      AWS_ACCOUNT_NUMBER: ${{ secrets.AWS_ACCOUNT_NUMBER_PRODUCTION }}
       GH_TOKEN_FLUX: ${{ secrets.GH_TOKEN_FLUXCD }}

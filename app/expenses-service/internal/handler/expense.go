@@ -47,15 +47,25 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
+	// OTel trace instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
 	expense := models.Expense{}
+	expense.UserId = c.GetHeader("UserId")
+	if expense.UserId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
+			"details": "no UserId in header"})
+		h.logger.Error("no user ID in header",
+			"level", "Handler")
+		return
+	}
 	// bind the JSON data to the user struct
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		h.logger.Error("error binding json",
 			"error", err.Error(),
+			"level", "Handler",
 		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -65,6 +75,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("error processing expense",
 			"error", err.Error(),
+			"level", "Handler",
 		)
 		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return

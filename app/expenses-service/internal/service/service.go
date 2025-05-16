@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
@@ -35,17 +39,23 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
+	// OTel trace instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "CreateExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
+
+	// Validate if user exist
+	if !s.validateUser(expense.UserId) {
+		return models.ExpensesReturn{}, common.ErrUserNotFound
+	}
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
 	expense.Date = time.Now().UTC().Format("2006-01-02")
 	// Create UUID
 	expense.ExpenseId = s.uuid.New()
-	time.Sleep(2 * time.Second)
+
 	if expense.Category == "" {
 		expense.Category = "none"
 	}
@@ -54,6 +64,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
+			"level", "service",
 		)
 		return models.ExpensesReturn{}, err
 	}
@@ -107,4 +118,42 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 		return expenses, err
 	}
 	return expenses, nil
+}
+
+// Function to validate if user exist and is active
+
+func (s *ExpensesService) validateUser(userId string) bool {
+	// OTel instrumentation
+	//tr := otel.Tracer(common.ServiceName)
+	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
+	//childSpan.SetAttributes(attribute.String("component", "service"))
+	//defer childSpan.End()
+
+	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
+	user := models.User{}
+
+	// Validate if User exist and is not blocked
+	resp, err := http.Get(userBaseURL)
+	if err != nil {
+		s.logger.Error("error creating the http request",
+			"error", err.Error(),
+			"url", userBaseURL,
+			"level", "service",
+		)
+		return false
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(respBody, &user)
+	if err != nil {
+		s.logger.Error("error could not parse response body for user",
+			"error", err.Error(),
+			"level", "service",
+		)
+		return false
+	}
+
+	return true
 }

@@ -40,6 +40,7 @@ func init() {
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
+
 	// validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if domainName == "" {
@@ -65,7 +66,7 @@ func init() {
 	}
 
 	common.ServiceName = os.Getenv("SERVICE_NAME")
-	if otelCollector == "" {
+	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}
@@ -73,6 +74,10 @@ func init() {
 }
 
 func main() {
+	// Init OTel TracerProvider
+	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
+
+	otel.SetTracerProvider(tp)
 
 	// configure the SDK
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

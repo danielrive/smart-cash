@@ -27,6 +27,7 @@ func NewPaymentHandler(paymentService *service.PaymentService, logger *slog.Logg
 // Handler for creating new user
 
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
+	// OTel Instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetTransaction")
 	defer childSpan.End()
@@ -36,6 +37,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	if err := c.ShouldBindJSON(&transaction); err != nil {
 		h.logger.Error("error binding json",
 			"error", err.Error(),
+			"level", "handler",
 		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
@@ -45,6 +47,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
+			"level", "handler",
 		)
 		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return

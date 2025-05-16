@@ -122,6 +122,7 @@ resource "github_repository_file" "kustomization" {
     {
       ENVIRONMENT  = var.environment
       SERVICE_NAME = local.this_service_name
+      ECR_REPO                   = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"
@@ -168,9 +169,6 @@ resource "github_repository_file" "overlays_svc_patch" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
 }
 ## Kustomization
 resource "github_repository_file" "overlays_svc_kustomization" {
@@ -189,16 +187,7 @@ resource "github_repository_file" "overlays_svc_kustomization" {
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-  lifecycle {
-    ignore_changes = [content]
-  }
 }
-
-
-
-
-
-
 
 ##### Network Policies
 resource "github_repository_file" "network_policy" {
@@ -230,7 +219,7 @@ resource "github_repository_file" "image_updates" {
       SERVICE_NAME    = local.this_service_name
       ECR_REPO        = module.ecr_registry.repo_url
       ENVIRONMENT     = var.environment
-      PATH_DEPLOYMENT = "services/${local.this_service_name}-service/overlays/${var.environment}/kustomization.yaml"
+      PATH_DEPLOYMENT = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
     }
   )
   commit_message      = "Managed by Terraform"

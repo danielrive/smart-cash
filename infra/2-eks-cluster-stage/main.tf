@@ -18,7 +18,7 @@ module "eks_cluster" {
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = "1.30"
+  cluster_version              = "1.31"
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
   private_endpoint_api         = true
   public_endpoint_api          = true
@@ -98,23 +98,21 @@ resource "null_resource" "bootstrap-flux" {
     always_run = timestamp() # this will always run
   }
 }
-/*
-### Force to update the Pod to take the changes in the SA
-resource "null_resource" "restart_image_reflector" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+
+// Install kubernetes gateway resources
+
+resource "null_resource" "install-k8-gateways" {
+  depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    aws eks update-kubeconfig --name ${local.cluster_name} --region ${var.region}
-    flux reconcile kustomization flux-system --with-source
-    sleep 5
-    kubectl rollout restart deployment image-reflector-controller -n flux-system
+    ./install-k8-gateway.sh ${local.cluster_name}  ${var.region}
     EOF
   }
   triggers = {
     always_run = timestamp() # this will always run
   }
 }
-*/
+
 ###############################
 ####  GitOps Configuration 
 

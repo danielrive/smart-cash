@@ -18,6 +18,7 @@ on:
           - expenses-service
           - frontend-service
           - hydradb-service
+          - payment-service
   push:
     branches:
       - develop
