@@ -97,7 +97,6 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	}
 
 	return transaction, nil
-
 }
 
 func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {

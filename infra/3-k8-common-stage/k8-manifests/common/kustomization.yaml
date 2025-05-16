@@ -6,4 +6,4 @@ resources:
 - cluster-issuer.yaml
 - certificates.yaml
 - ingress.yaml
-#- jaeger.yaml
+- jaeger.yaml
