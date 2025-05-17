@@ -50,8 +50,6 @@ kind: Ingress
 metadata:
   name: frontend-ingress
   namespace: ${ENVIRONMENT}
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
