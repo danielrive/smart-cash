@@ -38,6 +38,7 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 }
 
 func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.TransactionRequest, error) {
+<<<<<<< HEAD
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
@@ -78,6 +79,19 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	// Validate expense
 
 	resp, err = http.Get(expenseBaseURL)
+=======
+	// OTel instrumentation
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
+	defer childSpan.End()
+
+	user := models.User{}
+	expense := models.Expense{}
+	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
+
+	s.logger.Info("calling" + expenseBaseURL)
+	resp, err := http.Get(expenseBaseURL)
+>>>>>>> develop
 	if err != nil {
 		s.logger.Error("error creating the http request",
 			"error", err.Error(),
@@ -85,7 +99,11 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
+<<<<<<< HEAD
 	respBody, _ = io.ReadAll(resp.Body)
+=======
+	respBody, _ := io.ReadAll(resp.Body)
+>>>>>>> develop
 
 	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
@@ -95,6 +113,19 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
 
+<<<<<<< HEAD
+=======
+	// Validate if User exist and is not blocked
+	// Validate if user exist
+	if !s.validateUser(expense.UserId) {
+		s.logger.Error("error user not found",
+			"userId", paymentRequest.UserId,
+			"level", "service",
+		)
+		return models.TransactionRequest{}, common.ErrUserNotFound
+	}
+
+>>>>>>> develop
 	// create transaction to bank
 
 	transaction := models.TransactionRequest{
@@ -116,7 +147,10 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	}
 
 	return transaction, nil
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
 }
 
 func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {
@@ -133,3 +167,40 @@ func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.
 	return transaction, nil
 
 }
+<<<<<<< HEAD
+=======
+
+func (s *PaymentService) validateUser(userId string) bool {
+	// OTel instrumentation
+	//tr := otel.Tracer(common.ServiceName)
+	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
+	//childSpan.SetAttributes(attribute.String("component", "service"))
+	//defer childSpan.End()
+
+	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
+	user := models.User{}
+
+	// Validate if User exist and is not blocked
+	resp, err := http.Get(userBaseURL)
+	if err != nil {
+		s.logger.Error("error creating the http request",
+			"error", err.Error(),
+			"url", userBaseURL,
+		)
+		return false
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(respBody, &user)
+	if err != nil {
+		s.logger.Error("error could not parse response body for user",
+			"error", err.Error(),
+		)
+		return false
+	}
+
+	return true
+}
+>>>>>>> develop

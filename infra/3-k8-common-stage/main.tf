@@ -36,10 +36,10 @@ resource "github_repository_file" "common_resources" {
     "${local.path_tf_repo_flux_common}/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION  = var.region
-      ENVIRONMENT = var.environment
-      PROJECT     = var.project_name
-      DOMAIN_NAME = local.domain_name
+      AWS_REGION   = var.region
+      ENVIRONMENT  = var.environment
+      PROJECT      = var.project_name
+      DOMAIN_NAME  = local.domain_name
       CLUSTER_NAME = local.cluster_name
 
     }

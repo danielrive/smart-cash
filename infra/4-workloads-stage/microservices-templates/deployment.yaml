@@ -5,6 +5,7 @@ metadata:
   labels:
     app: ${SERVICE_NAME}
     tier: ${TIER}
+    version: $${APP_VERSION:=none}
 spec:
   replicas: 1
   strategy:
@@ -20,6 +21,7 @@ spec:
       labels:
         app: ${SERVICE_NAME}
         tier: ${TIER}
+        version: $${APP_VERSION:=none}
     spec:
       serviceAccountName: sa-${SERVICE_NAME}-service
       topologySpreadConstraints:
@@ -43,9 +45,10 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           requests:
-            memory: "50Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            memory: "10Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            cpu: "1m"
           limits:
-            memory: "50Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+            memory: "10Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
         - containerPort: ${SERVICE_PORT}
         livenessProbe:

@@ -4,6 +4,7 @@ metadata:
   name: ${ENVIRONMENT}
   labels:
     project: ${PROJECT}
+    istio.io/dataplane-mode: ambient
 
 ---
 
@@ -53,4 +54,4 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: karpenter
+  name: istio-system

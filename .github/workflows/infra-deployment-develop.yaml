@@ -18,6 +18,10 @@ on:
           - expenses-service
           - frontend-service
           - hydradb-service
+<<<<<<< HEAD
+=======
+          - payment-service
+>>>>>>> develop
   push:
     branches:
       - develop
@@ -91,7 +95,11 @@ jobs:
       max-parallel: 1
       matrix: ${{ fromJSON(needs.VALIDATE_STAGE_UPDATED.outputs.FOLDERS_UPDATED) }}
       fail-fast: false
+<<<<<<< HEAD
     uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@feature/enrich-otel
+=======
+    uses: danielrive/smart-cash/.github/workflows/template-run-terraform.yaml@develop
+>>>>>>> develop
     with: 
       AWS_REGION: 'us-west-2'
       ENVIRONMENT: 'develop'

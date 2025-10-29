@@ -1,0 +1,13 @@
+{
+    "terraform": 1.19,
+    "terraformAwsProvider": "5.41.0",
+    "tfnetworkingModule":1.17,
+    "eksvpccni": "1.19.2",
+    "fluentbit": "0.47.9",
+    "certmanager": "1.15.3",
+    "prometheus": "62.3.1",
+    "otelcollector": "0.109.0"
+
+
+
+}

@@ -3,11 +3,8 @@ locals {
   eks_node_group_name = "${var.project_name}-${var.environment}-eks-node-group"
 }
 
-#########################
-####  IAM EKS Role  ####
-########################
-
-# Role that will be used by the EKS cluster to make calls to aws services like ec2 instances, tag ec2 instances.
+####  IAM EKS Role  
+# Role that will be used by the EKS cluster to make calls to aws services.
 
 resource "aws_iam_role" "eks_iam_role" {
   name               = "role-eks-${var.cluster_name}-${var.region}"
@@ -34,9 +31,8 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_iam_role.name
 }
 
-#############################
-### cloudwatch logs group ###
-#############################
+
+### cloudwatch logs group 
 
 resource "aws_cloudwatch_log_group" "log_groups_control_plane" {
   name              = "/aws/eks/${var.cluster_name}/cluster"
@@ -50,9 +46,8 @@ resource "aws_cloudwatch_log_group" "log_groups_workloads" {
   kms_key_id        = var.kms_arn
 }
 
-#######################
+
 ##### EKS Cluster  ####
-#######################
 
 resource "aws_eks_cluster" "kube_cluster" {
   depends_on                = [aws_cloudwatch_log_group.log_groups_control_plane]
@@ -74,6 +69,9 @@ resource "aws_eks_cluster" "kube_cluster" {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = var.private_endpoint_api
     endpoint_public_access  = var.public_endpoint_api
+  }
+  tags = {
+    "karpenter.sh/discovery" = var.cluster_name
   }
 }
 
@@ -157,10 +155,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role" {
 
 
 ##################
-## OIDC Config ###
-##################
-
-# Configure OIDC for IRSA(IAM Roles for Service Accounts)
+## OIDC Config 
 
 # Get tls certificate from EKS cluster identity issuer
 data "tls_certificate" "cluster" {
@@ -175,13 +170,11 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
   url             = aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer
 }
 
-
-################################
 #####  EKS worker node role ####
-################################
 
 resource "aws_iam_role" "worker_nodes" {
   name = "role-${local.eks_node_group_name}"
+  depends_on = [aws_eks_cluster.kube_cluster]
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRole"
@@ -205,10 +198,18 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   role       = aws_iam_role.worker_nodes.name
 }
 
+resource "aws_iam_role_policy_attachment" "cni_policy_node" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.worker_nodes.name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.worker_nodes.name
+}
 
 ################################
-#####  EKS manage node group ###
-################################
+#####  EKS manage node group
 
 // Launch configuration for Node Group
 
@@ -239,21 +240,18 @@ resource "aws_launch_template" "node_group" {
   }
 }
 
-/*
-node group managed by eks, this contains the ec2 instances that will be the worker nodes
-ec2 instances has associated the node role created before
-*/
 resource "aws_eks_node_group" "worker-node-group" {
   cluster_name    = var.cluster_name
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
+  version =   var.cluster_version
   subnet_ids      = var.subnet_ids
   ami_type        = var.AMI_for_worker_nodes
   update_config {
     max_unavailable = 1
   }
   scaling_config {
-    desired_size = var.min_instances_node_group
+    desired_size = var.desired_nodes
     max_size     = var.max_instances_node_group
     min_size     = var.min_instances_node_group
   }
@@ -261,8 +259,6 @@ resource "aws_eks_node_group" "worker-node-group" {
     id      = aws_launch_template.node_group.id
     version = aws_launch_template.node_group.latest_version
   }
-  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
-  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_eks_cluster.kube_cluster,
@@ -271,32 +267,38 @@ resource "aws_eks_node_group" "worker-node-group" {
   ]
 }
 
+#####################
+### Pod Identity  
 
-################
+## Install EBS add-on
+resource "aws_eks_addon" "pod_identity" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.pod_identity_version
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
 ### VPC CNI  ###
-################
 
 // IAM role for CNI add-on
-
 resource "aws_iam_role" "vpc_cni_role" {
   name               = "vpc-cni-${var.cluster_name}-${var.region}"
   path               = "/"
-  assume_role_policy = <<EOF
+ assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
             "Effect": "Allow",
             "Principal": {
-                "Federated": "arn:aws:iam::${var.account_number}:oidc-provider/${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}"
+                "Service": "pods.eks.amazonaws.com"
             },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-                "StringEquals": {
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com",
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-node"
-                }
-            }
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
         }
     ]
 }
@@ -311,10 +313,14 @@ resource "aws_iam_role_policy_attachment" "cni_policy" {
 
 ## Install CNI add-on
 resource "aws_eks_addon" "vpc-cni" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.vpc_cni_version
-  service_account_role_arn    = aws_iam_role.vpc_cni_role.arn
+  pod_identity_association      {
+    role_arn =  aws_iam_role.vpc_cni_role.arn
+    service_account = "aws-node"
+    }
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
     enableNetworkPolicy = "true"
@@ -323,11 +329,9 @@ resource "aws_eks_addon" "vpc-cni" {
 
 
 ################
-### EBS CSI  ###
-################
+### EBS CSI 
 
 // IAM role for CSI add-on
-
 resource "aws_iam_role" "ebs_csi_role" {
   name               = "ebs-cni-role-${var.cluster_name}-${var.region}"
   path               = "/"
@@ -336,17 +340,15 @@ resource "aws_iam_role" "ebs_csi_role" {
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
             "Effect": "Allow",
             "Principal": {
-                "Federated": "arn:aws:iam::${var.account_number}:oidc-provider/${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}"
+                "Service": "pods.eks.amazonaws.com"
             },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-                "StringEquals": {
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com",
-                    "${replace(aws_eks_cluster.kube_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-                }
-            }
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
         }
     ]
 }
@@ -361,12 +363,17 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
 
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
+  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "aws-ebs-csi-driver"
   addon_version               = var.ebs_csi_version
-  service_account_role_arn    = aws_iam_role.ebs_csi_role.arn
+   pod_identity_association      {
+    role_arn =  aws_iam_role.ebs_csi_role.arn
+    service_account = "ebs-csi-controller-sa"
+    }
   resolve_conflicts_on_update = "OVERWRITE"
 }
+<<<<<<< HEAD
 
 
 
@@ -381,3 +388,5 @@ resource "aws_eks_addon" "pod_identity" {
   addon_version               = var.pod_identity_version
   resolve_conflicts_on_update = "OVERWRITE"
 }
+=======
+>>>>>>> develop

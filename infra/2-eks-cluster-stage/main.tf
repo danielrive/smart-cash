@@ -18,15 +18,15 @@ module "eks_cluster" {
   region                       = var.region
   cluster_name                 = local.cluster_name
   project_name                 = var.project_name
-  cluster_version              = "1.29"
+  cluster_version              = "1.31"
   subnet_ids                   = data.terraform_remote_state.base.outputs.public_subnets ## fLUX NEED INTERNET ACCESS, NAT not used to avoid costs
   private_endpoint_api         = true
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
-  vpc_cni_version              = "v1.18.3-eksbuild.1"
-  ebs_csi_version              = "v1.34.0-eksbuild.1"
-  pod_identity_version         = "v1.3.2-eksbuild.2"
+  vpc_cni_version              = "v1.19.2-eksbuild.1"
+  ebs_csi_version              = "v1.38.1-eksbuild.1"
+  pod_identity_version         = "v1.3.4-eksbuild.1"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster
   retention_control_plane_logs = 7
   cluster_enabled_log_types    = ["audit", "api", "authenticator"]
@@ -34,19 +34,18 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 3
-  max_instances_node_group   = 3
-  min_instances_node_group   = 3
+  desired_nodes              = 4
+  max_instances_node_group   = 4
+  min_instances_node_group   = 4
   storage_nodes              = 20
 }
-
 
 ##############################
 ### Flux imageupdate role
 
 module "flux_imageupdate_role" {
   depends_on      = [module.eks_cluster]
-  source          = "../modules/flux-image-repo-role"
+  source          = "../modules/flux-image-update-role"
   environment     = var.environment
   region          = var.region
   cluster_name    = local.cluster_name
@@ -67,9 +66,20 @@ module "cert_manager" {
   namespace       = "cert-manager"
 }
 
+######################
+### fluentbit role
+
+module "fuent-bit-role" {
+  source         = "../modules/fluent-bit-role"
+  environment    = var.environment
+  region         = var.region
+  cluster_name   = local.cluster_name
+  cluster_oidc   = module.eks_cluster.cluster_oidc
+  account_number = data.aws_caller_identity.id_account.id
+}
+
 ############################
 #####  Flux Bootstrap 
-
 
 ### Get Kubeconfig, arguments in bash script bootstrap-flux.sh
 # $1 = CLUSTER_NAME
@@ -89,15 +99,13 @@ resource "null_resource" "bootstrap-flux" {
   }
 }
 
-### Force to update the Pod to take the changes in the SA
-resource "null_resource" "restart_image_reflector" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+// Install kubernetes gateway resources
+
+resource "null_resource" "install-k8-gateways" {
+  depends_on = [module.eks_cluster]
   provisioner "local-exec" {
     command = <<EOF
-    aws eks update-kubeconfig --name ${local.cluster_name}  --region ${var.region}
-    flux reconcile kustomization flux-system --with-source
-    sleep 5
-    kubectl rollout restart deployment image-reflector-controller -n flux-system
+    ./install-k8-gateway.sh ${local.cluster_name}  ${var.region}
     EOF
   }
   triggers = {
@@ -148,7 +156,7 @@ resource "github_repository_file" "sources" {
 
 ##### Core resources
 resource "github_repository_file" "core_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux,github_repository_file.kustomizations]
   for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -182,22 +190,12 @@ resource "github_repository_file" "jaeger_resources" {
     "${local.path_tf_repo_flux_core}/jaeger/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION            = var.region
-      ENVIRONMENT           = var.environment
+      AWS_REGION  = var.region
+      ENVIRONMENT = var.environment
     }
   )
   commit_message      = "Managed by Terraform"
   commit_author       = "From terraform"
   commit_email        = "gitops@smartcash.com"
   overwrite_on_create = true
-}
-
-
-module "fuent-bit-role" {
-  source         = "../modules/fluent-bit-role"
-  environment    = var.environment
-  region         = var.region
-  cluster_name   = local.cluster_name
-  cluster_oidc   = module.eks_cluster.cluster_oidc
-  account_number = data.aws_caller_identity.id_account.id
 }

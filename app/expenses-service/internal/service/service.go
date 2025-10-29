@@ -2,7 +2,15 @@ package service
 
 import (
 	"context"
+<<<<<<< HEAD
 	"log/slog"
+=======
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+>>>>>>> develop
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
@@ -35,10 +43,23 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
+<<<<<<< HEAD
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
+=======
+	// OTel trace instrumentation
+	tr := otel.Tracer(common.ServiceName)
+	trContext, childSpan := tr.Start(ctx, "CreateExpense")
+	childSpan.SetAttributes(attribute.String("component", "service"))
+	defer childSpan.End()
+
+	// Validate if user exist
+	if !s.validateUser(expense.UserId) {
+		return models.ExpensesReturn{}, common.ErrUserNotFound
+	}
+>>>>>>> develop
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
@@ -54,6 +75,10 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
+<<<<<<< HEAD
+=======
+			"level", "service",
+>>>>>>> develop
 		)
 		return models.ExpensesReturn{}, err
 	}
@@ -108,3 +133,44 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 	}
 	return expenses, nil
 }
+<<<<<<< HEAD
+=======
+
+// Function to validate if user exist and is active
+
+func (s *ExpensesService) validateUser(userId string) bool {
+	// OTel instrumentation
+	//tr := otel.Tracer(common.ServiceName)
+	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
+	//childSpan.SetAttributes(attribute.String("component", "service"))
+	//defer childSpan.End()
+
+	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
+	user := models.User{}
+
+	// Validate if User exist and is not blocked
+	resp, err := http.Get(userBaseURL)
+	if err != nil {
+		s.logger.Error("error creating the http request",
+			"error", err.Error(),
+			"url", userBaseURL,
+			"level", "service",
+		)
+		return false
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(respBody, &user)
+	if err != nil {
+		s.logger.Error("error could not parse response body for user",
+			"error", err.Error(),
+			"level", "service",
+		)
+		return false
+	}
+
+	return true
+}
+>>>>>>> develop

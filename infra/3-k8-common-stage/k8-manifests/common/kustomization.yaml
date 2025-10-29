@@ -1,9 +1,8 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
+apiVersion: kustomize.config.k8s.io/v1
 kind: Kustomization
 
 resources:
-- nodePoolWorkloads.yaml
-- opa-templates.yaml
+#- opa-templates.yaml
 - cluster-issuer.yaml
 - certificates.yaml
 - ingress.yaml

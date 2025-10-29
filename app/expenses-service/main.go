@@ -59,7 +59,11 @@ func init() {
 	}
 
 	common.ServiceName = os.Getenv("SERVICE_NAME")
+<<<<<<< HEAD
 	if otelCollector == "" {
+=======
+	if common.ServiceName == "" {
+>>>>>>> develop
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}
@@ -102,7 +106,7 @@ func main() {
 	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
 	// create expenses
-	router.POST("/expenses/", expensesHandler.CreateExpense)
+	router.POST("/expenses", expensesHandler.CreateExpense)
 
 	// define router for get expenses by tag
 	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)

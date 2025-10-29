@@ -18,6 +18,7 @@ type ExpensesReturn struct {
 	Date      string  `json:"date" dynamodbav:"date"`
 	Name      string  `json:"name" dynamodbav:"name"`
 	Amount    float64 `json:"amount" dynamodbav:"amount"`
+	UserId    string  `json:"userId" dynamodbav:"userId"`
 	Status    string  `json:"priority" dynamodbav:"priority"`
 }
 

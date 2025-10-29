@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ${SERVICE_NAME}
+  labels:
+    tier: ${TIER}
 spec:
   type:  ClusterIP
   selector:

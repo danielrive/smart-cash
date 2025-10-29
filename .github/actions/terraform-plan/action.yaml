@@ -11,6 +11,10 @@ inputs:
   WORKING_DIR:
     description: 'workign directory where terraform will run'
     required: true
+  IMAGE_TAG:
+    description: 'image tag to use in main container'
+    required: false
+    default: 'none'
 
 runs:
   using: "composite"

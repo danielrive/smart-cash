@@ -22,6 +22,10 @@ type Expense struct {
 	Name      string  `json:"name" dynamodbav:"name"`
 	Amount    float64 `json:"amount" dynamodbav:"amount"`
 	Status    string  `json:"priority" dynamodbav:"priority"`
+<<<<<<< HEAD
+=======
+	UserId    string  `json:"userId" dynamodbav:"userId"`
+>>>>>>> develop
 }
 
 type PaymentRequest struct {
