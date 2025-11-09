@@ -7,6 +7,7 @@ import (
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/expenses-service/models"
+	"smart-cash/expenses-service/internal/handler/dto"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -47,17 +48,13 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
-<<<<<<< HEAD
-=======
-	// OTel trace instrumentation
->>>>>>> develop
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
-	expense := models.Expense{}
-	expense.UserId = c.GetHeader("UserId")
-	if expense.UserId == "" {
+	var expenseRequest dto.CreateExpenseRequest
+	expenseRequest.UserId = c.GetHeader("UserId")
+	if expenseRequest.UserId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
 			"details": "no UserId in header"})
 		h.logger.Error("no user ID in header",
@@ -65,7 +62,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&expense); err != nil {
+	if err := c.ShouldBindJSON(&expenseRequest); err != nil {
 		h.logger.Error("error binding json",
 			"error", err.Error(),
 			"level", "Handler",
@@ -74,7 +71,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 	// create the expense
-	response, err := h.expensesService.CreateExpense(trContext, expense)
+	response, err := h.expensesService.CreateExpense(trContext, expenseRequest)
 	if err != nil {
 		h.logger.Error("error processing expense",
 			"error", err.Error(),

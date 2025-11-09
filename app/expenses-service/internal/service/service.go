@@ -2,15 +2,11 @@ package service
 
 import (
 	"context"
-<<<<<<< HEAD
-	"log/slog"
-=======
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
->>>>>>> develop
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
@@ -43,12 +39,6 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-<<<<<<< HEAD
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
-	childSpan.SetAttributes(attribute.String("component", "service"))
-	defer childSpan.End()
-=======
 	// OTel trace instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "CreateExpense")
@@ -59,7 +49,6 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if !s.validateUser(expense.UserId) {
 		return models.ExpensesReturn{}, common.ErrUserNotFound
 	}
->>>>>>> develop
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
@@ -75,10 +64,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
-<<<<<<< HEAD
-=======
 			"level", "service",
->>>>>>> develop
 		)
 		return models.ExpensesReturn{}, err
 	}
@@ -133,8 +119,6 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 	}
 	return expenses, nil
 }
-<<<<<<< HEAD
-=======
 
 // Function to validate if user exist and is active
 
@@ -173,4 +157,3 @@ func (s *ExpensesService) validateUser(userId string) bool {
 
 	return true
 }
->>>>>>> develop
