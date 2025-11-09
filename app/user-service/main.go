@@ -91,7 +91,7 @@ func main() {
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 
 	// new UUID helper

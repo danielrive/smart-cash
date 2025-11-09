@@ -89,7 +89,7 @@ func main() {
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 
 	// // Initialize expenses repository

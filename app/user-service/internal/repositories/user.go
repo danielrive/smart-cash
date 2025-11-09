@@ -53,7 +53,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 		},
 	}
 	// call dynamoDB GetItem
-	response, err := r.client.GetItem(context.TODO(), input)
+	response, err := r.client.GetItem(ctx, input)
 
 	if err != nil {
 		r.logger.Error("dynamodb get item failed",
@@ -104,14 +104,14 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 		ConditionExpression: aws.String("attribute_not_exists(userId)"),
 	}
 	// call dynamodb put item
-	_, err = r.client.PutItem(context.TODO(), input)
+	_, err = r.client.PutItem(ctx, input)
 
 	if err != nil {
 		r.logger.Error("dynamodb error put item",
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
-		return output, common.ErrUserNoCreated
+		return output, common.ErrUserNotCreated
 	}
 	// create output response
 	output.UserId = u.UserId
@@ -143,14 +143,14 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 		Item:      item,
 	}
 	// call dynamodb put item
-	_, err = r.client.PutItem(context.TODO(), input)
+	_, err = r.client.PutItem(ctx, input)
 
 	if err != nil {
 		r.logger.Error("dynamodb error put item",
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
-		return output, common.ErrUserNoCreated
+		return output, common.ErrUserNotCreated
 	}
 	// create output response
 	output.UserId = u.UserId
@@ -192,7 +192,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	}
 	// Execute the query
 
-	response, err := r.client.Query(context.TODO(), queryInput)
+	response, err := r.client.Query(ctx, queryInput)
 
 	if err != nil {
 		r.logger.Error("dynamodb error query item",

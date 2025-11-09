@@ -38,7 +38,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 
 	output := models.BankUser{}
 	// Get bank item by id
-	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.bankTable),
 		Key: map[string]types.AttributeValue{
 			"userId": &types.AttributeValueMemberS{Value: id},
@@ -104,7 +104,7 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	_, err = r.client.UpdateItem(context.TODO(), inputUpdate)
+	_, err = r.client.UpdateItem(ctx, inputUpdate)
 
 	// Update bank item
 	if err != nil {

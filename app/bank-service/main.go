@@ -91,9 +91,9 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(otelCollector, otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 	// // Initialize bank repository
 	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, bankTable, logger) // Harcoded dynamotable to use data already uploaded
