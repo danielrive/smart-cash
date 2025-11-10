@@ -11,6 +11,7 @@ import (
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -23,6 +24,7 @@ var (
 	otelCollector     string
 	expensesTable     string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
 	logger            *slog.Logger
 )
@@ -64,6 +66,13 @@ func init() {
 		os.Exit(1)
 	}
 
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
+
 }
 
 func main() {
@@ -101,18 +110,25 @@ func main() {
 	// Init expenses handler
 	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
 
-	// create expenses
-	router.POST("/expenses", expensesHandler.CreateExpense)
-
-	// define router for get expenses by tag
-	router.GET("/expenses/:expenseId", expensesHandler.GetExpensesById)
-	// define router for get expenses by category or userId
-	router.GET("/expenses", expensesHandler.GetExpensesByQuery)
-
-	router.DELETE("/expenses/:expenseId", expensesHandler.DeleteExpense)
-
-	// Endpoint to test health check
+	// Public routes
 	router.GET("/expenses/health", expensesHandler.HealthCheck)
+
+	// Protected routes - All expense operations require authentication
+	router.POST("/expenses", 
+		middleware.AuthMiddleware(jwtSecret), 
+		expensesHandler.CreateExpense)
+	
+	router.GET("/expenses/:expenseId", 
+		middleware.AuthMiddleware(jwtSecret), 
+		expensesHandler.GetExpensesById)
+	
+	router.GET("/expenses", 
+		middleware.AuthMiddleware(jwtSecret), 
+		expensesHandler.GetExpensesByQuery)
+	
+	router.DELETE("/expenses/:expenseId", 
+		middleware.AuthMiddleware(jwtSecret), 
+		expensesHandler.DeleteExpense)
 
 	router.Run(":8282")
 

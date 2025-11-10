@@ -11,6 +11,7 @@ import (
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -24,6 +25,7 @@ var (
 	domainName        string
 	bankTable         string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/bank/health", "/bank/metrics"}
 	otelCollector     string
 )
@@ -54,11 +56,17 @@ func init() {
 	}
 
 	common.ServiceName = os.Getenv("SERVICE_NAME")
-
-	if otelCollector == "" {
+	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}
+
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
 
 }
 
@@ -104,14 +112,17 @@ func main() {
 	// Init bank handler
 	bankHandler := handler.NewBankHandler(bankService, logger)
 
-	// create bank
-	router.POST("/bank/pay", bankHandler.HandlePayment)
-
-	// Get user saldo
-	router.GET("/bank/user", bankHandler.GetUser)
-
-	// Endpoint to test health check
+	// Public routes
 	router.GET("/bank/health", bankHandler.HealthCheck)
+
+	// Protected routes - All bank operations require authentication
+	router.POST("/bank/pay", 
+		middleware.AuthMiddleware(jwtSecret), 
+		bankHandler.HandlePayment)
+	
+	router.GET("/bank/user", 
+		middleware.AuthMiddleware(jwtSecret), 
+		bankHandler.GetUser)
 	router.Run(":8585")
 }
 

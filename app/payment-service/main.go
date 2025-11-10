@@ -11,6 +11,7 @@ import (
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -23,6 +24,7 @@ var (
 	otelCollector     string
 	paymentTable      string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/payment/health", "/payment/metrics"}
 	logger            *slog.Logger
 	domainName        string
@@ -64,6 +66,13 @@ func init() {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}
+
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
 
 }
 
@@ -107,14 +116,17 @@ func main() {
 	// Init Payment handler
 	paymentHandler := handler.NewPaymentHandler(paymentService, logger)
 
-	// create Payment
-	router.GET("/payment/:transactionId", paymentHandler.GetTransaction)
-
-	// create Payment
-	router.POST("/payment", paymentHandler.ProcessPayment)
-
-	// Endpoint to test health check
+	// Public routes
 	router.GET("/payment/health", paymentHandler.HealthCheck)
+
+	// Protected routes - All payment operations require authentication
+	router.GET("/payment/:transactionId", 
+		middleware.AuthMiddleware(jwtSecret), 
+		paymentHandler.GetTransaction)
+	
+	router.POST("/payment", 
+		middleware.AuthMiddleware(jwtSecret), 
+		paymentHandler.ProcessPayment)
 
 	router.Run(":8989")
 

@@ -10,6 +10,7 @@ import (
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/handler"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
@@ -26,6 +27,7 @@ var (
 	otelCollector     string
 	usersTable        string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/user/health", "/user/metrics"}
 	logger            *slog.Logger
 	domainName        string
@@ -67,6 +69,13 @@ func init() {
 		os.Exit(1)
 	}
 
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
+
 }
 
 func main() {
@@ -100,24 +109,17 @@ func main() {
 	// Initialize user repository
 	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper, logger)
 
-	// Initialize user service
-	userService := service.NewUserService(userRepo, logger)
+	// Initialize user service (pass JWT secret!)
+	userService := service.NewUserService(userRepo, jwtSecret, logger)
 
 	// Init user handler
 	userHandler := handler.NewUserHandler(userService, logger)
 
-	// GET user/userID
-	router.GET("/user/:userId", userHandler.GetUserById)
-	// GET user?username=username user?email=email
-	//router.GET("/user", userHandler.GetUserByQuery)
+	router.POST("/user", userHandler.CreateUser)    
+	router.POST("/user/login", userHandler.Login)          
+	router.GET("/user/health", userHandler.HealthCheck)   
 
-	// GET api/v1/[controller]/user[?userID=0]
-	router.POST("/user", userHandler.CreateUser)
-
-	router.POST("/user/login", userHandler.Login)
-
-	// Health check
-	router.GET("/user/health", userHandler.HealthCheck)
+	router.GET("/user/:userId", middleware.AuthMiddleware(jwtSecret), userHandler.GetUserById)
 
 	router.Run(":8181")
 }
