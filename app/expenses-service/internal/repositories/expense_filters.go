@@ -1,5 +1,17 @@
 package repositories
 
+import (
+	"context"
+	"smart-cash/expenses-service/internal/common"
+	"smart-cash/expenses-service/models"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"go.opentelemetry.io/otel"
+)
+
 // ExpenseFilters represents the filter options for querying expenses
 type ExpenseFilters struct {
 	StartDate  *string  // Format: YYYY-MM-DD

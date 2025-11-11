@@ -18,14 +18,14 @@ type Expense struct {
 	Tags        []string  `json:"tags,omitempty" dynamodbav:"tags,omitempty"`
 }
 
-type ExpenseResponse struct {
-	ExpenseId   string  `json:"expenseId"`
-	Date        string  `json:"date"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	Category    string  `json:"category"`
-	Status      string  `json:"status"`
+type ExpensesReturn struct {
+	ExpenseId   string   `json:"expenseId"`
+	Date        string   `json:"date"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Amount      float64  `json:"amount"`
+	Category    string   `json:"category"`
+	Status      string   `json:"status"`
 	Tags        []string `json:"tags,omitempty"`
 }
 

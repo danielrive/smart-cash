@@ -56,7 +56,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
-		return output, common.ErrExpenseNoCreated
+		return output, common.ErrExpenseNotCreated
 	}
 
 	return createExpenserReturn(expense), nil
@@ -253,10 +253,13 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 
 func createExpenserReturn(expense models.Expense) models.ExpensesReturn {
 	return models.ExpensesReturn{
-		Date:      expense.Date,
-		ExpenseId: expense.ExpenseId,
-		Name:      expense.Name,
-		Status:    expense.Status,
-		Amount:    expense.Amount,
+		Date:        expense.Date.Format("2006-01-02"),
+		ExpenseId:   expense.ExpenseId,
+		Name:        expense.Name,
+		Description: expense.Description,
+		Status:      expense.Status,
+		Amount:      expense.Amount,
+		Category:    expense.Category,
+		Tags:        expense.Tags,
 	}
 }

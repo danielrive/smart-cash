@@ -3,11 +3,12 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"smart-cash/expenses-service/internal/common"
+	"smart-cash/expenses-service/internal/handler/dto"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/expenses-service/models"
-	"smart-cash/expenses-service/internal/handler/dto"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -79,8 +80,31 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	// Set userId from auth context
 	expenseRequest.UserId = userId.(string)
 
+	var expenseDate time.Time
+	if expenseRequest.Date != "" {
+		parsedDate, err := time.Parse("2006-01-02", expenseRequest.Date)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
+			h.logger.Error("failed to parse date", "error", err.Error())
+			return
+		}
+		expenseDate = parsedDate
+	} else {
+		expenseDate = time.Now().UTC()
+	}
+
+	expense := models.Expense{
+		UserId:      expenseRequest.UserId,
+		Name:        expenseRequest.Name,
+		Amount:      expenseRequest.Amount,
+		Description: expenseRequest.Description,
+		Category:    expenseRequest.Category,
+		Date:        expenseDate,
+		Tags:        expenseRequest.Tags,
+	}
+
 	// create the expense
-	response, err := h.expensesService.CreateExpense(trContext, expenseRequest)
+	response, err := h.expensesService.CreateExpense(trContext, expense)
 	if err != nil {
 		h.logger.Error("error processing expense",
 			"error", err.Error(),
