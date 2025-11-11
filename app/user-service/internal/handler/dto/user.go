@@ -15,3 +15,4 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+
