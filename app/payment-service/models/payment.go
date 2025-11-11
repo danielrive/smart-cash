@@ -22,13 +22,18 @@ type Expense struct {
 	Name      string  `json:"name" dynamodbav:"name"`
 	Amount    float64 `json:"amount" dynamodbav:"amount"`
 	Status    string  `json:"priority" dynamodbav:"priority"`
-<<<<<<< HEAD
-=======
 	UserId    string  `json:"userId" dynamodbav:"userId"`
->>>>>>> develop
 }
 
 type PaymentRequest struct {
 	UserId    string `json:"userId" dynamodbav:"userId"` // global secondary index
 	ExpenseId string `json:"expenseId" dynamodbav:"expenseId"`
+}
+
+type TransactionResponse struct {
+	TransactionId string  `json:"transactionId"`
+	ExpenseId     string  `json:"expenseId"`
+	Date          string  `json:"date"`
+	Amount        float64 `json:"amount"`
+	Status        string  `json:"status"`
 }

@@ -8,6 +8,7 @@ import (
 	"slices"
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/handler"
+	"smart-cash/expenses-service/internal/handler/dto"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/utils"
@@ -115,19 +116,23 @@ func main() {
 
 	// Protected routes - All expense operations require authentication
 	router.POST("/expenses", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidateBody[dto.CreateExpenseRequest](), // Validate request body
 		expensesHandler.CreateExpense)
 	
 	router.GET("/expenses/:expenseId", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.GetExpensesById)
 	
 	router.GET("/expenses", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.RequireOneOfQueryParams([]string{"userId", "category"}), // Require at least one query param
 		expensesHandler.GetExpensesByQuery)
 	
 	router.DELETE("/expenses/:expenseId", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.DeleteExpense)
 
 	router.Run(":8282")

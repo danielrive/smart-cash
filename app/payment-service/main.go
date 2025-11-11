@@ -8,6 +8,7 @@ import (
 	"slices"
 	"smart-cash/payment-service/internal/common"
 	"smart-cash/payment-service/internal/handler"
+	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/utils"
@@ -120,13 +121,15 @@ func main() {
 	router.GET("/payment/health", paymentHandler.HealthCheck)
 
 	// Protected routes - All payment operations require authentication
-	router.GET("/payment/:transactionId", 
-		middleware.AuthMiddleware(jwtSecret), 
-		paymentHandler.GetTransaction)
-	
 	router.POST("/payment", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidateBody[dto.ProcessPaymentRequest](), // Validate payment request
 		paymentHandler.ProcessPayment)
+	
+	router.GET("/payment/:transactionId", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("transactionId", "uuid"), // Validate transactionId is UUID
+		paymentHandler.GetTransaction)
 
 	router.Run(":8989")
 

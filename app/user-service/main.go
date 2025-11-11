@@ -9,11 +9,11 @@ import (
 
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/handler"
-	"smart-cash/utils"
-	"smart-cash/utils/middleware"
-
+	"smart-cash/user-service/internal/handler/dto"
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
+	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
@@ -115,11 +115,26 @@ func main() {
 	// Init user handler
 	userHandler := handler.NewUserHandler(userService, logger)
 
-	router.POST("/user", userHandler.CreateUser)    
-	router.POST("/user/login", userHandler.Login)          
-	router.GET("/user/health", userHandler.HealthCheck)   
+	// Public routes
+	router.GET("/user/health", userHandler.HealthCheck)
+	
+	router.POST("/user",
+		middleware.ValidateBody[dto.CreateUserRequest](), // Validate user creation
+		userHandler.CreateUser)
+	
+	router.POST("/user/login",
+		middleware.ValidateBody[dto.LoginRequest](), // Validate login
+		userHandler.Login)
+	
+	router.GET("/user",
+		middleware.RequireOneOfQueryParams([]string{"email", "username"}), // Require email OR username
+		userHandler.GetUserByQuery)
 
-	router.GET("/user/:userId", middleware.AuthMiddleware(jwtSecret), userHandler.GetUserById)
+	// Protected routes
+	router.GET("/user/:userId",
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
+		userHandler.GetUserById)
 
 	router.Run(":8181")
 }

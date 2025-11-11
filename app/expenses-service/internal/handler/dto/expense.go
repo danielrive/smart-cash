@@ -2,6 +2,7 @@
 package dto
 
 type CreateExpenseRequest struct {
+	UserId      string   `json:"-"` // Not from JSON, set from auth middleware
 	Name        string   `json:"name" validate:"required,max=100"`
 	Amount      float64  `json:"amount" validate:"required,gt=0"`
 	Description string   `json:"description" validate:"required,max=500"`

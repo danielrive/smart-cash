@@ -13,10 +13,10 @@ type User struct {
 }
 
 type UserResponse struct {
-	UserId   string `json:"userId" dynamodbav:"userId"` // primary key
-	Username string `json:"username" dynamodbav:"username"`
-	Email    string `json:"email" dynamodbav:"email"` // global secondary index
-	Active   bool   `json:"active" dynamodbav:"active"`
+	UserId   string `json:"userId"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Active   bool   `json:"active"`
 }
 
 type LoginRequest struct {

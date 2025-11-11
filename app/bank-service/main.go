@@ -8,6 +8,7 @@ import (
 	"slices"
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/handler"
+	"smart-cash/bank-service/internal/handler/dto"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
 	"smart-cash/utils"
@@ -117,11 +118,13 @@ func main() {
 
 	// Protected routes - All bank operations require authentication
 	router.POST("/bank/pay", 
-		middleware.AuthMiddleware(jwtSecret), 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidateBody[dto.PayExpenseRequest](), // Validate payment request
 		bankHandler.HandlePayment)
 	
-	router.GET("/bank/user", 
-		middleware.AuthMiddleware(jwtSecret), 
+	router.GET("/bank/user/:userId", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
 		bankHandler.GetUser)
 	router.Run(":8585")
 }

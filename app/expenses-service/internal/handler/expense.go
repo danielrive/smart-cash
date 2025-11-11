@@ -52,24 +52,33 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
-	var expenseRequest dto.CreateExpenseRequest
-	expenseRequest.UserId = c.GetHeader("UserId")
-	if expenseRequest.UserId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
-			"details": "no UserId in header"})
-		h.logger.Error("no user ID in header",
-			"level", "Handler")
+	// Get userId from auth middleware (set by AuthMiddleware)
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		h.logger.Error("userId not found in context")
 		return
 	}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&expenseRequest); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-			"level", "Handler",
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+
+	// Get validated body from validation middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		h.logger.Error("validatedBody not found in context")
 		return
 	}
+
+	// Type assert to our DTO
+	expenseRequest, ok := validatedBody.(dto.CreateExpenseRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		h.logger.Error("failed to cast validatedBody to CreateExpenseRequest")
+		return
+	}
+
+	// Set userId from auth context
+	expenseRequest.UserId = userId.(string)
+
 	// create the expense
 	response, err := h.expensesService.CreateExpense(trContext, expenseRequest)
 	if err != nil {

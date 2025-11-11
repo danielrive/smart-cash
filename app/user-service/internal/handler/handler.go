@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"smart-cash/user-service/internal/common"
+	"smart-cash/user-service/internal/handler/dto"
 	"smart-cash/user-service/internal/service"
 	"smart-cash/user-service/models"
 
@@ -39,8 +40,14 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 			return
 		}
 	}
+	response := models.UserResponse{
+		UserId:   user.UserId,
+		Username: user.Username,
+		Email:    user.Email,
+		Active:   user.Active,
+	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, response)
 }
 
 // Handler for Get user by email or username
@@ -72,7 +79,15 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 			return
 		}
 	}
-	c.JSON(http.StatusOK, user)
+
+	response := models.UserResponse{
+		UserId:   user.UserId,
+		Username: user.Username,
+		Email:    user.Email,
+		Active:   user.Active,
+	}
+
+	c.JSON(http.StatusOK, response)
 
 }
 
@@ -82,12 +97,32 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
 	defer childSpan.End()
-	user := models.User{}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		h.logger.Error("validatedBody not found in context")
 		return
 	}
+	
+	// Type assert to our DTO (this is safe because ValidateBody uses generics)
+	userDTO, ok := validatedBody.(dto.CreateUserRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		h.logger.Error("failed to cast validatedBody to CreateUserRequest")
+		return
+	}
+	
+	// Map DTO to domain model
+	user := models.User{
+		FirstName: userDTO.FirstName,
+		LastName:  userDTO.LastName,
+		Username:  userDTO.Username,
+		Email:     userDTO.Email,
+		Password:  userDTO.Password,
+	}
+	
 	// create the user
 	response, err := h.userService.CreateUser(trContext, user)
 	if err != nil {
@@ -104,10 +139,20 @@ func (h *UserHandler) Login(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
 	defer childSpan.End()
-	loginData := models.LoginRequest{}
-
-	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		h.logger.Error("validatedBody not found in context")
+		return
+	}
+	
+	// Type assert to our DTO
+	loginData, ok := validatedBody.(dto.LoginRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		h.logger.Error("failed to cast validatedBody to LoginRequest")
 		return
 	}
 
