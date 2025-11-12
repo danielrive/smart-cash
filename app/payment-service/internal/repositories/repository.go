@@ -45,7 +45,7 @@ func (r *DynamoDBPaymentRepository) CreateTransaction(ctx context.Context, trans
 		return common.ErrTransactionFailed
 	}
 
-	_, err = r.client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(r.paymentTable),
 		Item:      item,
 	})
@@ -71,7 +71,7 @@ func (r *DynamoDBPaymentRepository) GetTransaction(ctx context.Context, id strin
 
 	output := models.TransactionRequest{}
 	// Get bank item by id
-	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.paymentTable),
 		Key: map[string]types.AttributeValue{
 			"transactionId": &types.AttributeValueMemberS{Value: id},
@@ -137,7 +137,7 @@ func (r *DynamoDBPaymentRepository) UpdateTransaction(ctx context.Context, trans
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	_, err = r.client.UpdateItem(context.TODO(), inputUpdate)
+	_, err = r.client.UpdateItem(ctx, inputUpdate)
 
 	// Update bank item
 	if err != nil {

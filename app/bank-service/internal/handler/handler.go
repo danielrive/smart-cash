@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"smart-cash/bank-service/internal/common"
+	"smart-cash/bank-service/internal/handler/dto"
 	"smart-cash/bank-service/internal/service"
 	"smart-cash/bank-service/models"
 
@@ -31,17 +32,32 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerHandlePayment")
 	defer childSpan.End()
 
-	transaction := models.TransactionRequest{}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&transaction); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		h.logger.Error("validatedBody not found in context")
 		return
 	}
+	
+	paymentDTO, ok := validatedBody.(dto.PayExpenseRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		h.logger.Error("failed to cast validatedBody to PayExpenseRequest")
+		return
+	}
+	
+	transaction := models.TransactionRequest{
+		TransactionId: paymentDTO.TransactionId,
+		ExpenseId:     paymentDTO.ExpenseId,
+		Date:          paymentDTO.Date,
+		Amount:        paymentDTO.Amount,
+		UserId:        paymentDTO.UserId,
+		Status:        paymentDTO.Status,
+	}
+	
 	// init payment
-	response, err := h.bankService.ProcessPayment(trContext, transaction)
+	transactionResult, err := h.bankService.ProcessPayment(trContext, transaction)
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
@@ -49,6 +65,15 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return
 	}
+	
+	response := models.TransactionResponse{
+		TransactionId: transactionResult.TransactionId,
+		ExpenseId:     transactionResult.ExpenseId,
+		Date:          transactionResult.Date,
+		Amount:        transactionResult.Amount,
+		Status:        transactionResult.Status,
+	}
+	
 	c.JSON(http.StatusCreated, response)
 }
 
@@ -68,7 +93,14 @@ func (h *BankHandler) GetUser(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	response := models.BankUserResponse{
+		UserId:   user.UserId,
+		Currency: user.Currency,
+		Savings:  user.Savings,
+		Blocked:  user.Blocked,
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *BankHandler) HealthCheck(c *gin.Context) {

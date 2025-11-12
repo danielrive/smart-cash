@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"smart-cash/payment-service/internal/common"
+	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/payment-service/models"
 
@@ -29,21 +30,32 @@ func NewPaymentHandler(paymentService *service.PaymentService, logger *slog.Logg
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	// OTel Instrumentation
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetTransaction")
+	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerProcessPayment")
 	defer childSpan.End()
 
-	transaction := models.PaymentRequest{}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&transaction); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-			"level", "handler",
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		h.logger.Error("validatedBody not found in context")
 		return
 	}
+	
+	// Type assert to our DTO
+	paymentDTO, ok := validatedBody.(dto.ProcessPaymentRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		h.logger.Error("failed to cast validatedBody to ProcessPaymentRequest")
+		return
+	}
+	
+	transaction := models.PaymentRequest{
+		UserId:    paymentDTO.UserId,
+		ExpenseId: paymentDTO.ExpenseId,
+	}
+	
 	// init payment
-	response, err := h.paymentService.ProcessPayment(trContext, transaction)
+	transactionResult, err := h.paymentService.ProcessPayment(trContext, transaction)
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
@@ -52,6 +64,15 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
 		return
 	}
+	
+	response := models.TransactionResponse{
+		TransactionId: transactionResult.TransactionId,
+		ExpenseId:     transactionResult.ExpenseId,
+		Date:          transactionResult.Date,
+		Amount:        transactionResult.Amount,
+		Status:        transactionResult.Status,
+	}
+	
 	c.JSON(http.StatusCreated, response)
 }
 
@@ -73,7 +94,16 @@ func (h *PaymentHandler) GetTransaction(c *gin.Context) {
 		}
 
 	}
-	c.JSON(http.StatusOK, transaction)
+	
+	response := models.TransactionResponse{
+		TransactionId: transaction.TransactionId,
+		ExpenseId:     transaction.ExpenseId,
+		Date:          transaction.Date,
+		Amount:        transaction.Amount,
+		Status:        transaction.Status,
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *PaymentHandler) HealthCheck(c *gin.Context) {

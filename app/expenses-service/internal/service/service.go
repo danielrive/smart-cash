@@ -52,7 +52,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
-	expense.Date = time.Now().UTC().Format("2006-01-02")
+	expense.Date = time.Now().UTC()
 	// Create UUID
 	expense.ExpenseId = s.uuid.New()
 

@@ -9,10 +9,11 @@ import (
 
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/handler"
-	"smart-cash/utils"
-
+	"smart-cash/user-service/internal/handler/dto"
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
+	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
@@ -26,6 +27,7 @@ var (
 	otelCollector     string
 	usersTable        string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/user/health", "/user/metrics"}
 	logger            *slog.Logger
 	domainName        string
@@ -67,6 +69,13 @@ func init() {
 		os.Exit(1)
 	}
 
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
+
 }
 
 func main() {
@@ -91,7 +100,7 @@ func main() {
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 
 	// new UUID helper
@@ -100,24 +109,32 @@ func main() {
 	// Initialize user repository
 	userRepo := repositories.NewDynamoDBUsersRepository(dynamoClient, usersTable, uuidHelper, logger)
 
-	// Initialize user service
-	userService := service.NewUserService(userRepo, logger)
+	// Initialize user service (pass JWT secret!)
+	userService := service.NewUserService(userRepo, jwtSecret, logger)
 
 	// Init user handler
 	userHandler := handler.NewUserHandler(userService, logger)
 
-	// GET user/userID
-	router.GET("/user/:userId", userHandler.GetUserById)
-	// GET user?username=username user?email=email
-	//router.GET("/user", userHandler.GetUserByQuery)
-
-	// GET api/v1/[controller]/user[?userID=0]
-	router.POST("/user", userHandler.CreateUser)
-
-	router.POST("/user/login", userHandler.Login)
-
-	// Health check
+	// Public routes
 	router.GET("/user/health", userHandler.HealthCheck)
+	
+	router.POST("/user",
+		middleware.ValidateBody[dto.CreateUserRequest](), // Validate user creation
+		userHandler.CreateUser)
+	
+	router.POST("/user/login",
+		middleware.ValidateBody[dto.LoginRequest](), // Validate login
+		userHandler.Login)
+	
+	router.GET("/user",
+		middleware.RequireOneOfQueryParams([]string{"email", "username"}), // Require email OR username
+		userHandler.GetUserByQuery)
+
+	// Protected routes
+	router.GET("/user/:userId",
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
+		userHandler.GetUserById)
 
 	router.Run(":8181")
 }

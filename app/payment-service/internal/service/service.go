@@ -43,20 +43,27 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
 
-	user := models.User{}
 	expense := models.Expense{}
 	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
 
-	s.logger.Info("calling" + expenseBaseURL)
+	// Fetch expense details
 	resp, err := http.Get(expenseBaseURL)
 	if err != nil {
-		s.logger.Error("error creating the http request",
+		s.logger.Error("error calling expense service",
 			"error", err.Error(),
 			"url", expenseBaseURL,
 		)
-		return models.TransactionRequest{}, common.ErrUserNotFound
+		return models.TransactionRequest{}, common.ErrExpenseNotFound
 	}
-	respBody, _ := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		s.logger.Error("error reading response body",
+			"error", err.Error(),
+		)
+		return models.TransactionRequest{}, common.ErrInternalError
+	}
 
 	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
@@ -66,23 +73,21 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
 
-	// Validate if User exist and is not blocked
-	// Validate if user exist
+	// Validate if User exists and is not blocked
 	if !s.validateUser(expense.UserId) {
 		s.logger.Error("error user not found",
-			"userId", paymentRequest.UserId,
+			"userId", expense.UserId,
 			"level", "service",
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
 
-	// create transaction to bank
-
+	// Create transaction to bank
 	transaction := models.TransactionRequest{
 		TransactionId: s.uuid.New(),
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		ExpenseId:     expense.ExpenseId,
-		UserId:        user.UserId,
+		UserId:        expense.UserId,
 		Amount:        expense.Amount,
 		Status:        "pending",
 	}
@@ -115,35 +120,38 @@ func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.
 }
 
 func (s *PaymentService) validateUser(userId string) bool {
-	// OTel instrumentation
-	//tr := otel.Tracer(common.ServiceName)
-	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
-	//childSpan.SetAttributes(attribute.String("component", "service"))
-	//defer childSpan.End()
-
 	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
 	user := models.User{}
 
-	// Validate if User exist and is not blocked
+	// Validate if User exists and is not blocked
 	resp, err := http.Get(userBaseURL)
 	if err != nil {
-		s.logger.Error("error creating the http request",
+		s.logger.Error("error calling user service",
 			"error", err.Error(),
 			"url", userBaseURL,
+			"level", "service",
 		)
 		return false
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		s.logger.Error("error reading response body",
+			"error", err.Error(),
+			"level", "service",
+		)
+		return false
+	}
 
 	err = json.Unmarshal(respBody, &user)
 	if err != nil {
 		s.logger.Error("error could not parse response body for user",
 			"error", err.Error(),
+			"level", "service",
 		)
 		return false
 	}
 
-	return true
+	return user.Active
 }

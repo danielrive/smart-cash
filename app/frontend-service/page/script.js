@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+<<<<<<< HEAD
+=======
     // Handle expense registration
     const registerExpensesForm = document.getElementById('registerExpensesForm');
     if (registerExpensesForm) {
@@ -143,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+>>>>>>> develop
     // List expenses 
 
     // Handle expense registration
@@ -190,3 +193,7 @@ async function fetchExpense() {
         document.getElementById("expenseResult").innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> develop

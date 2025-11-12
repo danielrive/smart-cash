@@ -8,9 +8,11 @@ import (
 	"slices"
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/handler"
+	"smart-cash/bank-service/internal/handler/dto"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -24,6 +26,7 @@ var (
 	domainName        string
 	bankTable         string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/bank/health", "/bank/metrics"}
 	otelCollector     string
 )
@@ -54,11 +57,17 @@ func init() {
 	}
 
 	common.ServiceName = os.Getenv("SERVICE_NAME")
-
-	if otelCollector == "" {
+	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}
+
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
 
 }
 
@@ -91,9 +100,9 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(otelCollector, otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 	// // Initialize bank repository
 	bankRepo := repositories.NewDynamoDBBankRepository(dynamoClient, bankTable, logger) // Harcoded dynamotable to use data already uploaded
@@ -104,14 +113,19 @@ func main() {
 	// Init bank handler
 	bankHandler := handler.NewBankHandler(bankService, logger)
 
-	// create bank
-	router.POST("/bank/pay", bankHandler.HandlePayment)
-
-	// Get user saldo
-	router.GET("/bank/user", bankHandler.GetUser)
-
-	// Endpoint to test health check
+	// Public routes
 	router.GET("/bank/health", bankHandler.HealthCheck)
+
+	// Protected routes - All bank operations require authentication
+	router.POST("/bank/pay", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidateBody[dto.PayExpenseRequest](), // Validate payment request
+		bankHandler.HandlePayment)
+	
+	router.GET("/bank/user/:userId", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
+		bankHandler.GetUser)
 	router.Run(":8585")
 }
 

@@ -47,7 +47,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	}
 
 	// Create a new expense item
-	_, err = r.client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(r.expensesTable),
 		Item:      item,
 	})
@@ -56,7 +56,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
-		return output, common.ErrExpenseNoCreated
+		return output, common.ErrExpenseNotCreated
 	}
 
 	return createExpenserReturn(expense), nil
@@ -95,7 +95,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+	response, err := r.client.UpdateItem(ctx, inputUpdate)
 
 	if err != nil {
 		r.logger.Error("status couldn't be updated",
@@ -137,7 +137,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 
 	output := models.Expense{}
 	// Get expense item by id
-	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.expensesTable),
 		Key: map[string]types.AttributeValue{
 			"expenseId": &types.AttributeValueMemberS{Value: id},
@@ -198,7 +198,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 		ExpressionAttributeValues: expr.Values(),
 	}
 
-	response, err := r.client.Query(context.TODO(), queryInput)
+	response, err := r.client.Query(ctx, queryInput)
 
 	if err != nil {
 		r.logger.Error("dynamodb query failed",
@@ -235,7 +235,7 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 	defer childSpan.End()
 
 	// Delete expense item by id
-	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+	_, err := r.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(r.expensesTable),
 		Key: map[string]types.AttributeValue{
 			"expenseId": &types.AttributeValueMemberS{Value: id},
@@ -253,10 +253,13 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 
 func createExpenserReturn(expense models.Expense) models.ExpensesReturn {
 	return models.ExpensesReturn{
-		Date:      expense.Date,
-		ExpenseId: expense.ExpenseId,
-		Name:      expense.Name,
-		Status:    expense.Status,
-		Amount:    expense.Amount,
+		Date:        expense.Date.Format("2006-01-02"),
+		ExpenseId:   expense.ExpenseId,
+		Name:        expense.Name,
+		Description: expense.Description,
+		Status:      expense.Status,
+		Amount:      expense.Amount,
+		Category:    expense.Category,
+		Tags:        expense.Tags,
 	}
 }

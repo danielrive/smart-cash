@@ -8,9 +8,11 @@ import (
 	"slices"
 	"smart-cash/payment-service/internal/common"
 	"smart-cash/payment-service/internal/handler"
+	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -23,27 +25,22 @@ var (
 	otelCollector     string
 	paymentTable      string
 	awsRegion         string
+	jwtSecret         []byte
 	notToLogEndpoints = []string{"/payment/health", "/payment/metrics"}
 	logger            *slog.Logger
 	domainName        string
 )
 
 func init() {
-	// start logger
-
-	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
-
-	otel.SetTracerProvider(tp)
-
+	// Set-up logger handler
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // (Info, Warn, Error)
 	}))
 	slog.SetDefault(logger)
 
-	// validate ENV variables
+	// Validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
-	if domainName == "" {
+	if common.DomainName == "" {
 		common.DomainName = "localhost"
 	}
 
@@ -71,6 +68,13 @@ func init() {
 		os.Exit(1)
 	}
 
+	jwtSecretStr := os.Getenv("JWT_SECRET")
+	if jwtSecretStr == "" {
+		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+		jwtSecretStr = "default-secret-change-me"
+	}
+	jwtSecret = []byte(jwtSecretStr)
+
 }
 
 func main() {
@@ -96,9 +100,9 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(otelCollector, otelgin.WithFilter(filterTraces)),
+		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
 		gin.LoggerWithWriter(gin.DefaultWriter, "/payment/health"),
-		gin.Recovery(), gin.Recovery(),
+		gin.Recovery(),
 	)
 
 	// uuid helper
@@ -113,14 +117,19 @@ func main() {
 	// Init Payment handler
 	paymentHandler := handler.NewPaymentHandler(paymentService, logger)
 
-	// create Payment
-	router.GET("/payment/:transactionId", paymentHandler.GetTransaction)
-
-	// create Payment
-	router.POST("/payment", paymentHandler.ProcessPayment)
-
-	// Endpoint to test health check
+	// Public routes
 	router.GET("/payment/health", paymentHandler.HealthCheck)
+
+	// Protected routes - All payment operations require authentication
+	router.POST("/payment", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidateBody[dto.ProcessPaymentRequest](), // Validate payment request
+		paymentHandler.ProcessPayment)
+	
+	router.GET("/payment/:transactionId", 
+		middleware.AuthMiddleware(jwtSecret),
+		middleware.ValidatePathParam("transactionId", "uuid"), // Validate transactionId is UUID
+		paymentHandler.GetTransaction)
 
 	router.Run(":8989")
 
