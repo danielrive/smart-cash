@@ -69,7 +69,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 
 	// Hash the password before storing
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	us.logger.Info("pass", string(hashedPassword), u.Password)
+
 	if err != nil {
 		us.logger.Error("failed to hash password",
 			"error", err.Error(),
@@ -98,9 +98,7 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	defer childSpan.End()
 
 	response, err := us.GetUserByEmailorUsername(trContext, "username", user)
-	us.logger.Info("password is",
-		"pass", response.Password,
-		"user", user)
+
 	if err != nil {
 		childSpan.SetAttributes(attribute.String("error", err.Error()))
 		return "", common.ErrWrongCredentials

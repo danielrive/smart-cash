@@ -194,7 +194,6 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 
 	response, err := r.client.Query(ctx, queryInput)
 
-	r.logger.Info("query response", "items", response.Items)
 	if err != nil {
 		r.logger.Error("dynamodb error query item",
 			"error", err.Error(),
