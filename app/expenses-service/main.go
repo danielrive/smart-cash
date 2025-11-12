@@ -115,22 +115,22 @@ func main() {
 	router.GET("/expenses/health", expensesHandler.HealthCheck)
 
 	// Protected routes - All expense operations require authentication
-	router.POST("/expenses", 
+	router.POST("/expenses",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidateBody[dto.CreateExpenseRequest](), // Validate request body
 		expensesHandler.CreateExpense)
-	
-	router.GET("/expenses/:expenseId", 
+
+	router.GET("/expenses/:expenseId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.GetExpensesById)
-	
-	router.GET("/expenses", 
+
+	router.GET("/expenses",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.RequireOneOfQueryParams([]string{"userId", "category"}), // Require at least one query param
 		expensesHandler.GetExpensesByQuery)
-	
-	router.DELETE("/expenses/:expenseId", 
+
+	router.DELETE("/expenses/:expenseId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.DeleteExpense)
