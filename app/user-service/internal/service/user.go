@@ -98,7 +98,9 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	defer childSpan.End()
 
 	response, err := us.GetUserByEmailorUsername(trContext, "username", user)
-	us.logger.Info("pass", response.Password, user)
+	us.logger.Info("password is",
+		"pass", response.Password,
+		"user", user)
 	if err != nil {
 		childSpan.SetAttributes(attribute.String("error", err.Error()))
 		return "", common.ErrWrongCredentials
