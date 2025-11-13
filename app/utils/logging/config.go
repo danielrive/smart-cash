@@ -8,8 +8,7 @@ import (
 
 // logging configs
 type Config struct {
-	Level  slog.Level
-	Format string // "json" or "text"
+	Level slog.Level
 }
 
 // LoadConfig loads logging configuration from environment variables
@@ -19,16 +18,10 @@ func LoadConfig() *Config {
 		levelStr = "info"
 	}
 
-	formatStr := os.Getenv("LOG_FORMAT")
-	if formatStr == "" {
-		formatStr = "json"
-	}
-
 	level := parseLogLevel(strings.ToLower(levelStr))
 
 	return &Config{
-		Level:  level,
-		Format: strings.ToLower(formatStr),
+		Level: level,
 	}
 }
 

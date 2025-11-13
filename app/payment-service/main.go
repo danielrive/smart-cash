@@ -12,6 +12,7 @@ import (
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -32,11 +33,15 @@ var (
 )
 
 func init() {
-	// Set-up logger handler
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
+	// Set ServiceName first for logger initialization
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+	if common.ServiceName == "" {
+		common.ServiceName = "payment-service" // fallback for logger
+	}
+
+	// Logger config
+	logsConfig := logging.LoadConfig()
+	logger = logging.InitLogger(logsConfig, common.ServiceName)
 
 	// Validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
@@ -62,6 +67,7 @@ func init() {
 		os.Exit(1)
 	}
 
+	// Re-validate ServiceName (in case it was set via env)
 	common.ServiceName = os.Getenv("SERVICE_NAME")
 	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
@@ -101,7 +107,7 @@ func main() {
 
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/payment/health"),
+		logging.HTTPMiddleware(logger, notToLogEndpoints),
 		gin.Recovery(),
 	)
 
@@ -121,12 +127,12 @@ func main() {
 	router.GET("/payment/health", paymentHandler.HealthCheck)
 
 	// Protected routes - All payment operations require authentication
-	router.POST("/payment", 
+	router.POST("/payment",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidateBody[dto.ProcessPaymentRequest](), // Validate payment request
 		paymentHandler.ProcessPayment)
-	
-	router.GET("/payment/:transactionId", 
+
+	router.GET("/payment/:transactionId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("transactionId", "uuid"), // Validate transactionId is UUID
 		paymentHandler.GetTransaction)

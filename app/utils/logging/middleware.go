@@ -22,14 +22,19 @@ func HTTPMiddleware(logger *slog.Logger, excludeEndpoints []string) gin.HandlerF
 
 		duration := time.Since(start)
 
-		// Log request details
-		logger.Info("request processed",
+		attrs := []slog.Attr{
 			slog.String("method", c.Request.Method),
 			slog.String("path", c.Request.URL.Path),
 			slog.Int("status", c.Writer.Status()),
-			slog.Duration("duration", duration),
+			slog.Duration("duration_ms", duration),
 			slog.String("client_ip", c.ClientIP()),
-			slog.String("user_agent", c.Request.UserAgent()),
-		)
+		}
+
+		args := make([]any, len(attrs))
+		for i, attr := range attrs {
+			args[i] = attr
+		}
+
+		logger.Info("request processed", args...)
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -32,9 +33,19 @@ var (
 )
 
 func init() {
+	// Set ServiceName first for logger initialization
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+	if common.ServiceName == "" {
+		common.ServiceName = "bank-service" // fallback for logger
+	}
+
+	// Logger config
+	logsConfig := logging.LoadConfig()
+	logger = logging.InitLogger(logsConfig, common.ServiceName)
+
 	// validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
-	if domainName == "" {
+	if common.DomainName == "" {
 		common.DomainName = "localhost"
 	}
 
@@ -56,6 +67,7 @@ func init() {
 		os.Exit(1)
 	}
 
+	// Re-validate ServiceName (in case it was set via env)
 	common.ServiceName = os.Getenv("SERVICE_NAME")
 	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
@@ -72,11 +84,6 @@ func init() {
 }
 
 func main() {
-	// Set-up logger handler
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
 
 	// Init OTel TracerProvider
 	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
@@ -101,7 +108,7 @@ func main() {
 
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/bank/health"),
+		logging.HTTPMiddleware(logger, notToLogEndpoints),
 		gin.Recovery(),
 	)
 	// // Initialize bank repository
@@ -117,12 +124,12 @@ func main() {
 	router.GET("/bank/health", bankHandler.HealthCheck)
 
 	// Protected routes - All bank operations require authentication
-	router.POST("/bank/pay", 
+	router.POST("/bank/pay",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidateBody[dto.PayExpenseRequest](), // Validate payment request
 		bankHandler.HandlePayment)
-	
-	router.GET("/bank/user/:userId", 
+
+	router.GET("/bank/user/:userId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
 		bankHandler.GetUser)

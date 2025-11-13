@@ -57,26 +57,35 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 
 	if err != nil {
 		r.logger.Error("dynamodb get item failed",
-			"error", err.Error(),
-			"userId", id,
+			slog.String("error", err.Error()),
+			slog.String("user_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
 	if len(response.Item) == 0 {
-		r.logger.Error("user not found",
-			"userId", id,
+		r.logger.Debug("user not found in database",
+			slog.String("user_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrUserNotFound
 	}
 	// unmarshal item to models.user struct
 	err = attributevalue.UnmarshalMap(response.Item, &output)
 	if err != nil {
-		r.logger.Error("error unmashaling map",
-			"error", err.Error(),
-			"userId", id,
+		r.logger.Error("error unmarshaling map",
+			slog.String("error", err.Error()),
+			slog.String("user_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("user retrieved from database",
+		slog.String("user_id", id),
+		slog.String("component", "repository"),
+	)
+
 	return output, nil
 }
 
@@ -90,11 +99,19 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 	output := models.UserResponse{}
 	u.UserId = r.uuid.New()
 
+	r.logger.Debug("creating user in database",
+		slog.String("user_id", u.UserId),
+		slog.String("username", u.Username),
+		slog.String("email", u.Email),
+		slog.String("component", "repository"),
+	)
+
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
 		r.logger.Error("error marshaling map",
-			"error", err.Error(),
-			"userId", u.UserId,
+			slog.String("error", err.Error()),
+			slog.String("user_id", u.UserId),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
@@ -108,11 +125,20 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 
 	if err != nil {
 		r.logger.Error("dynamodb error put item",
-			"error", err.Error(),
-			"userId", u.UserId,
+			slog.String("error", err.Error()),
+			slog.String("user_id", u.UserId),
+			slog.String("username", u.Username),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrUserNotCreated
 	}
+
+	r.logger.Info("user created in database",
+		slog.String("user_id", u.UserId),
+		slog.String("username", u.Username),
+		slog.String("component", "repository"),
+	)
+
 	// create output response
 	output.UserId = u.UserId
 	output.Username = u.Username
@@ -176,11 +202,19 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 
 	if err != nil {
 		r.logger.Error("dynamodb error building expression",
-			"error", err.Error(),
-			k, v,
+			slog.String("error", err.Error()),
+			slog.String("key", k),
+			slog.String("value", v),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("querying user by email or username",
+		slog.String("key", k),
+		slog.String("value", v),
+		slog.String("component", "repository"),
+	)
 
 	// Create the input for the dynamodb query
 	queryInput := &dynamodb.QueryInput{
@@ -196,27 +230,40 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 
 	if err != nil {
 		r.logger.Error("dynamodb error query item",
-			"error", err.Error(),
-			k, v,
+			slog.String("error", err.Error()),
+			slog.String("key", k),
+			slog.String("value", v),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
 
 	if len(response.Items) == 0 {
-		r.logger.Error("user not found",
-			k, v,
+		r.logger.Debug("user not found in database",
+			slog.String("key", k),
+			slog.String("value", v),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrUserNotFound
 	}
 	//unmarshall dynamodb output
 	err = attributevalue.UnmarshalMap(response.Items[0], &output)
 	if err != nil {
-		r.logger.Error("error unmashaling map",
-			"error", err.Error(),
-			k, v,
+		r.logger.Error("error unmarshaling map",
+			slog.String("error", err.Error()),
+			slog.String("key", k),
+			slog.String("value", v),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("user found in database",
+		slog.String("user_id", output.UserId),
+		slog.String("key", k),
+		slog.String("component", "repository"),
+	)
+
 	return output, nil
 
 }

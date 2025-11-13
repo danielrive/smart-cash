@@ -43,6 +43,12 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
 
+	s.logger.Info("processing payment",
+		slog.String("user_id", paymentRequest.UserId),
+		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("component", "service"),
+	)
+
 	expense := models.Expense{}
 	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
 
@@ -50,8 +56,10 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 	resp, err := http.Get(expenseBaseURL)
 	if err != nil {
 		s.logger.Error("error calling expense service",
-			"error", err.Error(),
-			"url", expenseBaseURL,
+			slog.String("error", err.Error()),
+			slog.String("url", expenseBaseURL),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrExpenseNotFound
 	}
@@ -59,25 +67,30 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Error("error reading response body",
-			"error", err.Error(),
+		s.logger.Error("error reading response body from expense service",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
 
 	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
-		s.logger.Error("error could not parse response body for expense",
-			"error", err.Error(),
+		s.logger.Error("error parsing response body from expense service",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
 
 	// Validate if User exists and is not blocked
 	if !s.validateUser(expense.UserId) {
-		s.logger.Error("error user not found",
-			"userId", expense.UserId,
-			"level", "service",
+		s.logger.Warn("user not found or not active",
+			slog.String("user_id", expense.UserId),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
@@ -94,26 +107,51 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 
 	err = s.paymentRepository.CreateTransaction(trContext, transaction)
 	if err != nil {
-		s.logger.Error("error could not create the transaction",
-			"error", err.Error(),
+		s.logger.Error("error creating transaction",
+			slog.String("error", err.Error()),
+			slog.String("transaction_id", transaction.TransactionId),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		transaction.Status = "notProcessed"
 		return transaction, common.ErrInternalError
 	}
+
+	s.logger.Info("payment processed successfully",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("user_id", expense.UserId),
+		slog.String("component", "service"),
+	)
 
 	return transaction, nil
 }
 
 func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
+	trContext, childSpan := tr.Start(ctx, "SVCGetTransaction")
 	defer childSpan.End()
 
-	transaction, err := s.paymentRepository.GetTransaction(trContext, id)
+	s.logger.Debug("getting transaction",
+		slog.String("transaction_id", id),
+		slog.String("component", "service"),
+	)
 
+	transaction, err := s.paymentRepository.GetTransaction(trContext, id)
 	if err != nil {
+		s.logger.Error("error getting transaction",
+			slog.String("transaction_id", id),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
 		return models.TransactionRequest{}, err
 	}
+
+	s.logger.Debug("transaction retrieved successfully",
+		slog.String("transaction_id", id),
+		slog.String("status", transaction.Status),
+		slog.String("component", "service"),
+	)
 
 	return transaction, nil
 
@@ -127,9 +165,10 @@ func (s *PaymentService) validateUser(userId string) bool {
 	resp, err := http.Get(userBaseURL)
 	if err != nil {
 		s.logger.Error("error calling user service",
-			"error", err.Error(),
-			"url", userBaseURL,
-			"level", "service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
@@ -137,21 +176,31 @@ func (s *PaymentService) validateUser(userId string) bool {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Error("error reading response body",
-			"error", err.Error(),
-			"level", "service",
+		s.logger.Error("error reading response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
 
 	err = json.Unmarshal(respBody, &user)
 	if err != nil {
-		s.logger.Error("error could not parse response body for user",
-			"error", err.Error(),
-			"level", "service",
+		s.logger.Error("error parsing response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
+
+	s.logger.Debug("user validated",
+		slog.String("user_id", userId),
+		slog.Bool("active", user.Active),
+		slog.String("component", "service"),
+	)
 
 	return user.Active
 }
