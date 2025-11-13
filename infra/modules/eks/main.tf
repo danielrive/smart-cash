@@ -373,3 +373,20 @@ resource "aws_eks_addon" "ebs_csi" {
     }
   resolve_conflicts_on_update = "OVERWRITE"
 }
+<<<<<<< HEAD
+
+
+
+#####################
+### Pod Identity  ###
+#####################
+
+## Install EBS add-on
+resource "aws_eks_addon" "pod_identity" {
+  cluster_name                = aws_eks_cluster.kube_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.pod_identity_version
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+=======
+>>>>>>> develop

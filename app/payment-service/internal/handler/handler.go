@@ -33,21 +33,12 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerProcessPayment")
 	defer childSpan.End()
 
-	// Get validated body from middleware
-	validatedBody, exists := c.Get("validatedBody")
-	if !exists {
-		h.logger.Error("validatedBody not found in context",
-			slog.String("component", "handler"),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
-		return
-	}
-
-	// Type assert to our DTO
-	paymentDTO, ok := validatedBody.(dto.ProcessPaymentRequest)
-	if !ok {
-		h.logger.Error("failed to cast validatedBody to ProcessPaymentRequest",
-			slog.String("component", "handler"),
+	transaction := models.PaymentRequest{}
+	// bind the JSON data to the user struct
+	if err := c.ShouldBindJSON(&transaction); err != nil {
+		h.logger.Error("error binding json",
+			"error", err.Error(),
+			"level", "handler",
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -68,10 +59,8 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	transactionResult, err := h.paymentService.ProcessPayment(trContext, transaction)
 	if err != nil {
 		h.logger.Error("error processing payment",
-			slog.String("user_id", paymentDTO.UserId),
-			slog.String("expense_id", paymentDTO.ExpenseId),
-			slog.String("error", err.Error()),
-			slog.String("component", "handler"),
+			"error", err.Error(),
+			"level", "handler",
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 		return

@@ -39,11 +39,12 @@ func init() {
 		common.ServiceName = "payment-service" // fallback for logger
 	}
 
-	// Logger config
-	logsConfig := logging.LoadConfig()
-	logger = logging.InitLogger(logsConfig, common.ServiceName)
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug, // (Info, Warn, Error)
+	}))
+	slog.SetDefault(logger)
 
-	// Validate ENV variables
+	// validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if common.DomainName == "" {
 		common.DomainName = "localhost"

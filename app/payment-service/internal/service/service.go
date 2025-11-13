@@ -74,6 +74,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
+	respBody, _ := io.ReadAll(resp.Body)
 
 	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
@@ -84,8 +85,8 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
-
-	// Validate if User exists and is not blocked
+  // Validate if User exist and is not blocked
+	// Validate if user exist
 	if !s.validateUser(expense.UserId) {
 		s.logger.Warn("user not found or not active",
 			slog.String("user_id", expense.UserId),
@@ -95,7 +96,8 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
 
-	// Create transaction to bank
+	// create transaction to bank
+
 	transaction := models.TransactionRequest{
 		TransactionId: s.uuid.New(),
 		Date:          time.Now().UTC().Format("2006-01-02"),

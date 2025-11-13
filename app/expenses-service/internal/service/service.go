@@ -73,10 +73,8 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	response, err := s.expensesRepository.CreateExpense(trContext, expense)
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
-			slog.String("error", err.Error()),
-			slog.String("expense_id", expense.ExpenseId),
-			slog.String("user_id", expense.UserId),
-			slog.String("component", "service"),
+			"error", err.Error(),
+			"level", "service",
 		)
 		return models.ExpensesReturn{}, err
 	}
