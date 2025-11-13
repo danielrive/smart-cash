@@ -13,6 +13,7 @@ import (
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"smart-cash/utils/middleware"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -34,11 +35,9 @@ var (
 )
 
 func init() {
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
-
+	// Logger config
+	logsConfig := logging.LoadConfig()
+	logger = logging.InitLogger(logsConfig, common.ServiceName)
 	// validate ENV variables
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if domainName == "" {
@@ -99,7 +98,7 @@ func main() {
 
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/user/health"),
+		logging.HTTPMiddleware(logger, notToLogEndpoints), // Add structured logging middleware
 		gin.Recovery(),
 	)
 
@@ -117,15 +116,15 @@ func main() {
 
 	// Public routes
 	router.GET("/user/health", userHandler.HealthCheck)
-	
+
 	router.POST("/user",
 		middleware.ValidateBody[dto.CreateUserRequest](), // Validate user creation
 		userHandler.CreateUser)
-	
+
 	router.POST("/user/login",
 		middleware.ValidateBody[dto.LoginRequest](), // Validate login
 		userHandler.Login)
-	
+
 	router.GET("/user",
 		middleware.RequireOneOfQueryParams([]string{"email", "username"}), // Require email OR username
 		userHandler.GetUserByQuery)

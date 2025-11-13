@@ -52,8 +52,9 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		r.logger.Info("user not found",
-			"userId", id,
+		r.logger.Debug("bank user not found in database",
+			slog.String("user_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrUserNotFound
 	}
@@ -61,12 +62,18 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 	// Unmarshal the bank item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		r.logger.Error("failed to unmarshal attribute value",
-			"error", err.Error(),
-			"userId", id,
+		r.logger.Error("error unmarshaling bank user item",
+			slog.String("error", err.Error()),
+			slog.String("user_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("bank user retrieved from database",
+		slog.String("user_id", id),
+		slog.String("component", "repository"),
+	)
 
 	return output, nil
 }
@@ -108,11 +115,20 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 
 	// Update bank item
 	if err != nil {
-		r.logger.Error("saving could't be updated",
-			"error", err.Error(),
-			"userId", user.UserId,
+		r.logger.Error("error updating user savings",
+			slog.String("error", err.Error()),
+			slog.String("user_id", user.UserId),
+			slog.Float64("new_savings", user.Savings),
+			slog.String("component", "repository"),
 		)
 		return common.ErrInternalError
 	}
+
+	r.logger.Info("user savings updated in database",
+		slog.String("user_id", user.UserId),
+		slog.Float64("new_savings", user.Savings),
+		slog.String("component", "repository"),
+	)
+
 	return nil
 }

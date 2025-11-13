@@ -35,17 +35,29 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 	// Get validated body from middleware
 	validatedBody, exists := c.Get("validatedBody")
 	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
-		h.logger.Error("validatedBody not found in context")
 		return
 	}
 	
 	paymentDTO, ok := validatedBody.(dto.PayExpenseRequest)
 	if !ok {
+		h.logger.Error("failed to cast validatedBody to PayExpenseRequest",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-		h.logger.Error("failed to cast validatedBody to PayExpenseRequest")
 		return
 	}
+	
+	h.logger.Info("handling bank payment",
+		slog.String("transaction_id", paymentDTO.TransactionId),
+		slog.String("expense_id", paymentDTO.ExpenseId),
+		slog.String("user_id", paymentDTO.UserId),
+		slog.Float64("amount", paymentDTO.Amount),
+		slog.String("component", "handler"),
+	)
 	
 	transaction := models.TransactionRequest{
 		TransactionId: paymentDTO.TransactionId,
@@ -59,12 +71,20 @@ func (h *BankHandler) HandlePayment(c *gin.Context) {
 	// init payment
 	transactionResult, err := h.bankService.ProcessPayment(trContext, transaction)
 	if err != nil {
-		h.logger.Error("error processing payment",
-			"error", err.Error(),
+		h.logger.Error("error processing bank payment",
+			slog.String("transaction_id", paymentDTO.TransactionId),
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 		return
 	}
+	
+	h.logger.Info("bank payment processed successfully",
+		slog.String("transaction_id", transactionResult.TransactionId),
+		slog.String("status", transactionResult.Status),
+		slog.String("component", "handler"),
+	)
 	
 	response := models.TransactionResponse{
 		TransactionId: transactionResult.TransactionId,
@@ -84,15 +104,28 @@ func (h *BankHandler) GetUser(c *gin.Context) {
 
 	userId := c.Param("userId")
 
-	user, err := h.bankService.GetUser(trContext, userId)
+	h.logger.Info("getting bank user",
+		slog.String("user_id", userId),
+		slog.String("component", "handler"),
+	)
 
+	user, err := h.bankService.GetUser(trContext, userId)
 	if err != nil {
-		h.logger.Error("error getting user",
-			"error", err.Error(),
+		h.logger.Error("error getting bank user",
+			slog.String("user_id", userId),
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	h.logger.Info("bank user retrieved successfully",
+		slog.String("user_id", userId),
+		slog.String("currency", user.Currency),
+		slog.String("component", "handler"),
+	)
+	
 	response := models.BankUserResponse{
 		UserId:   user.UserId,
 		Currency: user.Currency,

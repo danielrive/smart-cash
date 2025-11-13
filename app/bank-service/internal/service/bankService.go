@@ -31,47 +31,60 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
 
-	s.logger.Info("processing transaction for expense",
-		"expenseId", transaction.ExpenseId,
-		"userId", transaction.UserId,
+	s.logger.Info("processing bank payment",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("expense_id", transaction.ExpenseId),
+		slog.String("user_id", transaction.UserId),
+		slog.Float64("amount", transaction.Amount),
+		slog.String("component", "service"),
 	)
 
 	user, err := s.bankRepository.GetUser(trContext, transaction.UserId)
-
 	if err != nil {
-		s.logger.Info("failed getting user",
-			"userId", transaction.UserId,
-			"error", err.Error())
-		transaction.Status = "NotPaid"
-		return transaction, common.ErrTransactionFailed
-	}
-	newSaldo, err := processPayment(transaction.Amount, user.Savings)
-	if err != nil {
-		s.logger.Error("transaction failed",
-			"error", err.Error(),
-			"userId", transaction.UserId,
-			"expenseId", transaction.ExpenseId,
+		s.logger.Error("failed getting user for payment",
+			slog.String("user_id", transaction.UserId),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
 		)
 		transaction.Status = "NotPaid"
 		return transaction, common.ErrTransactionFailed
 	}
+	
+	newSaldo, err := processPayment(transaction.Amount, user.Savings)
+	if err != nil {
+		s.logger.Warn("transaction failed - insufficient funds",
+			slog.String("error", err.Error()),
+			slog.String("user_id", transaction.UserId),
+			slog.String("expense_id", transaction.ExpenseId),
+			slog.Float64("amount", transaction.Amount),
+			slog.Float64("current_savings", user.Savings),
+			slog.String("component", "service"),
+		)
+		transaction.Status = "NotPaid"
+		return transaction, common.ErrTransactionFailed
+	}
+	
 	// update saving in user account
 	user.Savings = newSaldo
 	err = s.bankRepository.UpdateSavingsUser(trContext, user)
 	if err != nil {
-		// Use retry ?
-		s.logger.Error("transaction failed",
-			"error", err.Error(),
-			"userId", transaction.UserId,
-			"expenseId", transaction.ExpenseId,
+		s.logger.Error("transaction failed - could not update savings",
+			slog.String("error", err.Error()),
+			slog.String("user_id", transaction.UserId),
+			slog.String("expense_id", transaction.ExpenseId),
+			slog.String("component", "service"),
 		)
 		transaction.Status = "NotPaid"
 		return transaction, err
 	}
+	
 	transaction.Status = "Paid"
-	s.logger.Info("transaction processed",
-		"userId", transaction.UserId,
-		"expenseId", transaction.ExpenseId,
+	s.logger.Info("bank payment processed successfully",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("user_id", transaction.UserId),
+		slog.String("expense_id", transaction.ExpenseId),
+		slog.Float64("new_savings", newSaldo),
+		slog.String("component", "service"),
 	)
 
 	return transaction, nil
@@ -83,23 +96,34 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 	trContext, childSpan := tr.Start(ctx, "SVCGetUser")
 	defer childSpan.End()
 
-	user, err := s.bankRepository.GetUser(trContext, userId)
+	s.logger.Debug("getting bank user",
+		slog.String("user_id", userId),
+		slog.String("component", "service"),
+	)
 
+	user, err := s.bankRepository.GetUser(trContext, userId)
 	if err != nil {
-		s.logger.Error("error getting the user",
-			"error", err.Error(),
-			"user", userId,
+		s.logger.Error("error getting bank user",
+			slog.String("error", err.Error()),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return models.BankUser{}, err
 	}
 
 	if user.Blocked {
-		s.logger.Error("not transactions allowed",
-			"error", common.ErrUserBlocked,
-			"user", userId,
+		s.logger.Warn("user is blocked - transactions not allowed",
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return models.BankUser{}, common.ErrUserBlocked
 	}
+
+	s.logger.Debug("bank user retrieved successfully",
+		slog.String("user_id", userId),
+		slog.String("currency", user.Currency),
+		slog.String("component", "service"),
+	)
 
 	return user, nil
 

@@ -38,12 +38,20 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	// Create a new expense item
 	output := models.ExpensesReturn{}
 
+	r.logger.Debug("creating expense in database",
+		slog.String("expense_id", expense.ExpenseId),
+		slog.String("user_id", expense.UserId),
+		slog.String("component", "repository"),
+	)
+
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
-		r.logger.Error("error while unmarshaling DynamoDB item",
-			"error", err.Error(),
-			"expenseId", expense.ExpenseId,
+		r.logger.Error("error marshaling expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", expense.ExpenseId),
+			slog.String("component", "repository"),
 		)
+		return output, common.ErrInternalError
 	}
 
 	// Create a new expense item
@@ -52,12 +60,18 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 		Item:      item,
 	})
 	if err != nil {
-		r.logger.Error("dynamodb error while putting item",
-			"error", err.Error(),
-			"expenseId", expense.ExpenseId,
+		r.logger.Error("dynamodb error putting expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", expense.ExpenseId),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrExpenseNotCreated
 	}
+
+	r.logger.Info("expense created in database",
+		slog.String("expense_id", expense.ExpenseId),
+		slog.String("component", "repository"),
+	)
 
 	return createExpenserReturn(expense), nil
 }
@@ -151,8 +165,9 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		r.logger.Info("expense not found",
-			"expenseId", "test",
+		r.logger.Debug("expense not found in database",
+			slog.String("expense_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrExpenseNotFound
 	}
@@ -160,12 +175,18 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	// Unmarshal the expense item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		r.logger.Error("failed to unmarshal attribute value",
-			"error", err.Error(),
-			"expenseId", id,
+		r.logger.Error("error unmarshaling expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("expense retrieved from database",
+		slog.String("expense_id", id),
+		slog.String("component", "repository"),
+	)
 
 	return output, nil
 }

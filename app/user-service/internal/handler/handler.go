@@ -29,17 +29,40 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById")
 	defer childSpan.End()
+
 	userId := c.Param("userId")
+
+	h.logger.Info("getting user by id",
+		slog.String("user_id", userId),
+		slog.String("component", "handler"),
+	)
+
 	user, err := h.userService.GetUserById(trContext, userId)
 	if err != nil {
 		if err == common.ErrUserNotFound {
+			h.logger.Warn("user not found",
+				slog.String("user_id", userId),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
 			return
 		} else {
+			h.logger.Error("error getting user",
+				slog.String("user_id", userId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	}
+
+	h.logger.Info("user retrieved successfully",
+		slog.String("user_id", userId),
+		slog.String("username", user.Username),
+		slog.String("component", "handler"),
+	)
+
 	response := models.UserResponse{
 		UserId:   user.UserId,
 		Username: user.Username,
@@ -65,20 +88,47 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 	} else if username, ok := query["username"]; ok {
 		key, value = "username", username[0]
 	} else {
+		h.logger.Warn("invalid query parameters",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
 		return
 	}
+
+	h.logger.Info("getting user by query",
+		slog.String("key", key),
+		slog.String("value", value),
+		slog.String("component", "handler"),
+	)
+
 	// Get user info by the query
 	user, err := h.userService.GetUserByEmailorUsername(trContext, key, value)
 	if err != nil {
 		if err == common.ErrUserNotFound {
+			h.logger.Warn("user not found by query",
+				slog.String("key", key),
+				slog.String("value", value),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound.Error()})
 			return
 		} else {
+			h.logger.Error("error getting user by query",
+				slog.String("key", key),
+				slog.String("value", value),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 			return
 		}
 	}
+
+	h.logger.Info("user retrieved by query successfully",
+		slog.String("user_id", user.UserId),
+		slog.String("key", key),
+		slog.String("component", "handler"),
+	)
 
 	response := models.UserResponse{
 		UserId:   user.UserId,
@@ -97,23 +147,33 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
 	defer childSpan.End()
-	
+
 	// Get validated body from middleware
 	validatedBody, exists := c.Get("validatedBody")
 	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
-		h.logger.Error("validatedBody not found in context")
 		return
 	}
-	
+
 	// Type assert to our DTO (this is safe because ValidateBody uses generics)
 	userDTO, ok := validatedBody.(dto.CreateUserRequest)
 	if !ok {
+		h.logger.Error("failed to cast validatedBody to CreateUserRequest",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-		h.logger.Error("failed to cast validatedBody to CreateUserRequest")
 		return
 	}
-	
+
+	h.logger.Info("creating new user",
+		slog.String("username", userDTO.Username),
+		slog.String("email", userDTO.Email),
+		slog.String("component", "handler"),
+	)
+
 	// Map DTO to domain model
 	user := models.User{
 		FirstName: userDTO.FirstName,
@@ -122,13 +182,35 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Email:     userDTO.Email,
 		Password:  userDTO.Password,
 	}
-	
+
 	// create the user
 	response, err := h.userService.CreateUser(trContext, user)
 	if err != nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+		if err == common.ErrUserAlreadyExists {
+			h.logger.Warn("user creation failed - already exists",
+				slog.String("username", userDTO.Username),
+				slog.String("email", userDTO.Email),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		} else {
+			h.logger.Error("error creating user",
+				slog.String("username", userDTO.Username),
+				slog.String("email", userDTO.Email),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
+
+	h.logger.Info("user created successfully",
+		slog.String("user_id", response.UserId),
+		slog.String("username", response.Username),
+		slog.String("component", "handler"),
+	)
+
 	c.Header("Location", "/user/"+response.UserId)
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": response})
 }
@@ -139,29 +221,49 @@ func (h *UserHandler) Login(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
 	defer childSpan.End()
-	
+
 	// Get validated body from middleware
 	validatedBody, exists := c.Get("validatedBody")
 	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
-		h.logger.Error("validatedBody not found in context")
 		return
 	}
-	
+
 	// Type assert to our DTO
 	loginData, ok := validatedBody.(dto.LoginRequest)
 	if !ok {
+		h.logger.Error("failed to cast validatedBody to LoginRequest",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-		h.logger.Error("failed to cast validatedBody to LoginRequest")
 		return
 	}
+
+	h.logger.Info("login attempt",
+		slog.String("username", loginData.Username),
+		slog.String("component", "handler"),
+	)
 
 	token, err := h.userService.Login(trContext, loginData.Username, loginData.Password)
 
 	if err != nil {
+		h.logger.Warn("login failed",
+			slog.String("username", loginData.Username),
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.logger.Info("login successful",
+		slog.String("username", loginData.Username),
+		slog.String("component", "handler"),
+	)
+
 	c.JSON(http.StatusCreated, gin.H{"token": token})
 }
 

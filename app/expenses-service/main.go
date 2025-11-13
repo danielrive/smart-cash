@@ -12,6 +12,7 @@ import (
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"smart-cash/utils/middleware"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -31,12 +32,15 @@ var (
 )
 
 func init() {
-	// Set-up logger handler
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
+	// Set ServiceName first for logger initialization
+	common.ServiceName = os.Getenv("SERVICE_NAME")
+	if common.ServiceName == "" {
+		common.ServiceName = "expenses-service" // fallback for logger
+	}
 
-	slog.SetDefault(logger)
+	// Logger config
+	logsConfig := logging.LoadConfig()
+	logger = logging.InitLogger(logsConfig, common.ServiceName)
 
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if common.DomainName == "" {
@@ -61,6 +65,7 @@ func init() {
 		os.Exit(1)
 	}
 
+	// Re-validate ServiceName (in case it was set via env)
 	common.ServiceName = os.Getenv("SERVICE_NAME")
 	if common.ServiceName == "" {
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
@@ -98,7 +103,7 @@ func main() {
 
 	router.Use(
 		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
-		gin.LoggerWithWriter(gin.DefaultWriter, "/expenses/health"),
+		logging.HTTPMiddleware(logger, notToLogEndpoints),
 		gin.Recovery(),
 	)
 
@@ -115,22 +120,22 @@ func main() {
 	router.GET("/expenses/health", expensesHandler.HealthCheck)
 
 	// Protected routes - All expense operations require authentication
-	router.POST("/expenses", 
+	router.POST("/expenses",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidateBody[dto.CreateExpenseRequest](), // Validate request body
 		expensesHandler.CreateExpense)
-	
-	router.GET("/expenses/:expenseId", 
+
+	router.GET("/expenses/:expenseId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.GetExpensesById)
-	
-	router.GET("/expenses", 
+
+	router.GET("/expenses",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.RequireOneOfQueryParams([]string{"userId", "category"}), // Require at least one query param
 		expensesHandler.GetExpensesByQuery)
-	
-	router.DELETE("/expenses/:expenseId", 
+
+	router.DELETE("/expenses/:expenseId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
 		expensesHandler.DeleteExpense)
