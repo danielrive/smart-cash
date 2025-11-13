@@ -3,8 +3,10 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"smart-cash/expenses-service/internal/common"
+	"smart-cash/expenses-service/internal/handler/dto"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/expenses-service/models"
 
@@ -32,57 +34,132 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 	defer childSpan.End()
 
 	expenseId := c.Param("expenseId")
-	expense, err := h.expensesService.DeleteExpense(trContext, expenseId)
 
+	h.logger.Info("deleting expense",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "handler"),
+	)
+
+	expense, err := h.expensesService.DeleteExpense(trContext, expenseId)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
-			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrExpenseNotFound})
+			h.logger.Warn("expense not found for deletion",
+				slog.String("expense_id", expenseId),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrExpenseNotFound})
 		} else {
-			c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
+			h.logger.Error("error deleting expense",
+				slog.String("expense_id", expenseId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 		}
+		return
 	}
+
+	h.logger.Info("expense deleted successfully",
+		slog.String("expense_id", expense),
+		slog.String("component", "handler"),
+	)
+
 	c.JSON(http.StatusOK, gin.H{"expenseId": expense})
 }
 
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
-<<<<<<< HEAD
-=======
-	// OTel trace instrumentation
->>>>>>> develop
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
 	defer childSpan.End()
 
-	expense := models.Expense{}
-	expense.UserId = c.GetHeader("UserId")
-	if expense.UserId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request",
-			"details": "no UserId in header"})
-		h.logger.Error("no user ID in header",
-			"level", "Handler")
-		return
-	}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&expense); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-			"level", "Handler",
+	// Get userId from auth middleware (set by AuthMiddleware)
+	userId, exists := c.Get("userId")
+	if !exists {
+		h.logger.Error("userId not found in context",
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
+
+	// Get validated body from validation middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	// Type assert to our DTO
+	expenseRequest, ok := validatedBody.(dto.CreateExpenseRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to CreateExpenseRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	// Set userId from auth context
+	expenseRequest.UserId = userId.(string)
+
+	h.logger.Info("creating new expense",
+		slog.String("user_id", expenseRequest.UserId),
+		slog.String("name", expenseRequest.Name),
+		slog.Float64("amount", expenseRequest.Amount),
+		slog.String("category", expenseRequest.Category),
+		slog.String("component", "handler"),
+	)
+
+	var expenseDate time.Time
+	if expenseRequest.Date != "" {
+		parsedDate, err := time.Parse("2006-01-02", expenseRequest.Date)
+		if err != nil {
+			h.logger.Error("failed to parse date",
+				slog.String("error", err.Error()),
+				slog.String("date", expenseRequest.Date),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
+			return
+		}
+		expenseDate = parsedDate
+	} else {
+		expenseDate = time.Now().UTC()
+	}
+
+	expense := models.Expense{
+		UserId:      expenseRequest.UserId,
+		Name:        expenseRequest.Name,
+		Amount:      expenseRequest.Amount,
+		Description: expenseRequest.Description,
+		Category:    expenseRequest.Category,
+		Date:        expenseDate,
+		Tags:        expenseRequest.Tags,
+	}
+
 	// create the expense
 	response, err := h.expensesService.CreateExpense(trContext, expense)
 	if err != nil {
-		h.logger.Error("error processing expense",
-			"error", err.Error(),
-			"level", "Handler",
+		h.logger.Error("error creating expense",
+			slog.String("user_id", expenseRequest.UserId),
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusNotImplemented, gin.H{"error": common.ErrInternalError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 		return
 	}
+
+	h.logger.Info("expense created successfully",
+		slog.String("expense_id", response.ExpenseId),
+		slog.String("user_id", expenseRequest.UserId),
+		slog.String("component", "handler"),
+	)
+
 	c.Header("Location", "/expense/"+response.ExpenseId)
 	c.JSON(http.StatusCreated, response)
 
@@ -97,16 +174,36 @@ func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
 
 	expenseId := c.Param("expenseId")
 
+	h.logger.Info("getting expense by id",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "handler"),
+	)
+
 	expenses, err := h.expensesService.GetExpenseById(trContext, expenseId)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
+			h.logger.Warn("expense not found",
+				slog.String("expense_id", expenseId),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrExpenseNotFound})
 			return
 		} else {
+			h.logger.Error("error getting expense",
+				slog.String("expense_id", expenseId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
 			return
 		}
 	}
+
+	h.logger.Info("expense retrieved successfully",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "handler"),
+	)
+
 	c.JSON(http.StatusOK, expenses)
 }
 
@@ -123,22 +220,55 @@ func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
 	} else if category, ok := query["category"]; ok {
 		key, value = "category", category[0]
 	} else {
+		h.logger.Warn("invalid query parameters",
+			slog.String("component", "handler"),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
 		return
 	}
+
+	h.logger.Info("getting expenses by query",
+		slog.String("key", key),
+		slog.String("value", value),
+		slog.String("component", "handler"),
+	)
+
 	expenses, err := h.expensesService.GetExpByUserIdorCat(trContext, key, value)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
+			h.logger.Warn("expenses not found by query",
+				slog.String("key", key),
+				slog.String("value", value),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusNotFound, gin.H{"Message": common.ErrExpenseNotFound})
 			return
 		} else if err == common.ErrWrongCredentials {
+			h.logger.Warn("wrong credentials for expense query",
+				slog.String("key", key),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials})
 			return
 		} else {
+			h.logger.Error("error getting expenses by query",
+				slog.String("key", key),
+				slog.String("value", value),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			return
 		}
 	}
+
+	h.logger.Info("expenses retrieved by query successfully",
+		slog.String("key", key),
+		slog.String("value", value),
+		slog.Int("count", len(expenses)),
+		slog.String("component", "handler"),
+	)
+
 	c.JSON(http.StatusOK, expenses)
 }
 

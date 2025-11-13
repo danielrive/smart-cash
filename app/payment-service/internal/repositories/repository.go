@@ -36,27 +36,40 @@ func (r *DynamoDBPaymentRepository) CreateTransaction(ctx context.Context, trans
 	_, childSpan := tr.Start(ctx, "RepositoryCreateTransaction")
 	defer childSpan.End()
 
+	r.logger.Debug("creating transaction in database",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("expense_id", transaction.ExpenseId),
+		slog.String("component", "repository"),
+	)
+
 	item, err := attributevalue.MarshalMap(transaction)
 	if err != nil {
-		r.logger.Error("error while unmarshaling DynamoDB item",
-			"error", err.Error(),
-			"transactionId", transaction.TransactionId,
+		r.logger.Error("error marshaling transaction item",
+			slog.String("error", err.Error()),
+			slog.String("transaction_id", transaction.TransactionId),
+			slog.String("component", "repository"),
 		)
 		return common.ErrTransactionFailed
 	}
 
-	_, err = r.client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(r.paymentTable),
 		Item:      item,
 	})
 
 	if err != nil {
-		r.logger.Error("dynamodb error while putting item",
-			"error", err.Error(),
-			"transactionId", transaction.TransactionId,
+		r.logger.Error("dynamodb error putting transaction item",
+			slog.String("error", err.Error()),
+			slog.String("transaction_id", transaction.TransactionId),
+			slog.String("component", "repository"),
 		)
 		return common.ErrTransactionFailed
 	}
+
+	r.logger.Info("transaction created in database",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("component", "repository"),
+	)
 
 	return nil
 
@@ -71,7 +84,7 @@ func (r *DynamoDBPaymentRepository) GetTransaction(ctx context.Context, id strin
 
 	output := models.TransactionRequest{}
 	// Get bank item by id
-	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.paymentTable),
 		Key: map[string]types.AttributeValue{
 			"transactionId": &types.AttributeValueMemberS{Value: id},
@@ -85,21 +98,28 @@ func (r *DynamoDBPaymentRepository) GetTransaction(ctx context.Context, id strin
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		r.logger.Info("transaction not found",
-			"transactionId", id,
+		r.logger.Debug("transaction not found in database",
+			slog.String("transaction_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrTransactionNotFound
 	}
 
-	// Unmarshal the bank item
+	// Unmarshal the transaction item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		r.logger.Error("failed to unmarshal attribute value",
-			"error", err.Error(),
-			"transactionId", id,
+		r.logger.Error("error unmarshaling transaction item",
+			slog.String("error", err.Error()),
+			slog.String("transaction_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("transaction retrieved from database",
+		slog.String("transaction_id", id),
+		slog.String("component", "repository"),
+	)
 
 	return output, nil
 }
@@ -137,7 +157,7 @@ func (r *DynamoDBPaymentRepository) UpdateTransaction(ctx context.Context, trans
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	_, err = r.client.UpdateItem(context.TODO(), inputUpdate)
+	_, err = r.client.UpdateItem(ctx, inputUpdate)
 
 	// Update bank item
 	if err != nil {

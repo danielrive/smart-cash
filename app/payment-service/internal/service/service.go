@@ -38,169 +38,171 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 }
 
 func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.TransactionRequest, error) {
-<<<<<<< HEAD
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
-	defer childSpan.End()
-	user := models.User{}
-	expense := models.Expense{}
-	//userBaseURL := fmt.Sprintf("http://127.0.0.1:8181/user/%s", paymentRequest.UserId)
-	userBaseURL := fmt.Sprintf("http://user.%s/%s", common.DomainName, paymentRequest.UserId)
-	//expenseBaseURL := fmt.Sprintf("http://127.0.0.1:8282/expenses/%s", paymentRequest.ExpenseId)
-	expenseBaseURL := fmt.Sprintf("http://expenses.%s/%s", common.DomainName, paymentRequest.ExpenseId)
-
-	// Validate if User exist and is not blocked
-	resp, err := http.Get(userBaseURL)
-	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", userBaseURL,
-		)
-		return models.TransactionRequest{}, common.ErrUserNotFound
-	}
-	defer resp.Body.Close()
-
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-
-	err = json.Unmarshal(respBody, &user)
-	if err != nil {
-		s.logger.Error("error could not parse response body for user",
-			"error", err.Error(),
-		)
-		return models.TransactionRequest{}, common.ErrInternalError
-	}
-
-	if !user.Active {
-		return models.TransactionRequest{}, common.ErrUserBlocked
-	}
-
-	// Validate expense
-
-	resp, err = http.Get(expenseBaseURL)
-=======
 	// OTel instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
 	defer childSpan.End()
 
-	user := models.User{}
+	s.logger.Info("processing payment",
+		slog.String("user_id", paymentRequest.UserId),
+		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("component", "service"),
+	)
+
 	expense := models.Expense{}
 	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
 
-	s.logger.Info("calling" + expenseBaseURL)
+	// Fetch expense details
 	resp, err := http.Get(expenseBaseURL)
->>>>>>> develop
 	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", expenseBaseURL,
+		s.logger.Error("error calling expense service",
+			slog.String("error", err.Error()),
+			slog.String("url", expenseBaseURL),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
-		return models.TransactionRequest{}, common.ErrUserNotFound
+		return models.TransactionRequest{}, common.ErrExpenseNotFound
 	}
-<<<<<<< HEAD
-	respBody, _ = io.ReadAll(resp.Body)
-=======
-	respBody, _ := io.ReadAll(resp.Body)
->>>>>>> develop
+	defer resp.Body.Close()
 
-	err = json.Unmarshal(respBody, &expense)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Error("error could not parse response body for expense",
-			"error", err.Error(),
+		s.logger.Error("error reading response body from expense service",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
+	respBody, _ := io.ReadAll(resp.Body)
 
-<<<<<<< HEAD
-=======
-	// Validate if User exist and is not blocked
+	err = json.Unmarshal(respBody, &expense)
+	if err != nil {
+		s.logger.Error("error parsing response body from expense service",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
+		)
+		return models.TransactionRequest{}, common.ErrInternalError
+	}
+  // Validate if User exist and is not blocked
 	// Validate if user exist
 	if !s.validateUser(expense.UserId) {
-		s.logger.Error("error user not found",
-			"userId", paymentRequest.UserId,
-			"level", "service",
+		s.logger.Warn("user not found or not active",
+			slog.String("user_id", expense.UserId),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		return models.TransactionRequest{}, common.ErrUserNotFound
 	}
 
->>>>>>> develop
 	// create transaction to bank
 
 	transaction := models.TransactionRequest{
 		TransactionId: s.uuid.New(),
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		ExpenseId:     expense.ExpenseId,
-		UserId:        user.UserId,
+		UserId:        expense.UserId,
 		Amount:        expense.Amount,
 		Status:        "pending",
 	}
 
 	err = s.paymentRepository.CreateTransaction(trContext, transaction)
 	if err != nil {
-		s.logger.Error("error could not create the transaction",
-			"error", err.Error(),
+		s.logger.Error("error creating transaction",
+			slog.String("error", err.Error()),
+			slog.String("transaction_id", transaction.TransactionId),
+			slog.String("expense_id", paymentRequest.ExpenseId),
+			slog.String("component", "service"),
 		)
 		transaction.Status = "notProcessed"
 		return transaction, common.ErrInternalError
 	}
 
-	return transaction, nil
-<<<<<<< HEAD
+	s.logger.Info("payment processed successfully",
+		slog.String("transaction_id", transaction.TransactionId),
+		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("user_id", expense.UserId),
+		slog.String("component", "service"),
+	)
 
-=======
->>>>>>> develop
+	return transaction, nil
 }
 
 func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
+	trContext, childSpan := tr.Start(ctx, "SVCGetTransaction")
 	defer childSpan.End()
 
-	transaction, err := s.paymentRepository.GetTransaction(trContext, id)
+	s.logger.Debug("getting transaction",
+		slog.String("transaction_id", id),
+		slog.String("component", "service"),
+	)
 
+	transaction, err := s.paymentRepository.GetTransaction(trContext, id)
 	if err != nil {
+		s.logger.Error("error getting transaction",
+			slog.String("transaction_id", id),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
 		return models.TransactionRequest{}, err
 	}
+
+	s.logger.Debug("transaction retrieved successfully",
+		slog.String("transaction_id", id),
+		slog.String("status", transaction.Status),
+		slog.String("component", "service"),
+	)
 
 	return transaction, nil
 
 }
-<<<<<<< HEAD
-=======
 
 func (s *PaymentService) validateUser(userId string) bool {
-	// OTel instrumentation
-	//tr := otel.Tracer(common.ServiceName)
-	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
-	//childSpan.SetAttributes(attribute.String("component", "service"))
-	//defer childSpan.End()
-
 	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
 	user := models.User{}
 
-	// Validate if User exist and is not blocked
+	// Validate if User exists and is not blocked
 	resp, err := http.Get(userBaseURL)
 	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", userBaseURL,
+		s.logger.Error("error calling user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
-
-	err = json.Unmarshal(respBody, &user)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Error("error could not parse response body for user",
-			"error", err.Error(),
+		s.logger.Error("error reading response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
 
-	return true
+	err = json.Unmarshal(respBody, &user)
+	if err != nil {
+		s.logger.Error("error parsing response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
+		)
+		return false
+	}
+
+	s.logger.Debug("user validated",
+		slog.String("user_id", userId),
+		slog.Bool("active", user.Active),
+		slog.String("component", "service"),
+	)
+
+	return user.Active
 }
->>>>>>> develop

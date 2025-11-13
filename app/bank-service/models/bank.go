@@ -25,3 +25,18 @@ type TransactionRequest struct {
 	UserId        string  `json:"userId" dynamodbav:"userId"` // global secondary index
 	Status        string  `json:"status" dynamodbav:"status"`
 }
+
+type BankUserResponse struct {
+	UserId   string  `json:"userId"`
+	Currency string  `json:"currency"`
+	Savings  float64 `json:"savings"`
+	Blocked  bool    `json:"blocked"`
+}
+
+type TransactionResponse struct {
+	TransactionId string  `json:"transactionId"`
+	ExpenseId     string  `json:"expenseId"`
+	Date          string  `json:"date"`
+	Amount        float64 `json:"amount"`
+	Status        string  `json:"status"`
+}

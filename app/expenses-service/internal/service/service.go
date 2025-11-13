@@ -2,15 +2,11 @@ package service
 
 import (
 	"context"
-<<<<<<< HEAD
-	"log/slog"
-=======
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
->>>>>>> develop
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
@@ -43,27 +39,31 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-<<<<<<< HEAD
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCCreateExpense")
-	childSpan.SetAttributes(attribute.String("component", "service"))
-	defer childSpan.End()
-=======
 	// OTel trace instrumentation
 	tr := otel.Tracer(common.ServiceName)
 	trContext, childSpan := tr.Start(ctx, "CreateExpense")
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
+	s.logger.Info("creating expense",
+		slog.String("user_id", expense.UserId),
+		slog.String("name", expense.Name),
+		slog.Float64("amount", expense.Amount),
+		slog.String("component", "service"),
+	)
+
 	// Validate if user exist
 	if !s.validateUser(expense.UserId) {
+		s.logger.Warn("user not found during expense creation",
+			slog.String("user_id", expense.UserId),
+			slog.String("component", "service"),
+		)
 		return models.ExpensesReturn{}, common.ErrUserNotFound
 	}
->>>>>>> develop
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
-	expense.Date = time.Now().UTC().Format("2006-01-02")
+	expense.Date = time.Now().UTC()
 	// Create UUID
 	expense.ExpenseId = s.uuid.New()
 
@@ -71,17 +71,20 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 		expense.Category = "none"
 	}
 	response, err := s.expensesRepository.CreateExpense(trContext, expense)
-
 	if err != nil {
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
-<<<<<<< HEAD
-=======
 			"level", "service",
->>>>>>> develop
 		)
 		return models.ExpensesReturn{}, err
 	}
+
+	s.logger.Info("expense created successfully",
+		slog.String("expense_id", response.ExpenseId),
+		slog.String("user_id", expense.UserId),
+		slog.String("component", "service"),
+	)
+
 	return response, nil
 }
 
@@ -92,10 +95,25 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 	trContext, childSpan := tr.Start(ctx, "SVCGetExpenseById")
 	defer childSpan.End()
 
+	s.logger.Debug("getting expense by id",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "service"),
+	)
+
 	expense, err := s.expensesRepository.GetExpenseById(trContext, expenseId)
 	if err != nil {
+		s.logger.Error("error getting expense by id",
+			slog.String("expense_id", expenseId),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
 		return models.Expense{}, err
 	}
+
+	s.logger.Debug("expense retrieved successfully",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "service"),
+	)
 
 	return expense, nil
 }
@@ -107,15 +125,35 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 	trContext, childSpan := tr.Start(ctx, "SVCDeleteExpense")
 	defer childSpan.End()
 
+	s.logger.Info("deleting expense",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "service"),
+	)
+
 	expense, err := s.GetExpenseById(trContext, expenseId)
 	if err != nil {
+		s.logger.Warn("expense not found for deletion",
+			slog.String("expense_id", expenseId),
+			slog.String("component", "service"),
+		)
 		return "", common.ErrExpenseNotFound
 	}
 
 	err = s.expensesRepository.DeleteExpenseById(trContext, expense.ExpenseId)
 	if err != nil {
+		s.logger.Error("error deleting expense",
+			slog.String("expense_id", expenseId),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
 		return "", err
 	}
+
+	s.logger.Info("expense deleted successfully",
+		slog.String("expense_id", expenseId),
+		slog.String("component", "service"),
+	)
+
 	return expense.ExpenseId, nil
 }
 
@@ -127,14 +165,30 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 	childSpan.SetAttributes(attribute.String("component", "service"))
 	defer childSpan.End()
 
+	s.logger.Debug("getting expenses by user id or category",
+		slog.String("key", key),
+		slog.String("value", value),
+		slog.String("component", "service"),
+	)
+
 	expenses, err := s.expensesRepository.GetExpByUserIdorCat(trContext, key, value)
 	if err != nil {
+		s.logger.Debug("expenses not found by query",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.String("component", "service"),
+		)
 		return expenses, err
 	}
+
+	s.logger.Debug("expenses retrieved successfully",
+		slog.String("key", key),
+		slog.Int("count", len(expenses)),
+		slog.String("component", "service"),
+	)
+
 	return expenses, nil
 }
-<<<<<<< HEAD
-=======
 
 // Function to validate if user exist and is active
 
@@ -151,26 +205,42 @@ func (s *ExpensesService) validateUser(userId string) bool {
 	// Validate if User exist and is not blocked
 	resp, err := http.Get(userBaseURL)
 	if err != nil {
-		s.logger.Error("error creating the http request",
-			"error", err.Error(),
-			"url", userBaseURL,
-			"level", "service",
+		s.logger.Error("error calling user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
-
-	err = json.Unmarshal(respBody, &user)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Error("error could not parse response body for user",
-			"error", err.Error(),
-			"level", "service",
+		s.logger.Error("error reading response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
 		)
 		return false
 	}
 
+	err = json.Unmarshal(respBody, &user)
+	if err != nil {
+		s.logger.Error("error parsing response body from user service",
+			slog.String("error", err.Error()),
+			slog.String("url", userBaseURL),
+			slog.String("user_id", userId),
+			slog.String("component", "service"),
+		)
+		return false
+	}
+
+	s.logger.Debug("user validated successfully",
+		slog.String("user_id", userId),
+		slog.String("component", "service"),
+	)
+
 	return true
 }
->>>>>>> develop

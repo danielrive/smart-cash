@@ -38,26 +38,40 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	// Create a new expense item
 	output := models.ExpensesReturn{}
 
+	r.logger.Debug("creating expense in database",
+		slog.String("expense_id", expense.ExpenseId),
+		slog.String("user_id", expense.UserId),
+		slog.String("component", "repository"),
+	)
+
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
-		r.logger.Error("error while unmarshaling DynamoDB item",
-			"error", err.Error(),
-			"expenseId", expense.ExpenseId,
+		r.logger.Error("error marshaling expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", expense.ExpenseId),
+			slog.String("component", "repository"),
 		)
+		return output, common.ErrInternalError
 	}
 
 	// Create a new expense item
-	_, err = r.client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(r.expensesTable),
 		Item:      item,
 	})
 	if err != nil {
-		r.logger.Error("dynamodb error while putting item",
-			"error", err.Error(),
-			"expenseId", expense.ExpenseId,
+		r.logger.Error("dynamodb error putting expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", expense.ExpenseId),
+			slog.String("component", "repository"),
 		)
-		return output, common.ErrExpenseNoCreated
+		return output, common.ErrExpenseNotCreated
 	}
+
+	r.logger.Info("expense created in database",
+		slog.String("expense_id", expense.ExpenseId),
+		slog.String("component", "repository"),
+	)
 
 	return createExpenserReturn(expense), nil
 }
@@ -95,7 +109,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 		UpdateExpression:          expr.Update(),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	}
-	response, err := r.client.UpdateItem(context.TODO(), inputUpdate)
+	response, err := r.client.UpdateItem(ctx, inputUpdate)
 
 	if err != nil {
 		r.logger.Error("status couldn't be updated",
@@ -137,7 +151,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 
 	output := models.Expense{}
 	// Get expense item by id
-	item, err := r.client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.expensesTable),
 		Key: map[string]types.AttributeValue{
 			"expenseId": &types.AttributeValueMemberS{Value: id},
@@ -151,8 +165,9 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
-		r.logger.Info("expense not found",
-			"expenseId", "test",
+		r.logger.Debug("expense not found in database",
+			slog.String("expense_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrExpenseNotFound
 	}
@@ -160,12 +175,18 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	// Unmarshal the expense item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
-		r.logger.Error("failed to unmarshal attribute value",
-			"error", err.Error(),
-			"expenseId", id,
+		r.logger.Error("error unmarshaling expense item",
+			slog.String("error", err.Error()),
+			slog.String("expense_id", id),
+			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
+
+	r.logger.Debug("expense retrieved from database",
+		slog.String("expense_id", id),
+		slog.String("component", "repository"),
+	)
 
 	return output, nil
 }
@@ -198,7 +219,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 		ExpressionAttributeValues: expr.Values(),
 	}
 
-	response, err := r.client.Query(context.TODO(), queryInput)
+	response, err := r.client.Query(ctx, queryInput)
 
 	if err != nil {
 		r.logger.Error("dynamodb query failed",
@@ -235,7 +256,7 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 	defer childSpan.End()
 
 	// Delete expense item by id
-	_, err := r.client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+	_, err := r.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(r.expensesTable),
 		Key: map[string]types.AttributeValue{
 			"expenseId": &types.AttributeValueMemberS{Value: id},
@@ -253,10 +274,13 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 
 func createExpenserReturn(expense models.Expense) models.ExpensesReturn {
 	return models.ExpensesReturn{
-		Date:      expense.Date,
-		ExpenseId: expense.ExpenseId,
-		Name:      expense.Name,
-		Status:    expense.Status,
-		Amount:    expense.Amount,
+		Date:        expense.Date.Format("2006-01-02"),
+		ExpenseId:   expense.ExpenseId,
+		Name:        expense.Name,
+		Description: expense.Description,
+		Status:      expense.Status,
+		Amount:      expense.Amount,
+		Category:    expense.Category,
+		Tags:        expense.Tags,
 	}
 }
