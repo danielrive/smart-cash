@@ -11,6 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type UserHandler struct {
@@ -27,7 +29,12 @@ func NewUserHandler(userService *service.UserService, logger *slog.Logger) *User
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById")
+
+	_, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById",
+		trace.WithAttributes(
+			attribute.String("component", "handler"),
+		),
+	)
 	defer childSpan.End()
 
 	userId := c.Param("userId")
@@ -37,7 +44,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	user, err := h.userService.GetUserById(trContext, userId)
+	user, err := h.userService.GetUserById(c.Request.Context(), userId)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			h.logger.Warn("user not found",
@@ -77,7 +84,12 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 
 func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserByQuery")
+
+	_, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserByQuery",
+		trace.WithAttributes(
+			attribute.String("component", "handler"),
+		),
+	)
 	defer childSpan.End()
 
 	query := c.Request.URL.Query()
@@ -102,7 +114,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 	)
 
 	// Get user info by the query
-	user, err := h.userService.GetUserByEmailorUsername(trContext, key, value)
+	user, err := h.userService.GetUserByEmailorUsername(c.Request.Context(), key, value)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			h.logger.Warn("user not found by query",
@@ -145,7 +157,12 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
+
+	_, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser",
+		trace.WithAttributes(
+			attribute.String("component", "handler"),
+		),
+	)
 	defer childSpan.End()
 
 	// Get validated body from middleware
@@ -184,7 +201,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	}
 
 	// create the user
-	response, err := h.userService.CreateUser(trContext, user)
+	response, err := h.userService.CreateUser(c.Request.Context(), user)
 	if err != nil {
 		if err == common.ErrUserAlreadyExists {
 			h.logger.Warn("user creation failed - already exists",
@@ -219,7 +236,12 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 func (h *UserHandler) Login(c *gin.Context) {
 	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
+
+	_, childSpan := tr.Start(c.Request.Context(), "HandlerLogin",
+		trace.WithAttributes(
+			attribute.String("component", "handler"),
+		),
+	)
 	defer childSpan.End()
 
 	// Get validated body from middleware
@@ -247,7 +269,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	token, err := h.userService.Login(trContext, loginData.Username, loginData.Password)
+	token, err := h.userService.Login(c.Request.Context(), loginData.Username, loginData.Password)
 
 	if err != nil {
 		h.logger.Warn("login failed",

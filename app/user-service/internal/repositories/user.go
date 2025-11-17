@@ -12,6 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // define UUID interface
@@ -39,8 +43,18 @@ func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid
 // Function to Get user by ID
 func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (models.UserResponse, error) {
 	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryGetUserById")
+
+	_, childSpan := tr.Start(ctx, "RepositoryGetUserById",
+		trace.WithAttributes(
+			semconv.DBSystemKey.String("dynamodb"),     // Database type
+			semconv.DBOperationKey.String("GetItem"),   // Operation name
+			semconv.DBNameKey.String(r.tableUsers),     // Database/table name
+			attribute.String("user.id", id),            // The user ID we're looking for
+			attribute.String("db.table", r.tableUsers), // Alternative table attribute
+		),
+	)
 	defer childSpan.End()
+
 	output := models.UserResponse{}
 
 	// create input for get item
@@ -56,6 +70,9 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 	response, err := r.client.GetItem(ctx, input)
 
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "dynamodb GetItem failed")
+
 		r.logger.Error("dynamodb get item failed",
 			slog.String("error", err.Error()),
 			slog.String("user_id", id),
@@ -64,15 +81,22 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 		return output, common.ErrInternalError
 	}
 	if len(response.Item) == 0 {
+		childSpan.SetAttributes(attribute.Bool("db.item_found", false))
+		childSpan.SetStatus(codes.Ok, "user not found")
+
 		r.logger.Debug("user not found in database",
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
 		)
 		return output, common.ErrUserNotFound
 	}
+
 	// unmarshal item to models.user struct
 	err = attributevalue.UnmarshalMap(response.Item, &output)
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "unmarshal failed")
+
 		r.logger.Error("error unmarshaling map",
 			slog.String("error", err.Error()),
 			slog.String("user_id", id),
@@ -80,6 +104,13 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 		)
 		return output, common.ErrInternalError
 	}
+
+	// Success - mark span as successful and add result info
+	childSpan.SetAttributes(
+		attribute.Bool("db.item_found", true),
+		attribute.String("user.id", output.UserId),
+	)
+	childSpan.SetStatus(codes.Ok, "user retrieved successfully")
 
 	r.logger.Debug("user retrieved from database",
 		slog.String("user_id", id),
@@ -93,11 +124,23 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 
 func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
 	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryCreateUser")
+	_, childSpan := tr.Start(ctx, "RepositoryCreateUser",
+		trace.WithAttributes(
+			semconv.DBSystemKey.String("dynamodb"),
+			semconv.DBOperationKey.String("PutItem"),
+			semconv.DBNameKey.String(r.tableUsers),
+			attribute.String("db.table", r.tableUsers),
+			attribute.String("user.username", u.Username),
+			attribute.String("user.email", u.Email),
+		),
+	)
 	defer childSpan.End()
 
 	output := models.UserResponse{}
 	u.UserId = r.uuid.New()
+
+	// Add the generated user ID to the span
+	childSpan.SetAttributes(attribute.String("user.id", u.UserId))
 
 	r.logger.Debug("creating user in database",
 		slog.String("user_id", u.UserId),
@@ -108,6 +151,9 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "marshal failed")
+
 		r.logger.Error("error marshaling map",
 			slog.String("error", err.Error()),
 			slog.String("user_id", u.UserId),
@@ -120,10 +166,14 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 		Item:                item,
 		ConditionExpression: aws.String("attribute_not_exists(userId)"),
 	}
+
 	// call dynamodb put item
 	_, err = r.client.PutItem(ctx, input)
 
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "dynamodb PutItem failed")
+
 		r.logger.Error("dynamodb error put item",
 			slog.String("error", err.Error()),
 			slog.String("user_id", u.UserId),
@@ -132,6 +182,13 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 		)
 		return output, common.ErrUserNotCreated
 	}
+
+	// Success - mark span as successful
+	childSpan.SetAttributes(
+		attribute.String("user.id", u.UserId),
+		attribute.Bool("db.item_created", true),
+	)
+	childSpan.SetStatus(codes.Ok, "user created successfully")
 
 	r.logger.Info("user created in database",
 		slog.String("user_id", u.UserId),
@@ -151,13 +208,24 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 
 func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
 	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryUpdateUser")
+	_, childSpan := tr.Start(ctx, "RepositoryUpdateUser",
+		trace.WithAttributes(
+			semconv.DBSystemKey.String("dynamodb"),
+			semconv.DBOperationKey.String("PutItem"),
+			semconv.DBNameKey.String(r.tableUsers),
+			attribute.String("db.table", r.tableUsers),
+			attribute.String("user.id", u.UserId),
+		),
+	)
 	defer childSpan.End()
 
 	output := models.UserResponse{}
 
 	item, err := attributevalue.MarshalMap(u)
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "marshal failed")
+
 		r.logger.Error("error marshaling map",
 			"error", err.Error(),
 			"userId", u.UserId,
@@ -168,16 +236,25 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 		TableName: aws.String(r.tableUsers),
 		Item:      item,
 	}
+
 	// call dynamodb put item
 	_, err = r.client.PutItem(ctx, input)
 
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "dynamodb PutItem failed")
+
 		r.logger.Error("dynamodb error put item",
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
 		return output, common.ErrUserNotCreated
 	}
+
+	// Success
+	childSpan.SetAttributes(attribute.Bool("db.item_updated", true))
+	childSpan.SetStatus(codes.Ok, "user updated successfully")
+
 	// create output response
 	output.UserId = u.UserId
 	output.Username = u.Username
@@ -189,7 +266,17 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 // Function to Get user by email
 func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, k string, v string) (models.User, error) {
 	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryGetUserByEmailorUsername")
+	_, childSpan := tr.Start(ctx, "RepositoryGetUserByEmailorUsername",
+		trace.WithAttributes(
+			semconv.DBSystemKey.String("dynamodb"),
+			semconv.DBOperationKey.String("Query"),
+			semconv.DBNameKey.String(r.tableUsers),
+			attribute.String("db.table", r.tableUsers),
+			attribute.String("db.index", "by_"+k),
+			attribute.String("query.key", k),
+			attribute.String("query.value", v),
+		),
+	)
 	defer childSpan.End()
 
 	output := models.User{}
@@ -201,6 +288,9 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "expression build failed")
+
 		r.logger.Error("dynamodb error building expression",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
@@ -224,11 +314,14 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 	}
-	// Execute the query
 
+	// Execute the query
 	response, err := r.client.Query(ctx, queryInput)
 
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "dynamodb Query failed")
+
 		r.logger.Error("dynamodb error query item",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
@@ -239,6 +332,9 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	}
 
 	if len(response.Items) == 0 {
+		childSpan.SetAttributes(attribute.Bool("db.item_found", false))
+		childSpan.SetStatus(codes.Ok, "user not found")
+
 		r.logger.Debug("user not found in database",
 			slog.String("key", k),
 			slog.String("value", v),
@@ -246,9 +342,13 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 		)
 		return output, common.ErrUserNotFound
 	}
+
 	//unmarshall dynamodb output
 	err = attributevalue.UnmarshalMap(response.Items[0], &output)
 	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "unmarshal failed")
+
 		r.logger.Error("error unmarshaling map",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
@@ -257,6 +357,13 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 		)
 		return output, common.ErrInternalError
 	}
+
+	// Success
+	childSpan.SetAttributes(
+		attribute.Bool("db.item_found", true),
+		attribute.String("user.id", output.UserId),
+	)
+	childSpan.SetStatus(codes.Ok, "user found successfully")
 
 	r.logger.Debug("user found in database",
 		slog.String("user_id", output.UserId),

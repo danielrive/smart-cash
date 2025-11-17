@@ -5,7 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"slices"
+	"syscall"
+	"time"
 
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/handler"
@@ -135,7 +138,46 @@ func main() {
 		middleware.ValidatePathParam("userId", "uuid"), // Validate userId is UUID
 		userHandler.GetUserById)
 
-	router.Run(":8181")
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	srv := &http.Server{
+		Addr:    ":8181",
+		Handler: router,
+	}
+
+	go func() {
+		logger.Info("starting server",
+			"component", "main",
+			"port", "8181")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("server error",
+				"component", "main",
+				"error", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("shutdown signal received, shutting down gracefully...",
+		"component", "main")
+
+	if err := utils.ShutdownTracerProvider(context.Background(), tp, logger); err != nil {
+		logger.Warn("tracer shutdown had issues, but continuing",
+			"component", "main",
+			"error", err)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("server shutdown error",
+			"component", "main",
+			"error", err)
+	}
+
+	logger.Info("shutdown complete",
+		"component", "main")
 }
 
 func filterTraces(req *http.Request) bool {
