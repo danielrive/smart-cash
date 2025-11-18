@@ -267,9 +267,6 @@ resource "aws_eks_node_group" "worker-node-group" {
   ]
 }
 
-#####################
-### Pod Identity  
-
 ## Install EBS add-on
 resource "aws_eks_addon" "pod_identity" {
   depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
@@ -285,7 +282,7 @@ resource "aws_eks_addon" "pod_identity" {
 resource "aws_iam_role" "vpc_cni_role" {
   name               = "vpc-cni-${var.cluster_name}-${var.region}"
   path               = "/"
- assume_role_policy = <<EOF
+  assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -313,14 +310,20 @@ resource "aws_iam_role_policy_attachment" "cni_policy" {
 
 ## Install CNI add-on
 resource "aws_eks_addon" "vpc-cni" {
-  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
+  depends_on = [
+    aws_eks_cluster.kube_cluster,
+    aws_eks_node_group.worker-node-group,
+    aws_eks_addon.pod_identity,
+    aws_iam_role.vpc_cni_role,
+    aws_iam_role_policy_attachment.cni_policy
+  ]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.vpc_cni_version
-  pod_identity_association      {
-    role_arn =  aws_iam_role.vpc_cni_role.arn
+  pod_identity_association {
+    role_arn        = aws_iam_role.vpc_cni_role.arn
     service_account = "aws-node"
-    }
+  }
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values = jsonencode({
     enableNetworkPolicy = "true"
@@ -363,13 +366,17 @@ resource "aws_iam_role_policy_attachment" "csi_policy" {
 
 ## Install EBS add-on
 resource "aws_eks_addon" "ebs_csi" {
-  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
+  depends_on = [
+    aws_eks_cluster.kube_cluster,
+    aws_eks_node_group.worker-node-group,
+    aws_eks_addon.pod_identity
+  ]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "aws-ebs-csi-driver"
   addon_version               = var.ebs_csi_version
-   pod_identity_association      {
-    role_arn =  aws_iam_role.ebs_csi_role.arn
+  pod_identity_association {
+    role_arn        = aws_iam_role.ebs_csi_role.arn
     service_account = "ebs-csi-controller-sa"
-    }
+  }
   resolve_conflicts_on_update = "OVERWRITE"
 }
