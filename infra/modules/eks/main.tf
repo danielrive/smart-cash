@@ -325,9 +325,6 @@ resource "aws_eks_addon" "vpc-cni" {
     service_account = "aws-node"
   }
   resolve_conflicts_on_update = "OVERWRITE"
-  configuration_values = jsonencode({
-    enableNetworkPolicy = "true"
-  })
 }
 
 
