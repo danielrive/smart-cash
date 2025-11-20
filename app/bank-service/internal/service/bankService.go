@@ -5,10 +5,11 @@ import (
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/models"
+	"smart-cash/utils"
 
 	"log/slog"
 
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Define service interface
@@ -27,9 +28,13 @@ func NewBankService(bankRepository *repositories.DynamoDBBankRepository, logger 
 }
 
 func (s *BankService) ProcessPayment(ctx context.Context, transaction models.TransactionRequest) (models.TransactionRequest, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCProcessPayment", "service",
+		attribute.String("transaction.id", transaction.TransactionId),
+		attribute.String("expense.id", transaction.ExpenseId),
+		attribute.String("user.id", transaction.UserId),
+		attribute.Float64("transaction.amount", transaction.Amount),
+	)
+	defer endSpan()
 
 	s.logger.Info("processing bank payment",
 		slog.String("transaction_id", transaction.TransactionId),
@@ -39,8 +44,9 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 		slog.String("component", "service"),
 	)
 
-	user, err := s.bankRepository.GetUser(trContext, transaction.UserId)
+	user, err := s.bankRepository.GetUser(ctx, transaction.UserId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("failed getting user for payment",
 			slog.String("user_id", transaction.UserId),
 			slog.String("error", err.Error()),
@@ -49,9 +55,10 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 		transaction.Status = "NotPaid"
 		return transaction, common.ErrTransactionFailed
 	}
-	
+
 	newSaldo, err := processPayment(transaction.Amount, user.Savings)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Warn("transaction failed - insufficient funds",
 			slog.String("error", err.Error()),
 			slog.String("user_id", transaction.UserId),
@@ -63,11 +70,12 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 		transaction.Status = "NotPaid"
 		return transaction, common.ErrTransactionFailed
 	}
-	
+
 	// update saving in user account
 	user.Savings = newSaldo
-	err = s.bankRepository.UpdateSavingsUser(trContext, user)
+	err = s.bankRepository.UpdateSavingsUser(ctx, user)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("transaction failed - could not update savings",
 			slog.String("error", err.Error()),
 			slog.String("user_id", transaction.UserId),
@@ -77,7 +85,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 		transaction.Status = "NotPaid"
 		return transaction, err
 	}
-	
+
 	transaction.Status = "Paid"
 	s.logger.Info("bank payment processed successfully",
 		slog.String("transaction_id", transaction.TransactionId),
@@ -92,17 +100,19 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 
 // Function to get bank by Id
 func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUser, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCGetUser")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetUser", "service",
+		attribute.String("user.id", userId),
+	)
+	defer endSpan()
 
 	s.logger.Debug("getting bank user",
 		slog.String("user_id", userId),
 		slog.String("component", "service"),
 	)
 
-	user, err := s.bankRepository.GetUser(trContext, userId)
+	user, err := s.bankRepository.GetUser(ctx, userId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("error getting bank user",
 			slog.String("error", err.Error()),
 			slog.String("user_id", userId),

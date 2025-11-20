@@ -10,9 +10,9 @@ import (
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
+	"smart-cash/utils"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -39,11 +39,12 @@ func NewExpensesService(expensesRepository *repositories.DynamoDBExpensesReposit
 }
 
 func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	// OTel trace instrumentation
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "CreateExpense")
-	childSpan.SetAttributes(attribute.String("component", "service"))
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "CreateExpense", "service",
+		attribute.String("user.id", expense.UserId),
+		attribute.String("expense.name", expense.Name),
+		attribute.Float64("expense.amount", expense.Amount),
+	)
+	defer endSpan()
 
 	s.logger.Info("creating expense",
 		slog.String("user_id", expense.UserId),
@@ -70,8 +71,9 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	if expense.Category == "" {
 		expense.Category = "none"
 	}
-	response, err := s.expensesRepository.CreateExpense(trContext, expense)
+	response, err := s.expensesRepository.CreateExpense(ctx, expense)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("expense couldn't be created",
 			"error", err.Error(),
 			"level", "service",
@@ -91,17 +93,19 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 // Function to get expenses by Id
 
 func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) (models.Expense, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCGetExpenseById")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetExpenseById", "service",
+		attribute.String("expense.id", expenseId),
+	)
+	defer endSpan()
 
 	s.logger.Debug("getting expense by id",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
 
-	expense, err := s.expensesRepository.GetExpenseById(trContext, expenseId)
+	expense, err := s.expensesRepository.GetExpenseById(ctx, expenseId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("error getting expense by id",
 			slog.String("expense_id", expenseId),
 			slog.String("error", err.Error()),
@@ -121,17 +125,19 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 // Delete expense
 
 func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (string, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCDeleteExpense")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCDeleteExpense", "service",
+		attribute.String("expense.id", expenseId),
+	)
+	defer endSpan()
 
 	s.logger.Info("deleting expense",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
 
-	expense, err := s.GetExpenseById(trContext, expenseId)
+	expense, err := s.GetExpenseById(ctx, expenseId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Warn("expense not found for deletion",
 			slog.String("expense_id", expenseId),
 			slog.String("component", "service"),
@@ -139,8 +145,9 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 		return "", common.ErrExpenseNotFound
 	}
 
-	err = s.expensesRepository.DeleteExpenseById(trContext, expense.ExpenseId)
+	err = s.expensesRepository.DeleteExpenseById(ctx, expense.ExpenseId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("error deleting expense",
 			slog.String("expense_id", expenseId),
 			slog.String("error", err.Error()),
@@ -160,10 +167,11 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 // Function to get expenses by userId or category
 
 func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, value string) ([]models.Expense, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCGetExpByUserIdorCat")
-	childSpan.SetAttributes(attribute.String("component", "service"))
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetExpByUserIdorCat", "service",
+		attribute.String("query.key", key),
+		attribute.String("query.value", value),
+	)
+	defer endSpan()
 
 	s.logger.Debug("getting expenses by user id or category",
 		slog.String("key", key),
@@ -171,7 +179,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 		slog.String("component", "service"),
 	)
 
-	expenses, err := s.expensesRepository.GetExpByUserIdorCat(trContext, key, value)
+	expenses, err := s.expensesRepository.GetExpByUserIdorCat(ctx, key, value)
 	if err != nil {
 		s.logger.Debug("expenses not found by query",
 			slog.String("key", key),

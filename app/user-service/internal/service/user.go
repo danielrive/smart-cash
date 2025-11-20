@@ -6,13 +6,11 @@ import (
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/models"
+	"smart-cash/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,15 +36,10 @@ func NewUserService(userRepository *repositories.DynamoDBUsersRepository, jwtSec
 }
 
 func (us *UserService) GetUserById(ctx context.Context, userId string) (models.UserResponse, error) {
-	tr := otel.Tracer(common.ServiceName)
-
-	_, childSpan := tr.Start(ctx, "SVCGetUserById",
-		trace.WithAttributes(
-			attribute.String("component", "service"),
-			attribute.String("user.id", userId),
-		),
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetUserById", "service",
+		attribute.String("user.id", userId),
 	)
-	defer childSpan.End()
+	defer endSpan()
 
 	us.logger.Debug("getting user by id",
 		slog.String("user_id", userId),
@@ -55,6 +48,7 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 
 	user, err := us.userRepository.GetUserById(ctx, userId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		us.logger.Error("error getting user by id",
 			slog.String("user_id", userId),
 			slog.String("error", err.Error()),
@@ -72,16 +66,11 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 }
 
 func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string, value string) (models.User, error) {
-	tr := otel.Tracer(common.ServiceName)
-
-	_, childSpan := tr.Start(ctx, "SVCGetUserByEmailorUsername",
-		trace.WithAttributes(
-			attribute.String("component", "service"),
-			attribute.String("query.key", key),
-			attribute.String("query.value", value),
-		),
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetUserByEmailorUsername", "service",
+		attribute.String("query.key", key),
+		attribute.String("query.value", value),
 	)
-	defer childSpan.End()
+	defer endSpan()
 
 	us.logger.Debug("getting user by email or username",
 		slog.String("key", key),
@@ -109,16 +98,11 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 }
 
 func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.UserResponse, error) {
-	tr := otel.Tracer(common.ServiceName)
-
-	_, childSpan := tr.Start(ctx, "SVCCreateUser",
-		trace.WithAttributes(
-			attribute.String("component", "service"),
-			attribute.String("user.username", u.Username),
-			attribute.String("user.email", u.Email),
-		),
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCCreateUser", "service",
+		attribute.String("user.username", u.Username),
+		attribute.String("user.email", u.Email),
 	)
-	defer childSpan.End()
+	defer endSpan()
 
 	us.logger.Info("creating new user",
 		slog.String("username", u.Username),
@@ -129,8 +113,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 	// Hash the password before storing
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
-		childSpan.RecordError(err)
-		childSpan.SetStatus(codes.Error, "failed to hash password")
+		utils.RecordSpanError(ctx, err)
 		us.logger.Error("failed to hash password",
 			slog.String("error", err.Error()),
 			slog.String("username", u.Username),
@@ -144,6 +127,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 
 	user, err := us.userRepository.CreateUser(ctx, u)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		us.logger.Error("error creating user in repository",
 			slog.String("username", u.Username),
 			slog.String("email", u.Email),
@@ -165,15 +149,10 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 // communicate with another service
 
 func (us *UserService) Login(ctx context.Context, user string, password string) (string, error) {
-	tr := otel.Tracer(common.ServiceName)
-
-	_, childSpan := tr.Start(ctx, "SVCLogin",
-		trace.WithAttributes(
-			attribute.String("component", "service"),
-			attribute.String("user.username", user),
-		),
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCLogin", "service",
+		attribute.String("user.username", user),
 	)
-	defer childSpan.End()
+	defer endSpan()
 
 	us.logger.Debug("attempting login",
 		slog.String("username", user),
@@ -182,8 +161,7 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 
 	response, err := us.GetUserByEmailorUsername(ctx, "username", user)
 	if err != nil {
-		childSpan.RecordError(err)
-		childSpan.SetStatus(codes.Error, err.Error())
+		utils.RecordSpanError(ctx, err)
 		us.logger.Warn("login failed - user not found",
 			slog.String("username", user),
 			slog.String("component", "service"),
@@ -205,6 +183,7 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	// Password is correct, generate JWT token
 	token, err := us.generateJWT(response.UserId, response.Username, response.Email)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		us.logger.Error("error generating JWT token",
 			slog.String("error", err.Error()),
 			slog.String("username", user),

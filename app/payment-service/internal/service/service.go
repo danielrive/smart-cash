@@ -9,11 +9,12 @@ import (
 	"smart-cash/payment-service/internal/common"
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/models"
+	"smart-cash/utils"
 	"time"
 
 	"log/slog"
 
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type UUIDHelper interface {
@@ -38,10 +39,11 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 }
 
 func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.TransactionRequest, error) {
-	// OTel instrumentation
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCProcessPayment")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCProcessPayment", "service",
+		attribute.String("user.id", paymentRequest.UserId),
+		attribute.String("expense.id", paymentRequest.ExpenseId),
+	)
+	defer endSpan()
 
 	s.logger.Info("processing payment",
 		slog.String("user_id", paymentRequest.UserId),
@@ -74,7 +76,6 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
-	respBody, _ := io.ReadAll(resp.Body)
 
 	err = json.Unmarshal(respBody, &expense)
 	if err != nil {
@@ -85,7 +86,7 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		)
 		return models.TransactionRequest{}, common.ErrInternalError
 	}
-  // Validate if User exist and is not blocked
+	// Validate if User exist and is not blocked
 	// Validate if user exist
 	if !s.validateUser(expense.UserId) {
 		s.logger.Warn("user not found or not active",
@@ -107,8 +108,9 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		Status:        "pending",
 	}
 
-	err = s.paymentRepository.CreateTransaction(trContext, transaction)
+	err = s.paymentRepository.CreateTransaction(ctx, transaction)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("error creating transaction",
 			slog.String("error", err.Error()),
 			slog.String("transaction_id", transaction.TransactionId),
@@ -130,17 +132,19 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 }
 
 func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(ctx, "SVCGetTransaction")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetTransaction", "service",
+		attribute.String("transaction.id", id),
+	)
+	defer endSpan()
 
 	s.logger.Debug("getting transaction",
 		slog.String("transaction_id", id),
 		slog.String("component", "service"),
 	)
 
-	transaction, err := s.paymentRepository.GetTransaction(trContext, id)
+	transaction, err := s.paymentRepository.GetTransaction(ctx, id)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		s.logger.Error("error getting transaction",
 			slog.String("transaction_id", id),
 			slog.String("error", err.Error()),

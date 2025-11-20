@@ -67,11 +67,7 @@ func init() {
 
 	// Re-validate ServiceName (in case it was set via env)
 	common.ServiceName = os.Getenv("SERVICE_NAME")
-<<<<<<< HEAD
-	if otelCollector == "" {
-=======
 	if common.ServiceName == "" {
->>>>>>> develop
 		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
 		os.Exit(1)
 	}

@@ -4,32 +4,39 @@ import (
 	"context"
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/models"
+	"smart-cash/utils"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 // ExpenseFilters represents the filter options for querying expenses
 type ExpenseFilters struct {
-	StartDate  *string  // Format: YYYY-MM-DD
-	EndDate    *string  // Format: YYYY-MM-DD
-	Category   *string
-	Status     *string
-	MinAmount  *float64
-	MaxAmount  *float64
-	Tags       []string
-	Page       int
-	PageSize   int
+	StartDate *string // Format: YYYY-MM-DD
+	EndDate   *string // Format: YYYY-MM-DD
+	Category  *string
+	Status    *string
+	MinAmount *float64
+	MaxAmount *float64
+	Tags      []string
+	Page      int
+	PageSize  int
 }
 
 // GetExpensesByDateRange retrieves expenses within a date range
 func (r *DynamoDBExpensesRepository) GetExpensesByDateRange(ctx context.Context, userID string, filters ExpenseFilters) ([]models.Expense, error) {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryGetExpensesByDateRange")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryGetExpensesByDateRange", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("Query"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("user.id", userID),
+	)
+	defer endSpan()
 
 	// Create the base key condition
 	keyEx := expression.Key("userId").Equal(expression.Value(userID))
@@ -97,6 +104,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByDateRange(ctx context.Context,
 
 	expr, err := builder.Build()
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("error building expression for query",
 			"error", err.Error(),
 			"userId", userID,
@@ -108,7 +116,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByDateRange(ctx context.Context,
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(r.expensesTable),
 		KeyConditionExpression:    expr.KeyCondition(),
-		FilterExpression:         expr.Filter(),
+		FilterExpression:          expr.Filter(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 	}
@@ -116,6 +124,7 @@ func (r *DynamoDBExpensesRepository) GetExpensesByDateRange(ctx context.Context,
 	// Execute the query
 	result, err := r.client.Query(ctx, input)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("error querying expenses",
 			"error", err.Error(),
 			"userId", userID,
@@ -127,12 +136,18 @@ func (r *DynamoDBExpensesRepository) GetExpensesByDateRange(ctx context.Context,
 	var expenses []models.Expense
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &expenses)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("error unmarshaling query results",
 			"error", err.Error(),
 			"userId", userID,
 		)
 		return nil, err
 	}
+
+	utils.AddSpanEvent(ctx, "expenses retrieved by date range",
+		attribute.Int("db.items_count", len(expenses)),
+		attribute.Bool("db.items_found", len(expenses) > 0),
+	)
 
 	return expenses, nil
 }
