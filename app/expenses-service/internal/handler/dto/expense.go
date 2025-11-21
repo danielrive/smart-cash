@@ -7,7 +7,7 @@ type CreateExpenseRequest struct {
 	Amount      float64  `json:"amount" validate:"required,gt=0"`
 	Description string   `json:"description" validate:"required,max=500"`
 	Category    string   `json:"category" validate:"required"`
-	Date        string   `json:"date" validate:"required,datetime=2006-01-02"`
+	Date        string   `json:"date,omitempty" validate:"omitempty,datetime=2006-01-02"`
 	Tags        []string `json:"tags,omitempty" validate:"omitempty,dive,max=50"`
 }
 
