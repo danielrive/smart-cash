@@ -43,7 +43,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 				slog.String("user_id", userId),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrUserNotFound.Error()})
 			return
 		} else {
 			h.logger.Error("error getting user",
@@ -51,7 +51,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 			return
 		}
 	}
@@ -108,7 +108,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 				slog.String("value", value),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound.Error()})
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrUserNotFound.Error()})
 			return
 		} else {
 			h.logger.Error("error getting user by query",
@@ -189,7 +189,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 				slog.String("email", userDTO.Email),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			c.JSON(http.StatusConflict, gin.H{"error": common.ErrUserAlreadyExists.Error()})
 		} else {
 			h.logger.Error("error creating user",
 				slog.String("username", userDTO.Username),
@@ -197,7 +197,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		}
 		return
 	}
@@ -246,12 +246,20 @@ func (h *UserHandler) Login(c *gin.Context) {
 	token, err := h.userService.Login(ctx, loginData.Username, loginData.Password)
 
 	if err != nil {
-		h.logger.Warn("login failed",
-			slog.String("username", loginData.Username),
-			slog.String("error", err.Error()),
-			slog.String("component", "handler"),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err == common.ErrWrongCredentials {
+			h.logger.Warn("login failed - wrong credentials",
+				slog.String("username", loginData.Username),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials.Error()})
+		} else {
+			h.logger.Error("login failed - internal error",
+				slog.String("username", loginData.Username),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+		}
 		return
 	}
 
@@ -260,7 +268,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	c.JSON(http.StatusCreated, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 /// Health check
