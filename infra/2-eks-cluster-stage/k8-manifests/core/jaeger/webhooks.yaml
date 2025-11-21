@@ -2,7 +2,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: observability/jaeger-operator-serving-cert
+    cert-manager.io/inject-ca-from: monitoring/jaeger-operator-serving-cert
   labels:
     name: jaeger-operator
   name: jaeger-operator-mutating-webhook-configuration
@@ -12,7 +12,7 @@ webhooks:
   clientConfig:
     service:
       name: jaeger-operator-webhook-service
-      namespace: observability
+      namespace: monitoring
       path: /mutate-v1-deployment
   failurePolicy: Ignore
   name: deployment.sidecar-injector.jaegertracing.io
@@ -38,7 +38,7 @@ webhooks:
   clientConfig:
     service:
       name: jaeger-operator-webhook-service
-      namespace: observability
+      namespace: monitoring
       path: /mutate-jaegertracing-io-v1-jaeger
   failurePolicy: Fail
   name: mjaeger.kb.io
@@ -58,7 +58,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: observability/jaeger-operator-serving-cert
+    cert-manager.io/inject-ca-from: monitoring/jaeger-operator-serving-cert
   labels:
     name: jaeger-operator
   name: jaeger-operator-validating-webhook-configuration
@@ -68,7 +68,7 @@ webhooks:
   clientConfig:
     service:
       name: jaeger-operator-webhook-service
-      namespace: observability
+      namespace: monitoring
       path: /validate-jaegertracing-io-v1-jaeger
   failurePolicy: Fail
   name: vjaeger.kb.io

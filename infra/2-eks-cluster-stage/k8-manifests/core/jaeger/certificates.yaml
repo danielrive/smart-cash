@@ -4,11 +4,11 @@ metadata:
   labels:
     name: jaeger-operator
   name: jaeger-operator-serving-cert
-  namespace: observability
+  namespace: monitoring
 spec:
   dnsNames:
-  - jaeger-operator-webhook-service.observability.svc
-  - jaeger-operator-webhook-service.observability.svc.cluster.local
+  - jaeger-operator-webhook-service.monitoring.svc
+  - jaeger-operator-webhook-service.monitoring.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: jaeger-operator-selfsigned-issuer
@@ -23,7 +23,7 @@ metadata:
   labels:
     name: jaeger-operator
   name: jaeger-operator-selfsigned-issuer
-  namespace: observability
+  namespace: monitoring
 spec:
   selfSigned: {}
 ---

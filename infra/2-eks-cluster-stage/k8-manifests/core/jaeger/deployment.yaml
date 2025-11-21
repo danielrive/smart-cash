@@ -5,7 +5,7 @@ metadata:
   labels:
     name: jaeger-operator
   name: jaeger-operator
-  namespace: observability
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
