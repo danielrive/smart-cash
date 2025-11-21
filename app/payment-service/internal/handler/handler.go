@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"smart-cash/payment-service/internal/common"
+	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/payment-service/models"
 	"smart-cash/utils"
@@ -30,22 +31,36 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerProcessPayment", "handler")
 	defer endSpan()
 
-	paymentRequest := models.PaymentRequest{}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&paymentRequest); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-			"level", "handler",
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	paymentDTO, ok := validatedBody.(dto.ProcessPaymentRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to ProcessPaymentRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		return
 	}
 
 	h.logger.Info("processing payment",
-		slog.String("user_id", paymentRequest.UserId),
-		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("user_id", paymentDTO.UserId),
+		slog.String("expense_id", paymentDTO.ExpenseId),
 		slog.String("component", "handler"),
 	)
+
+	// Convert DTO to model for service layer
+	paymentRequest := models.PaymentRequest{
+		UserId:    paymentDTO.UserId,
+		ExpenseId: paymentDTO.ExpenseId,
+	}
 
 	// init payment
 	transactionResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
@@ -54,7 +69,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 			"error", err.Error(),
 			"level", "handler",
 		)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		return
 	}
 
@@ -102,7 +117,7 @@ func (h *PaymentHandler) GetTransaction(c *gin.Context) {
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 			return
 		}
 	}
