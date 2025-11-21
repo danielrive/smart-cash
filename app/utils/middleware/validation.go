@@ -7,6 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ValidationError struct {
@@ -35,6 +39,7 @@ func ValidateBody[T any]() gin.HandlerFunc {
 
 		// Bind JSON to struct
 		if err := c.ShouldBindJSON(&body); err != nil {
+			recordValidationError(c, http.StatusBadRequest, "Invalid JSON format", err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   "Invalid JSON format",
 				"details": err.Error(),
@@ -47,6 +52,7 @@ func ValidateBody[T any]() gin.HandlerFunc {
 			validationErrors := err.(validator.ValidationErrors)
 			errorDetails := formatValidationErrors(validationErrors)
 
+			recordValidationError(c, http.StatusBadRequest, "Validation failed", err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, ValidationErrorResponse{
 				Error:   "Validation failed",
 				Details: errorDetails,
@@ -65,6 +71,8 @@ func ValidatePathParam(paramName string, validationType string) gin.HandlerFunc 
 		value := c.Param(paramName)
 		// Check if param exists and is not empty
 		if value == "" {
+			err := fmt.Errorf("missing required path parameter: %s", paramName)
+			recordValidationError(c, http.StatusBadRequest, fmt.Sprintf("Missing required path parameter: %s", paramName), err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   fmt.Sprintf("Missing required path parameter: %s", paramName),
 				"details": fmt.Sprintf("Path parameter '%s' is required", paramName),
@@ -81,6 +89,7 @@ func ValidatePathParam(paramName string, validationType string) gin.HandlerFunc 
 		}
 
 		if err != nil {
+			recordValidationError(c, http.StatusBadRequest, fmt.Sprintf("Invalid path parameter: %s", paramName), err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   fmt.Sprintf("Invalid path parameter: %s", paramName),
 				"details": fmt.Sprintf("'%s' must be a valid %s", paramName, validationType),
@@ -117,6 +126,8 @@ func ValidateQueryParams(rules map[string]string) gin.HandlerFunc {
 		}
 
 		if len(errors) > 0 {
+			err := fmt.Errorf("query parameter validation failed: %d errors", len(errors))
+			recordValidationError(c, http.StatusBadRequest, "Query parameter validation failed", err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, ValidationErrorResponse{
 				Error:   "Query parameter validation failed",
 				Details: errors,
@@ -141,6 +152,8 @@ func RequireOneOfQueryParams(params []string) gin.HandlerFunc {
 		}
 
 		if !found {
+			err := fmt.Errorf("missing required query parameter: at least one of %s is required", strings.Join(params, ", "))
+			recordValidationError(c, http.StatusBadRequest, "Missing required query parameter", err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   "Missing required query parameter",
 				"details": fmt.Sprintf("At least one of the following query parameters is required: %s", strings.Join(params, ", ")),
@@ -157,6 +170,8 @@ func ValidateHeader(headerName string, validationType string) gin.HandlerFunc {
 		value := c.GetHeader(headerName)
 
 		if value == "" {
+			err := fmt.Errorf("missing required header: %s", headerName)
+			recordValidationError(c, http.StatusBadRequest, fmt.Sprintf("Missing required header: %s", headerName), err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   fmt.Sprintf("Missing required header: %s", headerName),
 				"details": fmt.Sprintf("Header '%s' is required", headerName),
@@ -165,6 +180,7 @@ func ValidateHeader(headerName string, validationType string) gin.HandlerFunc {
 		}
 
 		if err := validate.Var(value, validationType); err != nil {
+			recordValidationError(c, http.StatusBadRequest, fmt.Sprintf("Invalid header value: %s", headerName), err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error":   fmt.Sprintf("Invalid header value: %s", headerName),
 				"details": fmt.Sprintf("'%s' must be a valid %s", headerName, validationType),
@@ -176,7 +192,6 @@ func ValidateHeader(headerName string, validationType string) gin.HandlerFunc {
 		c.Next()
 	}
 }
-
 
 func formatValidationErrors(errs validator.ValidationErrors) []ValidationError {
 	var errors []ValidationError
@@ -229,3 +244,23 @@ func getErrorMessage(err validator.FieldError) string {
 	}
 }
 
+func recordValidationError(c *gin.Context, statusCode int, message string, err error) {
+	span := trace.SpanFromContext(c.Request.Context())
+	if !span.IsRecording() {
+		return
+	}
+
+	span.SetAttributes(
+		semconv.HTTPStatusCodeKey.Int(statusCode),
+		semconv.HTTPMethodKey.String(c.Request.Method),
+		semconv.HTTPRouteKey.String(c.FullPath()),
+		attribute.String("validation.error", message),
+		attribute.String("validation.type", "request_validation"),
+	)
+
+	span.RecordError(err)
+
+	if statusCode >= 500 {
+		span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d: %s", statusCode, message))
+	}
+}

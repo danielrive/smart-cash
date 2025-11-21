@@ -4,15 +4,17 @@ import (
 	"context"
 	"log/slog"
 	"smart-cash/expenses-service/internal/common"
-
 	"smart-cash/expenses-service/models"
+	"smart-cash/utils"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 type DynamoDBExpensesRepository struct {
@@ -32,10 +34,16 @@ func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string
 // Function to Create a new expense
 
 func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryCreateExpense")
-	defer childSpan.End()
-	// Create a new expense item
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryCreateExpense", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("PutItem"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("expense.id", expense.ExpenseId),
+		attribute.String("user.id", expense.UserId),
+	)
+	defer endSpan()
+
 	output := models.ExpensesReturn{}
 
 	r.logger.Debug("creating expense in database",
@@ -46,6 +54,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("error marshaling expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", expense.ExpenseId),
@@ -60,6 +69,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 		Item:      item,
 	})
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb error putting expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", expense.ExpenseId),
@@ -67,6 +77,12 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 		)
 		return output, common.ErrExpenseNotCreated
 	}
+
+	utils.AddSpanEvent(ctx, "expense created successfully",
+		attribute.String("expense.id", expense.ExpenseId),
+		attribute.Bool("db.item_created", true),
+	)
+	utils.SetSpanStatus(ctx, codes.Ok, "expense created successfully")
 
 	r.logger.Info("expense created in database",
 		slog.String("expense_id", expense.ExpenseId),
@@ -78,13 +94,19 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 
 // Function to update expense
 func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, expense models.Expense) (models.ExpensesReturn, error) {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryUpdateExpenseStatus")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryUpdateExpenseStatus", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("UpdateItem"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("expense.id", expense.ExpenseId),
+	)
+	defer endSpan()
 
 	update := expression.Set(expression.Name("status"), expression.Value(expense.Status))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb update expression couldn't be created",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
@@ -94,6 +116,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 	// Define the key of the item to update
 	expId, err := attributevalue.Marshal(expense.ExpenseId)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb udpate key couldn't be created",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
@@ -112,6 +135,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 	response, err := r.client.UpdateItem(ctx, inputUpdate)
 
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("status couldn't be updated",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
@@ -138,6 +162,13 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 		r.logger.Info("no attributes returned")
 	}
 
+	utils.AddSpanEvent(ctx, "expense status updated successfully",
+		attribute.String("expense.id", expense.ExpenseId),
+		attribute.String("expense.status", expense.Status),
+		attribute.Bool("db.item_updated", true),
+	)
+	utils.SetSpanStatus(ctx, codes.Ok, "expense status updated successfully")
+
 	return createExpenserReturn(expense), nil
 
 }
@@ -145,9 +176,14 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 // Function to get a expense by id
 
 func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id string) (models.Expense, error) {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryGetExpenseById")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryGetExpenseById", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("GetItem"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("expense.id", id),
+	)
+	defer endSpan()
 
 	output := models.Expense{}
 	// Get expense item by id
@@ -158,6 +194,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 		},
 	})
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb couldn't get the item",
 			"error", err.Error(),
 			"expenseId", id,
@@ -165,6 +202,8 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 		return output, common.ErrInternalError
 	}
 	if len(item.Item) == 0 {
+		utils.AddSpanEvent(ctx, "expense not found", attribute.Bool("db.item_found", false))
+		utils.SetSpanStatus(ctx, codes.Ok, "expense not found")
 		r.logger.Debug("expense not found in database",
 			slog.String("expense_id", id),
 			slog.String("component", "repository"),
@@ -175,6 +214,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	// Unmarshal the expense item
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("error unmarshaling expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", id),
@@ -182,6 +222,12 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 		)
 		return output, common.ErrInternalError
 	}
+
+	utils.AddSpanEvent(ctx, "expense retrieved successfully",
+		attribute.Bool("db.item_found", true),
+		attribute.String("expense.id", output.ExpenseId),
+	)
+	utils.SetSpanStatus(ctx, codes.Ok, "expense retrieved successfully")
 
 	r.logger.Debug("expense retrieved from database",
 		slog.String("expense_id", id),
@@ -193,9 +239,16 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 
 // Function get expense by userID
 func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k string, v string) ([]models.Expense, error) {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryGetExpByUserIdorCat")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryGetExpByUserIdorCat", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("Query"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("db.index", "by_"+k),
+		attribute.String("query.key", k),
+		attribute.String("query.value", v),
+	)
+	defer endSpan()
 
 	// create keycondition for userId
 	output := []models.Expense{}
@@ -205,6 +258,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	// create expression
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb expression couldn't be created",
 			"error", err.Error(),
 		)
@@ -222,6 +276,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	response, err := r.client.Query(ctx, queryInput)
 
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb query failed",
 			"error", err.Error(),
 		)
@@ -229,6 +284,8 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	}
 
 	if len(response.Items) == 0 {
+		utils.AddSpanEvent(ctx, "expenses not found", attribute.Bool("db.items_found", false))
+		utils.SetSpanStatus(ctx, codes.Ok, "expenses not found")
 		r.logger.Info("expense not found",
 			"tag", k,
 			"value", v,
@@ -239,11 +296,18 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	// Unmarshal the expense items
 	err = attributevalue.UnmarshalListOfMaps(response.Items, &output)
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("failed to unmarshal attribute value",
 			"error", err.Error(),
 		)
 		return []models.Expense{}, common.ErrInternalError
 	}
+
+	utils.AddSpanEvent(ctx, "expenses retrieved successfully",
+		attribute.Bool("db.items_found", true),
+		attribute.Int("db.items_count", len(output)),
+	)
+	utils.SetSpanStatus(ctx, codes.Ok, "expenses retrieved successfully")
 
 	return output, nil
 }
@@ -251,9 +315,14 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 // Function to delete a expense by id
 
 func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id string) error {
-	tr := otel.Tracer(common.ServiceName)
-	_, childSpan := tr.Start(ctx, "RepositoryDeleteExpenseById")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "RepositoryDeleteExpenseById", "repository",
+		semconv.DBSystemKey.String("dynamodb"),
+		semconv.DBOperationKey.String("DeleteItem"),
+		semconv.DBNameKey.String(r.expensesTable),
+		attribute.String("db.table", r.expensesTable),
+		attribute.String("expense.id", id),
+	)
+	defer endSpan()
 
 	// Delete expense item by id
 	_, err := r.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
@@ -263,11 +332,15 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 		},
 	})
 	if err != nil {
+		utils.RecordSpanError(ctx, err)
 		r.logger.Error("dynamodb delete operation failed",
 			"error", err.Error(),
 		)
 		return common.ErrInternalError
 	}
+
+	utils.AddSpanEvent(ctx, "expense deleted successfully", attribute.Bool("db.item_deleted", true))
+	utils.SetSpanStatus(ctx, codes.Ok, "expense deleted successfully")
 
 	return nil
 }

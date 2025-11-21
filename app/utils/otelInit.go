@@ -13,13 +13,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-// Set up openTelemetry
-// 1. define to where the data will be sent (for this case stdout), exporter are defined per signal
-// 2. Create the providers of the signals to use
-
 func InitOpenTelemetry(otelUrl string, serviceName string, logger *slog.Logger) *trace.TracerProvider {
-	// Creating Resource
-
 	res, err := resource.New(
 		context.Background(),
 		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
@@ -52,12 +46,33 @@ func InitOpenTelemetry(otelUrl string, serviceName string, logger *slog.Logger) 
 	tp := trace.NewTracerProvider(
 		trace.WithBatcher(
 			exporter,
-			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
-			trace.WithBatchTimeout(trace.DefaultScheduleDelay*time.Millisecond),
-			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize), // Default: 512 spans
+			trace.WithBatchTimeout(trace.DefaultScheduleDelay),            // Default: 5 seconds
 		),
 		trace.WithResource(res),
 	)
 
 	return tp
+}
+
+// ShutdownTracerProvider gracefully shuts down the TracerProvider
+
+func ShutdownTracerProvider(ctx context.Context, tp *trace.TracerProvider, logger *slog.Logger) error {
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	logger.Info("shutting down tracer provider",
+		"component", "otel")
+
+	if err := tp.Shutdown(shutdownCtx); err != nil {
+		logger.Error("error shutting down tracer provider",
+			"component", "otel",
+			"error", err)
+		return err
+	}
+
+	logger.Info("tracer provider shut down successfully",
+		"component", "otel")
+	return nil
 }

@@ -24,7 +24,7 @@ module "eks_cluster" {
   public_endpoint_api          = true
   kms_arn                      = data.terraform_remote_state.base.outputs.kms_eks_arn
   account_number               = data.aws_caller_identity.id_account.id
-  vpc_cni_version              = "v1.19.2-eksbuild.1"
+  vpc_cni_version              = "v1.20.4-eksbuild.1"
   ebs_csi_version              = "v1.38.1-eksbuild.1"
   pod_identity_version         = "v1.3.4-eksbuild.1"
   cluster_admins               = "daniel.rivera" # This user will be able to assume the role to manage the cluster

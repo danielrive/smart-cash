@@ -8,9 +8,9 @@ import (
 	"smart-cash/user-service/internal/handler/dto"
 	"smart-cash/user-service/internal/service"
 	"smart-cash/user-service/models"
+	"smart-cash/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 )
 
 type UserHandler struct {
@@ -26,9 +26,8 @@ func NewUserHandler(userService *service.UserService, logger *slog.Logger) *User
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserById")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetUserById", "handler")
+	defer endSpan()
 
 	userId := c.Param("userId")
 
@@ -37,14 +36,14 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	user, err := h.userService.GetUserById(trContext, userId)
+	user, err := h.userService.GetUserById(ctx, userId)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			h.logger.Warn("user not found",
 				slog.String("user_id", userId),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound})
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrUserNotFound.Error()})
 			return
 		} else {
 			h.logger.Error("error getting user",
@@ -52,7 +51,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 			return
 		}
 	}
@@ -76,9 +75,8 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 // Handler for Get user by email or username
 
 func (h *UserHandler) GetUserByQuery(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetUserByQuery")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetUserByQuery", "handler")
+	defer endSpan()
 
 	query := c.Request.URL.Query()
 	var key, value string
@@ -102,7 +100,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 	)
 
 	// Get user info by the query
-	user, err := h.userService.GetUserByEmailorUsername(trContext, key, value)
+	user, err := h.userService.GetUserByEmailorUsername(ctx, key, value)
 	if err != nil {
 		if err == common.ErrUserNotFound {
 			h.logger.Warn("user not found by query",
@@ -110,7 +108,7 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 				slog.String("value", value),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrUserNotFound.Error()})
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrUserNotFound.Error()})
 			return
 		} else {
 			h.logger.Error("error getting user by query",
@@ -144,9 +142,8 @@ func (h *UserHandler) GetUserByQuery(c *gin.Context) {
 // Handler for creating new user
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateUser")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerCreateUser", "handler")
+	defer endSpan()
 
 	// Get validated body from middleware
 	validatedBody, exists := c.Get("validatedBody")
@@ -184,7 +181,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	}
 
 	// create the user
-	response, err := h.userService.CreateUser(trContext, user)
+	response, err := h.userService.CreateUser(ctx, user)
 	if err != nil {
 		if err == common.ErrUserAlreadyExists {
 			h.logger.Warn("user creation failed - already exists",
@@ -192,7 +189,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 				slog.String("email", userDTO.Email),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			c.JSON(http.StatusConflict, gin.H{"error": common.ErrUserAlreadyExists.Error()})
 		} else {
 			h.logger.Error("error creating user",
 				slog.String("username", userDTO.Username),
@@ -200,7 +197,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		}
 		return
 	}
@@ -218,9 +215,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // login
 
 func (h *UserHandler) Login(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerLogin")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerLogin", "handler")
+	defer endSpan()
 
 	// Get validated body from middleware
 	validatedBody, exists := c.Get("validatedBody")
@@ -247,15 +243,23 @@ func (h *UserHandler) Login(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	token, err := h.userService.Login(trContext, loginData.Username, loginData.Password)
+	token, err := h.userService.Login(ctx, loginData.Username, loginData.Password)
 
 	if err != nil {
-		h.logger.Warn("login failed",
-			slog.String("username", loginData.Username),
-			slog.String("error", err.Error()),
-			slog.String("component", "handler"),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err == common.ErrWrongCredentials {
+			h.logger.Warn("login failed - wrong credentials",
+				slog.String("username", loginData.Username),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials.Error()})
+		} else {
+			h.logger.Error("login failed - internal error",
+				slog.String("username", loginData.Username),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+		}
 		return
 	}
 
@@ -264,7 +268,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	c.JSON(http.StatusCreated, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 /// Health check

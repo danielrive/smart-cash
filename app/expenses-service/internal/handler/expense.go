@@ -9,9 +9,9 @@ import (
 	"smart-cash/expenses-service/internal/handler/dto"
 	"smart-cash/expenses-service/internal/service"
 	"smart-cash/expenses-service/models"
+	"smart-cash/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 )
 
 type ExpensesHandler struct {
@@ -29,9 +29,8 @@ func NewExpensesHandler(expensesService *service.ExpensesService, logger *slog.L
 // Handler for delete expense
 
 func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerDeleteExpense")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerDeleteExpense", "handler")
+	defer endSpan()
 
 	expenseId := c.Param("expenseId")
 
@@ -40,7 +39,7 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	expense, err := h.expensesService.DeleteExpense(trContext, expenseId)
+	expense, err := h.expensesService.DeleteExpense(ctx, expenseId)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
 			h.logger.Warn("expense not found for deletion",
@@ -70,9 +69,8 @@ func (h *ExpensesHandler) DeleteExpense(c *gin.Context) {
 // Handler for creating new user
 
 func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerCreateExpense")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerCreateExpense", "handler")
+	defer endSpan()
 
 	// Get userId from auth middleware (set by AuthMiddleware)
 	userId, exists := c.Get("userId")
@@ -143,7 +141,7 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 	}
 
 	// create the expense
-	response, err := h.expensesService.CreateExpense(trContext, expense)
+	response, err := h.expensesService.CreateExpense(ctx, expense)
 	if err != nil {
 		h.logger.Error("error creating expense",
 			slog.String("user_id", expenseRequest.UserId),
@@ -168,9 +166,8 @@ func (h *ExpensesHandler) CreateExpense(c *gin.Context) {
 // Handler for Get expense by expenseID
 
 func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetExpensesById")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetExpensesById", "handler")
+	defer endSpan()
 
 	expenseId := c.Param("expenseId")
 
@@ -179,7 +176,7 @@ func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	expenses, err := h.expensesService.GetExpenseById(trContext, expenseId)
+	expenses, err := h.expensesService.GetExpenseById(ctx, expenseId)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
 			h.logger.Warn("expense not found",
@@ -208,9 +205,8 @@ func (h *ExpensesHandler) GetExpensesById(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetExpensesByQuery")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetExpensesByQuery", "handler")
+	defer endSpan()
 
 	// validate the query in the url to see with what attribute filter
 	query := c.Request.URL.Query()
@@ -233,7 +229,7 @@ func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	expenses, err := h.expensesService.GetExpByUserIdorCat(trContext, key, value)
+	expenses, err := h.expensesService.GetExpByUserIdorCat(ctx, key, value)
 	if err != nil {
 		if err == common.ErrExpenseNotFound {
 			h.logger.Warn("expenses not found by query",

@@ -5,12 +5,11 @@ import (
 	"net/http"
 
 	"smart-cash/payment-service/internal/common"
-	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/payment-service/models"
+	"smart-cash/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 )
 
 type PaymentHandler struct {
@@ -28,14 +27,12 @@ func NewPaymentHandler(paymentService *service.PaymentService, logger *slog.Logg
 // Handler for creating new user
 
 func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
-	// OTel Instrumentation
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerProcessPayment")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerProcessPayment", "handler")
+	defer endSpan()
 
-	transaction := models.PaymentRequest{}
+	paymentRequest := models.PaymentRequest{}
 	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&transaction); err != nil {
+	if err := c.ShouldBindJSON(&paymentRequest); err != nil {
 		h.logger.Error("error binding json",
 			"error", err.Error(),
 			"level", "handler",
@@ -45,18 +42,13 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	}
 
 	h.logger.Info("processing payment",
-		slog.String("user_id", paymentDTO.UserId),
-		slog.String("expense_id", paymentDTO.ExpenseId),
+		slog.String("user_id", paymentRequest.UserId),
+		slog.String("expense_id", paymentRequest.ExpenseId),
 		slog.String("component", "handler"),
 	)
 
-	transaction := models.PaymentRequest{
-		UserId:    paymentDTO.UserId,
-		ExpenseId: paymentDTO.ExpenseId,
-	}
-
 	// init payment
-	transactionResult, err := h.paymentService.ProcessPayment(trContext, transaction)
+	transactionResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
 	if err != nil {
 		h.logger.Error("error processing payment",
 			"error", err.Error(),
@@ -85,9 +77,8 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 }
 
 func (h *PaymentHandler) GetTransaction(c *gin.Context) {
-	tr := otel.Tracer(common.ServiceName)
-	trContext, childSpan := tr.Start(c.Request.Context(), "HandlerGetTransaction")
-	defer childSpan.End()
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetTransaction", "handler")
+	defer endSpan()
 
 	transactionId := c.Param("transactionId")
 
@@ -96,7 +87,7 @@ func (h *PaymentHandler) GetTransaction(c *gin.Context) {
 		slog.String("component", "handler"),
 	)
 
-	transaction, err := h.paymentService.GetTransaction(trContext, transactionId)
+	transaction, err := h.paymentService.GetTransaction(ctx, transactionId)
 	if err != nil {
 		if err == common.ErrTransactionNotFound {
 			h.logger.Warn("transaction not found",

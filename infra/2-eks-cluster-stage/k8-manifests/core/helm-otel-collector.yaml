@@ -2,7 +2,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: otel-collector
-  namespace: observability
+  namespace: monitoring
 spec:
   interval: 10m0s
   chart:
@@ -15,7 +15,7 @@ spec:
         namespace: flux-system
   values:
     mode: "deployment"
-    namespaceOverride: "observability"
+    namespaceOverride: "monitoring"
     presets:
       kubernetesAttributes:
         enabled: true
@@ -35,7 +35,7 @@ spec:
         debug:
           verbosity: detailed
         otlphttp:
-          endpoint:  "http://jaeger-traces-collector.observability.svc.cluster.local:4318"
+          endpoint:  "http://jaeger-traces-collector.monitoring.svc.cluster.local:4318"
           tls:
             insecure: true
       extensions:
