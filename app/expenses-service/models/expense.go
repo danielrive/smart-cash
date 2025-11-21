@@ -6,7 +6,7 @@ import "time"
 
 type Expense struct {
 	ExpenseId   string    `json:"expenseId" dynamodbav:"expenseId" validate:"required"`
-	Date        time.Time `json:"date" dynamodbav:"date" validate:"required"`
+	Date        time.Time `json:"date" dynamodbav:"date"`
 	Description string    `json:"description" dynamodbav:"description" validate:"required,max=500"`
 	Status      string    `json:"status" dynamodbav:"status" validate:"required,oneof=pending paid cancelled"`
 	Name        string    `json:"name" dynamodbav:"name" validate:"required,max=100"`
