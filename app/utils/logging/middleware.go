@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"smart-cash/utils"
 )
 
 // HTTPMiddleware creates HTTP request logging middleware
@@ -29,12 +28,6 @@ func HTTPMiddleware(logger *slog.Logger, excludeEndpoints []string) gin.HandlerF
 			slog.Int("status", c.Writer.Status()),
 			slog.Duration("duration_ms", duration),
 			slog.String("client_ip", c.ClientIP()),
-		}
-
-		// Add trace context to logs for correlation
-		traceAttrs := utils.GetTraceContext(c.Request.Context())
-		if traceAttrs != nil {
-			attrs = append(attrs, traceAttrs...)
 		}
 
 		args := make([]any, len(attrs))
