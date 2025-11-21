@@ -81,6 +81,11 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 		return models.ExpensesReturn{}, err
 	}
 
+	utils.AddSpanEvent(ctx, "expense created successfully",
+		attribute.String("expense.id", response.ExpenseId),
+		attribute.String("user.id", expense.UserId),
+	)
+
 	s.logger.Info("expense created successfully",
 		slog.String("expense_id", response.ExpenseId),
 		slog.String("user_id", expense.UserId),
@@ -113,6 +118,10 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 		)
 		return models.Expense{}, err
 	}
+
+	utils.AddSpanEvent(ctx, "expense retrieved successfully",
+		attribute.String("expense.id", expenseId),
+	)
 
 	s.logger.Debug("expense retrieved successfully",
 		slog.String("expense_id", expenseId),
@@ -156,6 +165,10 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 		return "", err
 	}
 
+	utils.AddSpanEvent(ctx, "expense deleted successfully",
+		attribute.String("expense.id", expenseId),
+	)
+
 	s.logger.Info("expense deleted successfully",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
@@ -188,6 +201,12 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 		)
 		return expenses, err
 	}
+
+	utils.AddSpanEvent(ctx, "expenses retrieved successfully",
+		attribute.String("query.key", key),
+		attribute.String("query.value", value),
+		attribute.Int("expenses.count", len(expenses)),
+	)
 
 	s.logger.Debug("expenses retrieved successfully",
 		slog.String("key", key),

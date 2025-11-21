@@ -121,6 +121,13 @@ func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest mode
 		return transaction, common.ErrInternalError
 	}
 
+	utils.AddSpanEvent(ctx, "payment processed successfully",
+		attribute.String("transaction.id", transaction.TransactionId),
+		attribute.String("expense.id", paymentRequest.ExpenseId),
+		attribute.String("user.id", expense.UserId),
+		attribute.String("transaction.status", transaction.Status),
+	)
+
 	s.logger.Info("payment processed successfully",
 		slog.String("transaction_id", transaction.TransactionId),
 		slog.String("expense_id", paymentRequest.ExpenseId),
@@ -152,6 +159,11 @@ func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.
 		)
 		return models.TransactionRequest{}, err
 	}
+
+	utils.AddSpanEvent(ctx, "transaction retrieved successfully",
+		attribute.String("transaction.id", id),
+		attribute.String("transaction.status", transaction.Status),
+	)
 
 	s.logger.Debug("transaction retrieved successfully",
 		slog.String("transaction_id", id),

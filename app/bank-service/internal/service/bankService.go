@@ -87,6 +87,15 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	}
 
 	transaction.Status = "Paid"
+	utils.AddSpanEvent(ctx, "bank payment processed successfully",
+		attribute.String("transaction.id", transaction.TransactionId),
+		attribute.String("user.id", transaction.UserId),
+		attribute.String("expense.id", transaction.ExpenseId),
+		attribute.Float64("transaction.amount", transaction.Amount),
+		attribute.Float64("user.new_savings", newSaldo),
+		attribute.String("transaction.status", transaction.Status),
+	)
+
 	s.logger.Info("bank payment processed successfully",
 		slog.String("transaction_id", transaction.TransactionId),
 		slog.String("user_id", transaction.UserId),
@@ -128,6 +137,13 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 		)
 		return models.BankUser{}, common.ErrUserBlocked
 	}
+
+	utils.AddSpanEvent(ctx, "bank user retrieved successfully",
+		attribute.String("user.id", userId),
+		attribute.String("user.currency", user.Currency),
+		attribute.Float64("user.savings", user.Savings),
+		attribute.Bool("user.blocked", user.Blocked),
+	)
 
 	s.logger.Debug("bank user retrieved successfully",
 		slog.String("user_id", userId),
