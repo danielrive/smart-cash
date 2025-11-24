@@ -7,8 +7,8 @@ import (
 var (
 	ErrUserNotFound           = errors.New("user not found")
 	ErrExpenseNotFound        = errors.New("expense not found")
-	ErrTransactionNotFound    = errors.New("transaction not found")
-	ErrTransactionFailed      = errors.New("transaction failed")
+	ErrPaymentNotFound        = errors.New("payment not found")
+	ErrPaymentFailed          = errors.New("payment failed")
 	ErrUnexpectedError        = errors.New("unexpected error")
 	ErrInternalError          = errors.New("internal error")
 	ErrWrongCredentials       = errors.New("wrong credentials")

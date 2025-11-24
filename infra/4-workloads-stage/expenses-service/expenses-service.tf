@@ -52,6 +52,26 @@ resource "aws_dynamodb_table" "dynamo_table" {
 }
 
 ##############################
+##### SQSQueue for events
+
+resource "aws_sqs_queue" "service_queue" {
+  name                      = "${local.this_service_name}-service-queue"
+  delay_seconds             = 0
+  max_message_size          = 64
+  message_retention_seconds = 2880 # 48 hours 2 days
+  receive_wait_time_seconds = 0
+  # redrive_policy = jsonencode({
+  #   deadLetterTargetArn = aws_sqs_queue.terraform_queue_deadletter.arn
+  #   maxReceiveCount     = 4
+  # })
+  sqs_managed_sse_enabled = true
+
+  tags = {
+    Name = "${local.this_service_name}-service-queue"
+  }
+}
+
+##############################
 ###### IAM Role K8 SA
 
 resource "aws_iam_role" "iam_sa_role" {
@@ -103,6 +123,19 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
           "${aws_dynamodb_table.dynamo_table.arn}/index/by_category"
         ]
       },
+      {
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl" 
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_sqs_queue.service_queue.arn,
+        ]
+      }
     ]
   })
 }
@@ -132,7 +165,6 @@ module "ecr_registry" {
   account_id   = data.aws_caller_identity.id_account.id
   service_role = aws_iam_role.iam_sa_role.arn
 }
-
 
 ###########################
 ##### K8 Manifests 
@@ -190,6 +222,7 @@ resource "github_repository_file" "overlays_svc_patch" {
       SERVICE_NAME        = local.this_service_name
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamo_table.name
       AWS_REGION          = var.region
+      SQS_QUEUE_NAME      = aws_sqs_queue.service_queue.url
     }
   )
   commit_message      = "Managed by Terraform"

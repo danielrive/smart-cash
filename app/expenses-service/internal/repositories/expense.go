@@ -347,7 +347,7 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 
 func createExpenserReturn(expense models.Expense) models.ExpensesReturn {
 	return models.ExpensesReturn{
-		Date:        expense.Date.Format("2006-01-02"),
+		Date:        expense.Date,
 		ExpenseId:   expense.ExpenseId,
 		Name:        expense.Name,
 		Description: expense.Description,

@@ -14,6 +14,8 @@ locals {
 resource "aws_dynamodb_table" "dynamo_table" {
   name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
+  stream_enabled = true
+  stream_view_type = "NEW_IMAGES"
   hash_key     = "transactionId"
 
   attribute {
@@ -25,6 +27,26 @@ resource "aws_dynamodb_table" "dynamo_table" {
     Name = "${local.this_service_name}-table"
   }
 
+}
+
+##############################
+#### SQSQueue for events
+
+resource "aws_sqs_queue" "service_queue" {
+  name                      = "${local.this_service_name}-service-queue"
+  delay_seconds             = 0
+  max_message_size          = 64
+  message_retention_seconds = 2880 # 48 hours 2 days
+  receive_wait_time_seconds = 0
+  # redrive_policy = jsonencode({
+  #   deadLetterTargetArn = aws_sqs_queue.terraform_queue_deadletter.arn
+  #   maxReceiveCount     = 4
+  # })
+  sqs_managed_sse_enabled = true
+
+  tags = {
+    Name = "${local.this_service_name}-service-queue"
+  }
 }
 
 ##############################
@@ -77,6 +99,19 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
           aws_dynamodb_table.dynamo_table.arn
         ]
       },
+      {
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl" 
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_sqs_queue.service_queue.arn,
+        ]
+      }
     ]
   })
 }

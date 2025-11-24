@@ -53,6 +53,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	h.logger.Info("processing payment",
 		slog.String("user_id", paymentDTO.UserId),
 		slog.String("expense_id", paymentDTO.ExpenseId),
+		slog.Float64("amount", paymentDTO.Amount),
 		slog.String("component", "handler"),
 	)
 
@@ -60,60 +61,60 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	paymentRequest := models.PaymentRequest{
 		UserId:    paymentDTO.UserId,
 		ExpenseId: paymentDTO.ExpenseId,
+		Amount:    paymentDTO.Amount,
 	}
 
 	// init payment
-	transactionResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
+	paymentResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
 	if err != nil {
 		h.logger.Error("error processing payment",
-			"error", err.Error(),
-			"level", "handler",
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
 		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		return
 	}
 
 	h.logger.Info("payment processed successfully",
-		slog.String("transaction_id", transactionResult.TransactionId),
-		slog.String("expense_id", transactionResult.ExpenseId),
-		slog.String("status", transactionResult.Status),
+		slog.String("payment_id", paymentResult.PaymentId),
+		slog.String("expense_id", paymentResult.ExpenseId),
+		slog.String("status", paymentResult.Status),
 		slog.String("component", "handler"),
 	)
 
-	response := models.TransactionResponse{
-		TransactionId: transactionResult.TransactionId,
-		ExpenseId:     transactionResult.ExpenseId,
-		Date:          transactionResult.Date,
-		Amount:        transactionResult.Amount,
-		Status:        transactionResult.Status,
+	response := models.PaymentResponse{
+		PaymentId: paymentResult.PaymentId,
+		ExpenseId: paymentResult.ExpenseId,
+		Date:      paymentResult.Date,
+		Status:    paymentResult.Status,
 	}
 
 	c.JSON(http.StatusCreated, response)
 }
 
-func (h *PaymentHandler) GetTransaction(c *gin.Context) {
-	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetTransaction", "handler")
+func (h *PaymentHandler) GetPayment(c *gin.Context) {
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetPayment", "handler")
 	defer endSpan()
 
-	transactionId := c.Param("transactionId")
+	paymentId := c.Param("paymentId")
 
-	h.logger.Info("getting transaction",
-		slog.String("transaction_id", transactionId),
+	h.logger.Info("getting payment",
+		slog.String("payment_id", paymentId),
 		slog.String("component", "handler"),
 	)
 
-	transaction, err := h.paymentService.GetTransaction(ctx, transactionId)
+	payment, err := h.paymentService.GetPayment(ctx, paymentId)
 	if err != nil {
-		if err == common.ErrTransactionNotFound {
-			h.logger.Warn("transaction not found",
-				slog.String("transaction_id", transactionId),
+		if err == common.ErrPaymentNotFound {
+			h.logger.Warn("payment not found",
+				slog.String("payment_id", paymentId),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrTransactionNotFound})
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrPaymentNotFound})
 			return
 		} else {
-			h.logger.Error("error getting transaction",
-				slog.String("transaction_id", transactionId),
+			h.logger.Error("error getting payment",
+				slog.String("payment_id", paymentId),
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
@@ -122,18 +123,17 @@ func (h *PaymentHandler) GetTransaction(c *gin.Context) {
 		}
 	}
 
-	h.logger.Info("transaction retrieved successfully",
-		slog.String("transaction_id", transactionId),
-		slog.String("status", transaction.Status),
+	h.logger.Info("payment retrieved successfully",
+		slog.String("payment_id", paymentId),
+		slog.String("status", payment.Status),
 		slog.String("component", "handler"),
 	)
 
-	response := models.TransactionResponse{
-		TransactionId: transaction.TransactionId,
-		ExpenseId:     transaction.ExpenseId,
-		Date:          transaction.Date,
-		Amount:        transaction.Amount,
-		Status:        transaction.Status,
+	response := models.PaymentResponse{
+		PaymentId: payment.PaymentId,
+		ExpenseId: payment.ExpenseId,
+		Date:      payment.Date,
+		Status:    payment.Status,
 	}
 
 	c.JSON(http.StatusOK, response)

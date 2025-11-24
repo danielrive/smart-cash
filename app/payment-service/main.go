@@ -30,58 +30,59 @@ var (
 	notToLogEndpoints = []string{"/payment/health", "/payment/metrics"}
 	logger            *slog.Logger
 	domainName        string
+	sqsQueueURL       string
 )
 
 func init() {
 	// Set ServiceName first for logger initialization
 	common.ServiceName = os.Getenv("SERVICE_NAME")
 	if common.ServiceName == "" {
-		common.ServiceName = "payment-service" // fallback for logger
+		common.ServiceName = "payment-service"
+
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelDebug, // (Info, Warn, Error)
+		}))
+		slog.SetDefault(logger)
+
+		// validate ENV variables
+		common.DomainName = os.Getenv("DOMAIN_NAME")
+		if common.DomainName == "" {
+			common.DomainName = "localhost"
+		}
+
+		paymentTable = os.Getenv("DYNAMODB_PAYMENT_TABLE")
+		if paymentTable == "" {
+			logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_PAYMENT_TABLE"))
+			os.Exit(1)
+		}
+
+		otelCollector = os.Getenv("OTEL_COLLECTOR")
+		if otelCollector == "" {
+			logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
+			os.Exit(1)
+		}
+
+		awsRegion = os.Getenv("AWS_REGION")
+		if awsRegion == "" {
+			logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
+			os.Exit(1)
+		}
+
+		// Re-validate ServiceName (in case it was set via env)
+		common.ServiceName = os.Getenv("SERVICE_NAME")
+		if common.ServiceName == "" {
+			logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
+			os.Exit(1)
+		}
+
+		jwtSecretStr := os.Getenv("JWT_SECRET")
+		if jwtSecretStr == "" {
+			logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
+			jwtSecretStr = "default-secret-change-me"
+		}
+		jwtSecret = []byte(jwtSecretStr)
+
 	}
-
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug, // (Info, Warn, Error)
-	}))
-	slog.SetDefault(logger)
-
-	// validate ENV variables
-	common.DomainName = os.Getenv("DOMAIN_NAME")
-	if common.DomainName == "" {
-		common.DomainName = "localhost"
-	}
-
-	paymentTable = os.Getenv("DYNAMODB_PAYMENT_TABLE")
-	if paymentTable == "" {
-		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_PAYMENT_TABLE"))
-		os.Exit(1)
-	}
-
-	otelCollector = os.Getenv("OTEL_COLLECTOR")
-	if otelCollector == "" {
-		logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
-		os.Exit(1)
-	}
-
-	awsRegion = os.Getenv("AWS_REGION")
-	if awsRegion == "" {
-		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
-		os.Exit(1)
-	}
-
-	// Re-validate ServiceName (in case it was set via env)
-	common.ServiceName = os.Getenv("SERVICE_NAME")
-	if common.ServiceName == "" {
-		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
-		os.Exit(1)
-	}
-
-	jwtSecretStr := os.Getenv("JWT_SECRET")
-	if jwtSecretStr == "" {
-		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
-		jwtSecretStr = "default-secret-change-me"
-	}
-	jwtSecret = []byte(jwtSecretStr)
-
 }
 
 func main() {
@@ -100,7 +101,8 @@ func main() {
 			"error", err.Error())
 		os.Exit(1)
 	}
-	// define uuid helper
+
+	// Define aws clients
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 
 	// create a router with gin
@@ -136,7 +138,7 @@ func main() {
 	router.GET("/payment/:transactionId",
 		middleware.AuthMiddleware(jwtSecret),
 		middleware.ValidatePathParam("transactionId", "uuid"), // Validate transactionId is UUID
-		paymentHandler.GetTransaction)
+		paymentHandler.GetPayment)
 
 	router.Run(":8989")
 
