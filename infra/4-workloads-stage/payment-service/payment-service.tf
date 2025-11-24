@@ -15,11 +15,11 @@ resource "aws_dynamodb_table" "dynamo_table" {
   name         = "${local.this_service_name}-table"
   billing_mode = "PAY_PER_REQUEST"
   stream_enabled = true
-  stream_view_type = "NEW_IMAGES"
-  hash_key     = "transactionId"
+  stream_view_type = "NEW_IMAGE"
+  hash_key     = "paymentId"
 
   attribute {
-    name = "transactionId"
+    name = "paymentId"
     type = "S"
   }
 
@@ -35,7 +35,7 @@ resource "aws_dynamodb_table" "dynamo_table" {
 resource "aws_sqs_queue" "service_queue" {
   name                      = "${local.this_service_name}-service-queue"
   delay_seconds             = 0
-  max_message_size          = 64
+  max_message_size          = 1024
   message_retention_seconds = 2880 # 48 hours 2 days
   receive_wait_time_seconds = 0
   # redrive_policy = jsonencode({

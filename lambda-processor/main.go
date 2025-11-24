@@ -44,15 +44,15 @@ type PublishedEvent struct {
 
 // OutboxEvent represents the structure from DynamoDB
 type OutboxEvent struct {
-	EventID       string                 `dynamodbav:"eventId"`
-	AggregateID   string                 `dynamodbav:"aggregateId"`
-	AggregateType string                 `dynamodbav:"aggregateType"`
-	EventType     string                 `dynamodbav:"eventType"`
-	Payload       string                 `dynamodbav:"payload"`
-	Status        string                 `dynamodbav:"status"`
-	CreatedAt     time.Time              `dynamodbav:"createdAt"`
-	Attempt       int                    `dynamodbav:"attempt"`
-	LastError     *string                `dynamodbav:"lastError"`
+	EventID       string    `dynamodbav:"eventId"`
+	AggregateID   string    `dynamodbav:"aggregateId"`
+	AggregateType string    `dynamodbav:"aggregateType"`
+	EventType     string    `dynamodbav:"eventType"`
+	Payload       string    `dynamodbav:"payload"`
+	Status        string    `dynamodbav:"status"`
+	CreatedAt     time.Time `dynamodbav:"createdAt"`
+	Attempt       int       `dynamodbav:"attempt"`
+	LastError     *string   `dynamodbav:"lastError"`
 }
 
 func init() {
