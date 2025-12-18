@@ -38,10 +38,6 @@ func init() {
 		common.ServiceName = "expenses-service" // fallback for logger
 	}
 
-	// Logger config
-	logsConfig := logging.LoadConfig()
-	logger = logging.InitLogger(logsConfig, common.ServiceName)
-
 	common.DomainName = os.Getenv("DOMAIN_NAME")
 	if common.DomainName == "" {
 		common.DomainName = "localhost"
