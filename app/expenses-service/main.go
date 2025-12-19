@@ -32,6 +32,10 @@ var (
 )
 
 func init() {
+	// Logger config - Initialize logger first
+	logsConfig := logging.LoadConfig()
+	logger = logging.InitLogger(logsConfig, "expenses-service")
+
 	// Set ServiceName first for logger initialization
 	common.ServiceName = os.Getenv("SERVICE_NAME")
 	if common.ServiceName == "" {
