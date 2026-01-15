@@ -7,7 +7,7 @@ spec:
   interval: 10m0s
   chart:
     spec:
-      chart: grafana/tempo-distributed
+      chart: tempo-distributed
       version: 1.60.0
       sourceRef:
         kind: HelmRepository
