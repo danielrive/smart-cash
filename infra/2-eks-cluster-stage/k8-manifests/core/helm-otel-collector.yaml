@@ -35,7 +35,7 @@ spec:
         debug:
           verbosity: detailed
         otlphttp:
-          endpoint:  "http://jaeger-traces-collector.monitoring.svc.cluster.local:4318"
+          endpoint:  "http://grafana-tempo-distributor.monitoring.svc.cluster.local:4318"
           tls:
             insecure: true
       extensions:
