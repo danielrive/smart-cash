@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana-tempo
+  namespace: monitoring
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: grafana/tempo
+      version: 1.24.1
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-tempo
+        namespace: flux-system
+  values:
+    replicas: 2
+    tempo:
+      registry: docker.io
+      repository: grafana/tempo
+      tag: ""
+      pullPolicy: IfNotPresent
+      updateStrategy: RollingUpdate
+      retention: 24h
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 300m
+          memory: 200Mi
+      storage:
+        trace:
+          backend: s3
+          s3:
+            bucket: $S3_BUCKET_GRAFANA_TEMPO # Replace with your S3 bucket name
+            endpoint: "s3.amazonaws.com"
+            region: $AWS_REGION # Replace with your AWS region, e.g., us-west-2
+            prefix: "tempo"
+            insecure: false
+      # receivers:
+      #   otlp:
+      #     protocols:
+      #       grpc:
+      #         endpoint: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+      #       http:
+      #         endpoint: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318"

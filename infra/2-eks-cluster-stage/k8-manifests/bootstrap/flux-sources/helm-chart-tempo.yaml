@@ -1,9 +1,8 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: karpenter
+  name: grafana-tempo
   namespace: flux-system
 spec:
-  type: "oci"
   interval: 10m0s
-  url: oci://public.ecr.aws/karpenter
+  url: https://grafana.github.io/helm-charts

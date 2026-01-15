@@ -7,6 +7,29 @@ locals {
   gh_username                     = "danielrive"
 }
 
+#################################
+### S3 Bucket for Grafana Tempo
+
+resource "aws_s3_bucket" "grafana_tempo" {
+  bucket = "${var.environment}-${var.project_name}-grafana-tempo-bucket"
+
+  tags = {
+    Name        = "${local.cluster_name}-grafana-tempo-bucket"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "grafana_tempo" {
+  bucket = aws_s3_bucket.grafana_tempo.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = data.terraform_remote_state.base.outputs.kms_eks_arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
 
 ##########################
 #### EKS Cluster
@@ -171,6 +194,7 @@ resource "github_repository_file" "core_resources" {
       PROJECT               = var.project_name
       ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
       ACCOUNT_NUMBER        = data.aws_caller_identity.id_account.id
+      S3_BUCKET_GRAFANA_TEMPO = aws_s3_bucket.grafana_tempo.bucket
     }
   )
   commit_message      = "Managed by Terraform"
@@ -179,23 +203,3 @@ resource "github_repository_file" "core_resources" {
   overwrite_on_create = true
 }
 
-##### jaeger resources
-resource "github_repository_file" "jaeger_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  for_each   = fileset("${local.path_tf_repo_flux_core}/jaeger", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/core/jaeger/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_core}/jaeger/${each.key}",
-    {
-      ## Common variables for manifests
-      AWS_REGION  = var.region
-      ENVIRONMENT = var.environment
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}
