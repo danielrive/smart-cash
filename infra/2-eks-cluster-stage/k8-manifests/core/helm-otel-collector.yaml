@@ -33,7 +33,7 @@ spec:
     config:
       exporters:
         debug:
-          verbosity: detailed
+          verbosity: normal
         otlphttp:
           endpoint:  "http://grafana-tempo-distributor.monitoring.svc.cluster.local:4318"
           tls:
