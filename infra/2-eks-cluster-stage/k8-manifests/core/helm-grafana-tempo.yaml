@@ -29,10 +29,9 @@ spec:
             region: $AWS_REGION # Replace with your AWS region, e.g., us-west-2
             prefix: "tempo"
             insecure: false
-      # receivers:
-      #   otlp:
-      #     protocols:
-      #       grpc:
-      #         endpoint: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      #       http:
-      #         endpoint: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318"
+      traces: 
+        otlp: 
+          grpc: 
+            enabled: true 
+          http: 
+            enabled: true 
