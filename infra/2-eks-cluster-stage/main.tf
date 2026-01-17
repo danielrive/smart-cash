@@ -96,6 +96,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 }
 
 resource "aws_eks_pod_identity_association" "association" {
+  depends_on = [ module.eks_cluster ]
   cluster_name    = local.cluster_name
   namespace       = "monitoring"
   service_account = "sa-grafana-tempo"
