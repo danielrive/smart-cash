@@ -77,6 +77,15 @@ resource "aws_iam_policy" "tempo_iam_policy" {
           "${aws_s3_bucket.grafana_tempo.arn}/*"
         ]
       },
+      {
+        Action = [
+          "kms:*",
+        ]
+        Effect = "Allow"
+        Resource = [
+          data.terraform_remote_state.base.outputs.kms_eks_arn
+        ]
+      },
     ]
   })
 }
