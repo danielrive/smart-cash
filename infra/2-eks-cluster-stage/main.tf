@@ -90,7 +90,7 @@ resource "aws_eks_pod_identity_association" "association" {
   cluster_name    = local.cluster_name
   namespace       = var.environment
   service_account = "sa-grafana-tempo"
-  role_arn        = aws_iam_role.iam_sa_role.arn
+  role_arn        = aws_iam_role.iam_sa_role_tempo.arn
 }
 
 
