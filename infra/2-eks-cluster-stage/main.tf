@@ -32,6 +32,70 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "grafana_tempo" {
 }
 
 ##########################
+### IAM for SA Tempo
+
+##############################
+###### IAM Role K8 SA
+
+resource "aws_iam_role" "iam_sa_role_tempo" {
+  name               = "role-sa-grafana-tempo-${var.environment}"
+  path               = "/"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "tempo_iam_policy" {
+  name        = "policy-grafana-tempo-${var.environment}"
+  path        = "/"
+  description = "policy for k8 service account"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:*",
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_s3_bucket.grafana_tempo.arn,
+          "${aws_s3_bucket.grafana_tempo.arn}/*"
+        ]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "att_policy_role1" {
+  policy_arn = aws_iam_policy.tempo_iam_policy.arn
+  role       = aws_iam_role.iam_sa_role_tempo.name
+}
+
+resource "aws_eks_pod_identity_association" "association" {
+  cluster_name    = local.cluster_name
+  namespace       = var.environment
+  service_account = "sa-grafana-tempo"
+  role_arn        = aws_iam_role.iam_sa_role.arn
+}
+
+
+
+##########################
 #### EKS Cluster
 
 module "eks_cluster" {
