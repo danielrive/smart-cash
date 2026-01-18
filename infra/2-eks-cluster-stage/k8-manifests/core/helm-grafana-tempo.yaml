@@ -56,5 +56,5 @@ spec:
       config:
         storage:
           path: /var/tempo/wal
-          remote_write: []
+          remote_write: 
             - url: http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write
