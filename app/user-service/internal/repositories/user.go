@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/models"
@@ -140,7 +141,7 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 		slog.String("component", "repository"),
 	)
 
-	item, err := attributevalue.MarshalMap(u)
+	userItem, err := attributevalue.MarshalMap(u)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
@@ -151,14 +152,55 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 		)
 		return output, common.ErrInternalError
 	}
-	input := &dynamodb.PutItemInput{
-		TableName:           aws.String(r.tableUsers),
-		Item:                item,
-		ConditionExpression: aws.String("attribute_not_exists(userId)"),
+
+	input := &dynamodb.TransactWriteItemsInput{
+		TransactItems: []types.TransactWriteItem{
+			{
+				// 1. The Actual User Item
+				Put: &types.Put{
+					TableName:           aws.String(r.tableUsers),
+					Item:                userItem,
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+			{
+				// 2. The Username Marker (prevents duplicate usernames)
+				Put: &types.Put{
+					TableName: aws.String(r.tableUsers),
+					Item: map[string]types.AttributeValue{
+						"userId": &types.AttributeValueMemberS{Value: "USERNAME#" + u.Username},
+					},
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+			{
+				// 3. The Email Marker (prevents duplicate emails)
+				Put: &types.Put{
+					TableName: aws.String(r.tableUsers),
+					Item: map[string]types.AttributeValue{
+						"userId": &types.AttributeValueMemberS{Value: "EMAIL#" + u.Email},
+					},
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+		},
 	}
 
-	// call dynamodb put item
-	_, err = r.client.PutItem(ctx, input)
+	_, err = r.client.TransactWriteItems(ctx, input)
+
+	if err != nil {
+		var tcf *types.TransactionCanceledException
+		if errors.As(err, &tcf) {
+			for _, reason := range tcf.CancellationReasons {
+				if *reason.Code == "ConditionalCheckFailed" {
+					r.logger.Warn("user already exists (username or email)", slog.String("username", u.Username))
+					// IMPORTANT: Return a specific conflict error so your API returns 409
+					return models.UserResponse{}, common.ErrUserAlreadyExists
+				}
+			}
+		}
+		return models.UserResponse{}, common.ErrUserNotCreated
+	}
 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
