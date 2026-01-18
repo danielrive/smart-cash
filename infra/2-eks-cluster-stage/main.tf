@@ -12,7 +12,7 @@ locals {
 
 resource "aws_s3_bucket" "grafana_tempo" {
   bucket = "${var.environment}-${var.project_name}-grafana-tempo-bucket"
-
+  force_destroy = true
   tags = {
     Name        = "${local.cluster_name}-grafana-tempo-bucket"
     Environment = var.environment

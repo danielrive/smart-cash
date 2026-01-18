@@ -48,3 +48,13 @@ spec:
         registry: docker.io
         repository: grafana/tempo
         tag: "2.9.0" # It is safer to specify a version
+    metricsGenerator:
+      # -- Specifies whether a metrics-generator should be deployed
+      enabled: true
+      # -- Kind of deployment [StatefulSet/Deployment]
+      kind: Deployment
+      config:
+        storage:
+          path: /var/tempo/wal
+          remote_write: []
+            - url: http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write
