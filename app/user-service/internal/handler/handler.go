@@ -190,14 +190,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 				slog.String("component", "handler"),
 			)
 			c.JSON(http.StatusConflict, gin.H{"error": common.ErrUserAlreadyExists.Error()})
-		} else if err == common.ErrUserAlreadyExists {
-			h.logger.Warn("user creation failed - already exists",
-				slog.String("username", userDTO.Username),
-				slog.String("email", userDTO.Email),
-				slog.String("component", "handler"),
-			)
-			c.JSON(http.StatusConflict, gin.H{"error": common.ErrUserAlreadyExists.Error()})
-
 		} else {
 			h.logger.Error("error creating user",
 				slog.String("username", userDTO.Username),

@@ -51,7 +51,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	}
 
 	h.logger.Info("processing payment",
-		slog.String("user_id", paymentDTO.UserId),
+		slog.String("user_id", c.GetString("userId")),
 		slog.String("expense_id", paymentDTO.ExpenseId),
 		slog.Float64("amount", paymentDTO.Amount),
 		slog.String("component", "handler"),
@@ -59,7 +59,7 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 
 	// Convert DTO to model for service layer
 	paymentRequest := models.PaymentRequest{
-		UserId:    paymentDTO.UserId,
+		UserId:    c.GetString("userId"),
 		ExpenseId: paymentDTO.ExpenseId,
 		Amount:    paymentDTO.Amount,
 	}
