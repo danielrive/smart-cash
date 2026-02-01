@@ -6,6 +6,7 @@ import (
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -21,6 +22,11 @@ type DynamoDBExpensesRepository struct {
 	client        *dynamodb.Client
 	expensesTable string
 	logger        *slog.Logger
+}
+
+// loggerWithTrace returns a logger with trace context if available in the context
+func (r *DynamoDBExpensesRepository) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, r.logger)
 }
 
 func NewDynamoDBExpensesRepository(client *dynamodb.Client, expensesTable string, logger *slog.Logger) *DynamoDBExpensesRepository {
@@ -46,7 +52,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 
 	output := models.ExpensesReturn{}
 
-	r.logger.Debug("creating expense in database",
+	r.loggerWithTrace(ctx).Debug("creating expense in database",
 		slog.String("expense_id", expense.ExpenseId),
 		slog.String("user_id", expense.UserId),
 		slog.String("component", "repository"),
@@ -55,7 +61,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	item, err := attributevalue.MarshalMap(expense)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("error marshaling expense item",
+		r.loggerWithTrace(ctx).Error("error marshaling expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", expense.ExpenseId),
 			slog.String("component", "repository"),
@@ -70,7 +76,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	})
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb error putting expense item",
+		r.loggerWithTrace(ctx).Error("dynamodb error putting expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", expense.ExpenseId),
 			slog.String("component", "repository"),
@@ -84,7 +90,7 @@ func (r *DynamoDBExpensesRepository) CreateExpense(ctx context.Context, expense 
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "expense created successfully")
 
-	r.logger.Info("expense created in database",
+	r.loggerWithTrace(ctx).Info("expense created in database",
 		slog.String("expense_id", expense.ExpenseId),
 		slog.String("component", "repository"),
 	)
@@ -107,7 +113,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb update expression couldn't be created",
+		r.loggerWithTrace(ctx).Error("dynamodb update expression couldn't be created",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
@@ -117,7 +123,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 	expId, err := attributevalue.Marshal(expense.ExpenseId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb udpate key couldn't be created",
+		r.loggerWithTrace(ctx).Error("dynamodb udpate key couldn't be created",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
@@ -136,7 +142,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("status couldn't be updated",
+		r.loggerWithTrace(ctx).Error("status couldn't be updated",
 			"error", err.Error(),
 			"expenseId", expense.ExpenseId,
 		)
@@ -150,7 +156,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 			// Unmarshal the AttributeValue into a generic interface{}
 			err := attributevalue.Unmarshal(value, &readableValue)
 			if err != nil {
-				r.logger.Error("failed to unmarshal attribute value",
+				r.loggerWithTrace(ctx).Error("failed to unmarshal attribute value",
 					"error", err.Error(),
 					"expenseId", expense.ExpenseId,
 				)
@@ -159,7 +165,7 @@ func (r *DynamoDBExpensesRepository) UpdateExpenseStatus(ctx context.Context, ex
 
 		}
 	} else {
-		r.logger.Info("no attributes returned")
+		r.loggerWithTrace(ctx).Info("no attributes returned")
 	}
 
 	utils.AddSpanEvent(ctx, "expense status updated successfully",
@@ -195,7 +201,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	})
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb couldn't get the item",
+		r.loggerWithTrace(ctx).Error("dynamodb couldn't get the item",
 			"error", err.Error(),
 			"expenseId", id,
 		)
@@ -204,7 +210,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	if len(item.Item) == 0 {
 		utils.AddSpanEvent(ctx, "expense not found", attribute.Bool("db.item_found", false))
 		utils.SetSpanStatus(ctx, codes.Ok, "expense not found")
-		r.logger.Debug("expense not found in database",
+		r.loggerWithTrace(ctx).Debug("expense not found in database",
 			slog.String("expense_id", id),
 			slog.String("component", "repository"),
 		)
@@ -215,7 +221,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("error unmarshaling expense item",
+		r.loggerWithTrace(ctx).Error("error unmarshaling expense item",
 			slog.String("error", err.Error()),
 			slog.String("expense_id", id),
 			slog.String("component", "repository"),
@@ -229,7 +235,7 @@ func (r *DynamoDBExpensesRepository) GetExpenseById(ctx context.Context, id stri
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "expense retrieved successfully")
 
-	r.logger.Debug("expense retrieved from database",
+	r.loggerWithTrace(ctx).Debug("expense retrieved from database",
 		slog.String("expense_id", id),
 		slog.String("component", "repository"),
 	)
@@ -259,7 +265,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	expr, err := expression.NewBuilder().WithKeyCondition(keyCondition).Build()
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb expression couldn't be created",
+		r.loggerWithTrace(ctx).Error("dynamodb expression couldn't be created",
 			"error", err.Error(),
 		)
 		return output, common.ErrInternalError
@@ -277,7 +283,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb query failed",
+		r.loggerWithTrace(ctx).Error("dynamodb query failed",
 			"error", err.Error(),
 		)
 		return output, common.ErrInternalError
@@ -286,7 +292,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	if len(response.Items) == 0 {
 		utils.AddSpanEvent(ctx, "expenses not found", attribute.Bool("db.items_found", false))
 		utils.SetSpanStatus(ctx, codes.Ok, "expenses not found")
-		r.logger.Info("expense not found",
+		r.loggerWithTrace(ctx).Info("expense not found",
 			"tag", k,
 			"value", v,
 		)
@@ -297,7 +303,7 @@ func (r *DynamoDBExpensesRepository) GetExpByUserIdorCat(ctx context.Context, k 
 	err = attributevalue.UnmarshalListOfMaps(response.Items, &output)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("failed to unmarshal attribute value",
+		r.loggerWithTrace(ctx).Error("failed to unmarshal attribute value",
 			"error", err.Error(),
 		)
 		return []models.Expense{}, common.ErrInternalError
@@ -333,7 +339,7 @@ func (r *DynamoDBExpensesRepository) DeleteExpenseById(ctx context.Context, id s
 	})
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb delete operation failed",
+		r.loggerWithTrace(ctx).Error("dynamodb delete operation failed",
 			"error", err.Error(),
 		)
 		return common.ErrInternalError

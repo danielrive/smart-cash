@@ -139,6 +139,70 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Handler for updating payment status
+func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerUpdatePaymentStatus", "handler")
+	defer endSpan()
+
+	paymentId := c.Param("paymentId")
+
+	// Get validated body from validation middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	// Type assert to our DTO
+	statusRequest, ok := validatedBody.(dto.UpdatePaymentStatusRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to UpdatePaymentStatusRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	h.logger.Info("updating payment status",
+		slog.String("payment_id", paymentId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	err := h.paymentService.UpdatePaymentStatus(ctx, paymentId, statusRequest.Status)
+	if err != nil {
+		if err == common.ErrPaymentNotFound {
+			h.logger.Warn("payment not found for status update",
+				slog.String("payment_id", paymentId),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrPaymentNotFound.Error()})
+		} else {
+			h.logger.Error("error updating payment status",
+				slog.String("payment_id", paymentId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+		}
+		return
+	}
+
+	h.logger.Info("payment status updated successfully",
+		slog.String("payment_id", paymentId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"paymentId": paymentId,
+		"status":    statusRequest.Status,
+	})
+}
+
 func (h *PaymentHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, "ok")
 }

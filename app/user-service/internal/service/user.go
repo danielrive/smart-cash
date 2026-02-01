@@ -7,6 +7,7 @@ import (
 	"smart-cash/user-service/internal/repositories"
 	"smart-cash/user-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -20,10 +21,16 @@ type UserService struct {
 	jwtSecret      []byte
 }
 
+// loggerWithTrace returns a logger with trace context if available in the context
+func (us *UserService) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, us.logger)
+}
+
 type claims = struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Active   bool   `json:"active"`
 	jwt.RegisteredClaims
 }
 
@@ -41,7 +48,7 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 	)
 	defer endSpan()
 
-	us.logger.Debug("getting user by id",
+	us.loggerWithTrace(ctx).Debug("getting user by id",
 		slog.String("user_id", userId),
 		slog.String("component", "service"),
 	)
@@ -49,7 +56,7 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 	user, err := us.userRepository.GetUserById(ctx, userId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		us.logger.Error("error getting user by id",
+		us.loggerWithTrace(ctx).Error("error getting user by id",
 			slog.String("user_id", userId),
 			slog.String("error", err.Error()),
 			slog.String("component", "service"),
@@ -57,7 +64,7 @@ func (us *UserService) GetUserById(ctx context.Context, userId string) (models.U
 		return models.UserResponse{}, err
 	}
 
-	us.logger.Debug("user retrieved successfully",
+	us.loggerWithTrace(ctx).Debug("user retrieved successfully",
 		slog.String("user_id", userId),
 		slog.String("component", "service"),
 	)
@@ -72,7 +79,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 	)
 	defer endSpan()
 
-	us.logger.Debug("getting user by email or username",
+	us.loggerWithTrace(ctx).Debug("getting user by email or username",
 		slog.String("key", key),
 		slog.String("value", value),
 		slog.String("component", "service"),
@@ -80,7 +87,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 
 	user, err := us.userRepository.GetUserByEmailorUsername(ctx, key, value)
 	if err != nil {
-		us.logger.Debug("user not found by email or username",
+		us.loggerWithTrace(ctx).Debug("user not found by email or username",
 			slog.String("key", key),
 			slog.String("value", value),
 			slog.String("component", "service"),
@@ -88,7 +95,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 		return models.User{}, err
 	}
 
-	us.logger.Debug("user found by email or username",
+	us.loggerWithTrace(ctx).Debug("user found by email or username",
 		slog.String("user_id", user.UserId),
 		slog.String("key", key),
 		slog.String("component", "service"),
@@ -104,7 +111,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 	)
 	defer endSpan()
 
-	us.logger.Info("creating new user",
+	us.loggerWithTrace(ctx).Info("creating new user",
 		slog.String("username", u.Username),
 		slog.String("email", u.Email),
 		slog.String("component", "service"),
@@ -114,7 +121,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		us.logger.Error("failed to hash password",
+		us.loggerWithTrace(ctx).Error("failed to hash password",
 			slog.String("error", err.Error()),
 			slog.String("username", u.Username),
 			slog.String("component", "service"),
@@ -128,7 +135,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 	user, err := us.userRepository.CreateUser(ctx, u)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		us.logger.Error("error creating user in repository",
+		us.loggerWithTrace(ctx).Error("error creating user in repository",
 			slog.String("username", u.Username),
 			slog.String("email", u.Email),
 			slog.String("error", err.Error()),
@@ -137,7 +144,7 @@ func (us *UserService) CreateUser(ctx context.Context, u models.User) (models.Us
 		return models.UserResponse{}, err
 	}
 
-	us.logger.Info("user created successfully",
+	us.loggerWithTrace(ctx).Info("user created successfully",
 		slog.String("user_id", user.UserId),
 		slog.String("username", user.Username),
 		slog.String("component", "service"),
@@ -154,7 +161,7 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	)
 	defer endSpan()
 
-	us.logger.Debug("attempting login",
+	us.loggerWithTrace(ctx).Debug("attempting login",
 		slog.String("username", user),
 		slog.String("component", "service"),
 	)
@@ -162,17 +169,27 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	response, err := us.GetUserByEmailorUsername(ctx, "username", user)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		us.logger.Warn("login failed - user not found",
+		us.loggerWithTrace(ctx).Warn("login failed - user not found",
 			slog.String("username", user),
 			slog.String("component", "service"),
 		)
 		return "", common.ErrWrongCredentials
 	}
 
+	// Check if user is active
+	if !response.Active {
+		us.loggerWithTrace(ctx).Warn("login failed - user account is inactive",
+			slog.String("username", user),
+			slog.String("user_id", response.UserId),
+			slog.String("component", "service"),
+		)
+		return "", common.ErrUserInactive
+	}
+
 	// Compare hashes
 	err = bcrypt.CompareHashAndPassword([]byte(response.Password), []byte(password))
 	if err != nil {
-		us.logger.Warn("login failed - password mismatch",
+		us.loggerWithTrace(ctx).Warn("login failed - password mismatch",
 			slog.String("username", user),
 			slog.String("user_id", response.UserId),
 			slog.String("component", "service"),
@@ -181,10 +198,10 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	}
 
 	// Password is correct, generate JWT token
-	token, err := us.generateJWT(response.UserId, response.Username, response.Email)
+	token, err := us.generateJWT(response.UserId, response.Username, response.Email, response.Active)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		us.logger.Error("error generating JWT token",
+		us.loggerWithTrace(ctx).Error("error generating JWT token",
 			slog.String("error", err.Error()),
 			slog.String("username", user),
 			slog.String("user_id", response.UserId),
@@ -193,7 +210,7 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 		return "", common.ErrInternalError
 	}
 
-	us.logger.Info("login successful",
+	us.loggerWithTrace(ctx).Info("login successful",
 		slog.String("username", user),
 		slog.String("user_id", response.UserId),
 		slog.String("component", "service"),
@@ -204,12 +221,13 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 }
 
 // generateJWT creates a JWT token with user claims
-func (us *UserService) generateJWT(userID, username, email string) (string, error) {
+func (us *UserService) generateJWT(userID, username, email string, active bool) (string, error) {
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := &claims{
 		UserID:   userID,
 		Username: username,
 		Email:    email,
+		Active:   active,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},

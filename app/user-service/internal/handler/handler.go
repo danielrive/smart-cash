@@ -252,6 +252,12 @@ func (h *UserHandler) Login(c *gin.Context) {
 				slog.String("component", "handler"),
 			)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": common.ErrWrongCredentials.Error()})
+		} else if err == common.ErrUserInactive {
+			h.logger.Warn("login failed - user account is inactive",
+				slog.String("username", loginData.Username),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusForbidden, gin.H{"error": common.ErrUserInactive.Error()})
 		} else {
 			h.logger.Error("login failed - internal error",
 				slog.String("username", loginData.Username),

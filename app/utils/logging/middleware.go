@@ -30,6 +30,10 @@ func HTTPMiddleware(logger *slog.Logger, excludeEndpoints []string) gin.HandlerF
 			slog.String("client_ip", c.ClientIP()),
 		}
 
+		// Add trace context if available (from OpenTelemetry middleware)
+		traceAttrs := WithTraceContext(c.Request.Context())
+		attrs = append(attrs, traceAttrs...)
+
 		args := make([]any, len(attrs))
 		for i, attr := range attrs {
 			args[i] = attr

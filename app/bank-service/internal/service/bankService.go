@@ -6,6 +6,7 @@ import (
 	"smart-cash/bank-service/internal/repositories"
 	"smart-cash/bank-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 
 	"log/slog"
 
@@ -17,6 +18,11 @@ import (
 type BankService struct {
 	bankRepository *repositories.DynamoDBBankRepository
 	logger         *slog.Logger
+}
+
+// loggerWithTrace returns a logger with trace context if available in the context
+func (s *BankService) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, s.logger)
 }
 
 // Create a new bank service
@@ -36,7 +42,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	)
 	defer endSpan()
 
-	s.logger.Info("processing bank payment",
+	s.loggerWithTrace(ctx).Info("processing bank payment",
 		slog.String("transaction_id", transaction.TransactionId),
 		slog.String("expense_id", transaction.ExpenseId),
 		slog.String("user_id", transaction.UserId),
@@ -47,7 +53,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	user, err := s.bankRepository.GetUser(ctx, transaction.UserId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("failed getting user for payment",
+		s.loggerWithTrace(ctx).Error("failed getting user for payment",
 			slog.String("user_id", transaction.UserId),
 			slog.String("error", err.Error()),
 			slog.String("component", "service"),
@@ -59,7 +65,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	newSaldo, err := processPayment(transaction.Amount, user.Savings)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Warn("transaction failed - insufficient funds",
+		s.loggerWithTrace(ctx).Warn("transaction failed - insufficient funds",
 			slog.String("error", err.Error()),
 			slog.String("user_id", transaction.UserId),
 			slog.String("expense_id", transaction.ExpenseId),
@@ -76,7 +82,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 	err = s.bankRepository.UpdateSavingsUser(ctx, user)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("transaction failed - could not update savings",
+		s.loggerWithTrace(ctx).Error("transaction failed - could not update savings",
 			slog.String("error", err.Error()),
 			slog.String("user_id", transaction.UserId),
 			slog.String("expense_id", transaction.ExpenseId),
@@ -96,7 +102,7 @@ func (s *BankService) ProcessPayment(ctx context.Context, transaction models.Tra
 		attribute.String("transaction.status", transaction.Status),
 	)
 
-	s.logger.Info("bank payment processed successfully",
+	s.loggerWithTrace(ctx).Info("bank payment processed successfully",
 		slog.String("transaction_id", transaction.TransactionId),
 		slog.String("user_id", transaction.UserId),
 		slog.String("expense_id", transaction.ExpenseId),
@@ -114,7 +120,7 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 	)
 	defer endSpan()
 
-	s.logger.Debug("getting bank user",
+	s.loggerWithTrace(ctx).Debug("getting bank user",
 		slog.String("user_id", userId),
 		slog.String("component", "service"),
 	)
@@ -122,7 +128,7 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 	user, err := s.bankRepository.GetUser(ctx, userId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("error getting bank user",
+		s.loggerWithTrace(ctx).Error("error getting bank user",
 			slog.String("error", err.Error()),
 			slog.String("user_id", userId),
 			slog.String("component", "service"),
@@ -131,7 +137,7 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 	}
 
 	if user.Blocked {
-		s.logger.Warn("user is blocked - transactions not allowed",
+		s.loggerWithTrace(ctx).Warn("user is blocked - transactions not allowed",
 			slog.String("user_id", userId),
 			slog.String("component", "service"),
 		)
@@ -145,7 +151,7 @@ func (s *BankService) GetUser(ctx context.Context, userId string) (models.BankUs
 		attribute.Bool("user.blocked", user.Blocked),
 	)
 
-	s.logger.Debug("bank user retrieved successfully",
+	s.loggerWithTrace(ctx).Debug("bank user retrieved successfully",
 		slog.String("user_id", userId),
 		slog.String("currency", user.Currency),
 		slog.String("component", "service"),

@@ -268,6 +268,67 @@ func (h *ExpensesHandler) GetExpensesByQuery(c *gin.Context) {
 	c.JSON(http.StatusOK, expenses)
 }
 
+// Handler for updating expense status
+func (h *ExpensesHandler) UpdateExpenseStatus(c *gin.Context) {
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerUpdateExpenseStatus", "handler")
+	defer endSpan()
+
+	expenseId := c.Param("expenseId")
+
+	// Get validated body from validation middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	// Type assert to our DTO
+	statusRequest, ok := validatedBody.(dto.UpdateExpenseStatusRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to UpdateExpenseStatusRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	h.logger.Info("updating expense status",
+		slog.String("expense_id", expenseId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	response, err := h.expensesService.UpdateExpenseStatus(ctx, expenseId, statusRequest.Status)
+	if err != nil {
+		if err == common.ErrExpenseNotFound {
+			h.logger.Warn("expense not found for status update",
+				slog.String("expense_id", expenseId),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrExpenseNotFound.Error()})
+		} else {
+			h.logger.Error("error updating expense status",
+				slog.String("expense_id", expenseId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+		}
+		return
+	}
+
+	h.logger.Info("expense status updated successfully",
+		slog.String("expense_id", expenseId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	c.JSON(http.StatusOK, response)
+}
+
 /// Health check
 
 func (h *ExpensesHandler) HealthCheck(c *gin.Context) {
