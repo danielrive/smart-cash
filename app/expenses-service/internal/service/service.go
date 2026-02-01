@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"smart-cash/expenses-service/internal/common"
 	"smart-cash/expenses-service/internal/repositories"
 	"smart-cash/expenses-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -27,6 +24,11 @@ type ExpensesService struct {
 	expensesRepository *repositories.DynamoDBExpensesRepository
 	logger             *slog.Logger
 	uuid               UUIDHelper
+}
+
+// loggerWithTrace returns a logger with trace context if available in the context
+func (s *ExpensesService) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, s.logger)
 }
 
 // Create a new expenses service
@@ -46,21 +48,15 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	)
 	defer endSpan()
 
-	s.logger.Info("creating expense",
+	s.loggerWithTrace(ctx).Info("creating expense",
 		slog.String("user_id", expense.UserId),
 		slog.String("name", expense.Name),
 		slog.Float64("amount", expense.Amount),
 		slog.String("component", "service"),
 	)
 
-	// Validate if user exist
-	if !s.validateUser(expense.UserId) {
-		s.logger.Warn("user not found during expense creation",
-			slog.String("user_id", expense.UserId),
-			slog.String("component", "service"),
-		)
-		return models.ExpensesReturn{}, common.ErrUserNotFound
-	}
+	// User validation is handled by JWT middleware - if user is inactive or doesn't exist,
+	// they cannot authenticate and reach this point. The userId comes from JWT claims.
 	// set the expense status to unpaid
 	expense.Status = "unpaid"
 	// set the date of creation
@@ -74,7 +70,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 	response, err := s.expensesRepository.CreateExpense(ctx, expense)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("expense couldn't be created",
+		s.loggerWithTrace(ctx).Error("expense couldn't be created",
 			"error", err.Error(),
 			"level", "service",
 		)
@@ -86,7 +82,7 @@ func (s *ExpensesService) CreateExpense(ctx context.Context, expense models.Expe
 		attribute.String("user.id", expense.UserId),
 	)
 
-	s.logger.Info("expense created successfully",
+	s.loggerWithTrace(ctx).Info("expense created successfully",
 		slog.String("expense_id", response.ExpenseId),
 		slog.String("user_id", expense.UserId),
 		slog.String("component", "service"),
@@ -103,7 +99,7 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 	)
 	defer endSpan()
 
-	s.logger.Debug("getting expense by id",
+	s.loggerWithTrace(ctx).Debug("getting expense by id",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
@@ -111,7 +107,7 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 	expense, err := s.expensesRepository.GetExpenseById(ctx, expenseId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("error getting expense by id",
+		s.loggerWithTrace(ctx).Error("error getting expense by id",
 			slog.String("expense_id", expenseId),
 			slog.String("error", err.Error()),
 			slog.String("component", "service"),
@@ -123,7 +119,7 @@ func (s *ExpensesService) GetExpenseById(ctx context.Context, expenseId string) 
 		attribute.String("expense.id", expenseId),
 	)
 
-	s.logger.Debug("expense retrieved successfully",
+	s.loggerWithTrace(ctx).Debug("expense retrieved successfully",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
@@ -139,7 +135,7 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 	)
 	defer endSpan()
 
-	s.logger.Info("deleting expense",
+	s.loggerWithTrace(ctx).Info("deleting expense",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
@@ -147,7 +143,7 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 	expense, err := s.GetExpenseById(ctx, expenseId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Warn("expense not found for deletion",
+		s.loggerWithTrace(ctx).Warn("expense not found for deletion",
 			slog.String("expense_id", expenseId),
 			slog.String("component", "service"),
 		)
@@ -157,7 +153,7 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 	err = s.expensesRepository.DeleteExpenseById(ctx, expense.ExpenseId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("error deleting expense",
+		s.loggerWithTrace(ctx).Error("error deleting expense",
 			slog.String("expense_id", expenseId),
 			slog.String("error", err.Error()),
 			slog.String("component", "service"),
@@ -169,7 +165,7 @@ func (s *ExpensesService) DeleteExpense(ctx context.Context, expenseId string) (
 		attribute.String("expense.id", expenseId),
 	)
 
-	s.logger.Info("expense deleted successfully",
+	s.loggerWithTrace(ctx).Info("expense deleted successfully",
 		slog.String("expense_id", expenseId),
 		slog.String("component", "service"),
 	)
@@ -186,7 +182,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 	)
 	defer endSpan()
 
-	s.logger.Debug("getting expenses by user id or category",
+	s.loggerWithTrace(ctx).Debug("getting expenses by user id or category",
 		slog.String("key", key),
 		slog.String("value", value),
 		slog.String("component", "service"),
@@ -194,7 +190,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 
 	expenses, err := s.expensesRepository.GetExpByUserIdorCat(ctx, key, value)
 	if err != nil {
-		s.logger.Debug("expenses not found by query",
+		s.loggerWithTrace(ctx).Debug("expenses not found by query",
 			slog.String("key", key),
 			slog.String("value", value),
 			slog.String("component", "service"),
@@ -208,7 +204,7 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 		attribute.Int("expenses.count", len(expenses)),
 	)
 
-	s.logger.Debug("expenses retrieved successfully",
+	s.loggerWithTrace(ctx).Debug("expenses retrieved successfully",
 		slog.String("key", key),
 		slog.Int("count", len(expenses)),
 		slog.String("component", "service"),
@@ -217,57 +213,58 @@ func (s *ExpensesService) GetExpByUserIdorCat(ctx context.Context, key string, v
 	return expenses, nil
 }
 
-// Function to validate if user exist and is active
+// UpdateExpenseStatus updates the status of an expense
+func (s *ExpensesService) UpdateExpenseStatus(ctx context.Context, expenseId string, status string) (models.ExpensesReturn, error) {
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCUpdateExpenseStatus", "service",
+		attribute.String("expense.id", expenseId),
+		attribute.String("expense.status", status),
+	)
+	defer endSpan()
 
-func (s *ExpensesService) validateUser(userId string) bool {
-	// OTel instrumentation
-	//tr := otel.Tracer(common.ServiceName)
-	//trContext, childSpan := tr.Start(ctx, "SVCValidateUser")
-	//childSpan.SetAttributes(attribute.String("component", "service"))
-	//defer childSpan.End()
-
-	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
-	user := models.User{}
-
-	// Validate if User exist and is not blocked
-	resp, err := http.Get(userBaseURL)
-	if err != nil {
-		s.logger.Error("error calling user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		s.logger.Error("error reading response body from user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-
-	err = json.Unmarshal(respBody, &user)
-	if err != nil {
-		s.logger.Error("error parsing response body from user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-
-	s.logger.Debug("user validated successfully",
-		slog.String("user_id", userId),
+	s.loggerWithTrace(ctx).Info("updating expense status",
+		slog.String("expense_id", expenseId),
+		slog.String("status", status),
 		slog.String("component", "service"),
 	)
 
-	return true
+	// Get the expense first to ensure it exists
+	expense, err := s.expensesRepository.GetExpenseById(ctx, expenseId)
+	if err != nil {
+		utils.RecordSpanError(ctx, err)
+		s.loggerWithTrace(ctx).Error("expense not found for status update",
+			slog.String("expense_id", expenseId),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
+		return models.ExpensesReturn{}, common.ErrExpenseNotFound
+	}
+
+	// Update the status
+	expense.Status = status
+	expense.UpdatedAt = time.Now().UTC()
+
+	response, err := s.expensesRepository.UpdateExpenseStatus(ctx, expense)
+	if err != nil {
+		utils.RecordSpanError(ctx, err)
+		s.loggerWithTrace(ctx).Error("failed to update expense status",
+			slog.String("expense_id", expenseId),
+			slog.String("status", status),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
+		return models.ExpensesReturn{}, err
+	}
+
+	utils.AddSpanEvent(ctx, "expense status updated successfully",
+		attribute.String("expense.id", expenseId),
+		attribute.String("expense.status", status),
+	)
+
+	s.loggerWithTrace(ctx).Info("expense status updated successfully",
+		slog.String("expense_id", expenseId),
+		slog.String("status", status),
+		slog.String("component", "service"),
+	)
+
+	return response, nil
 }

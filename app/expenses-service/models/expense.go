@@ -19,14 +19,14 @@ type Expense struct {
 }
 
 type ExpensesReturn struct {
-	ExpenseId   string   `json:"expenseId"`
-	Date        string   `json:"date"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Amount      float64  `json:"amount"`
-	Category    string   `json:"category"`
-	Status      string   `json:"status"`
-	Tags        []string `json:"tags,omitempty"`
+	ExpenseId   string    `json:"expenseId"`
+	Date        time.Time `json:"date"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Amount      float64   `json:"amount"`
+	Category    string    `json:"category"`
+	Status      string    `json:"status"`
+	Tags        []string  `json:"tags,omitempty"`
 }
 
 type ExpensesPay struct {

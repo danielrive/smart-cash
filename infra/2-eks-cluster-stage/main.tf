@@ -7,6 +7,103 @@ locals {
   gh_username                     = "danielrive"
 }
 
+#################################
+### S3 Bucket for Grafana Tempo
+
+resource "aws_s3_bucket" "grafana_tempo" {
+  bucket = "${var.environment}-${var.project_name}-grafana-tempo-bucket"
+  force_destroy = true
+  tags = {
+    Name        = "${local.cluster_name}-grafana-tempo-bucket"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "grafana_tempo" {
+  bucket = aws_s3_bucket.grafana_tempo.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = data.terraform_remote_state.base.outputs.kms_eks_arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+##########################
+### IAM for SA Tempo
+
+##############################
+###### IAM Role K8 SA
+
+resource "aws_iam_role" "iam_sa_role_tempo" {
+  name               = "role-sa-grafana-tempo-${var.environment}"
+  path               = "/"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "tempo_iam_policy" {
+  name        = "policy-grafana-tempo-${var.environment}"
+  path        = "/"
+  description = "policy for k8 service account"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:*",
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_s3_bucket.grafana_tempo.arn,
+          "${aws_s3_bucket.grafana_tempo.arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "kms:*",
+        ]
+        Effect = "Allow"
+        Resource = [
+          data.terraform_remote_state.base.outputs.kms_eks_arn
+        ]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "att_policy_role1" {
+  policy_arn = aws_iam_policy.tempo_iam_policy.arn
+  role       = aws_iam_role.iam_sa_role_tempo.name
+}
+
+resource "aws_eks_pod_identity_association" "association" {
+  depends_on = [ module.eks_cluster ]
+  cluster_name    = local.cluster_name
+  namespace       = "monitoring"
+  service_account = "sa-grafana-tempo"
+  role_arn        = aws_iam_role.iam_sa_role_tempo.arn
+}
+
+
 
 ##########################
 #### EKS Cluster
@@ -34,9 +131,9 @@ module "eks_cluster" {
   key_pair_name              = "k8-admin"
   instance_type_worker_nodes = var.environment == "develop" ? "t3.medium" : "t3.medium"
   AMI_for_worker_nodes       = "AL2_x86_64"
-  desired_nodes              = 4
-  max_instances_node_group   = 4
-  min_instances_node_group   = 4
+  desired_nodes              = 5
+  max_instances_node_group   = 5
+  min_instances_node_group   = 5
   storage_nodes              = 20
 }
 
@@ -171,6 +268,7 @@ resource "github_repository_file" "core_resources" {
       PROJECT               = var.project_name
       ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
       ACCOUNT_NUMBER        = data.aws_caller_identity.id_account.id
+      S3_BUCKET_GRAFANA_TEMPO = aws_s3_bucket.grafana_tempo.bucket
     }
   )
   commit_message      = "Managed by Terraform"
@@ -179,23 +277,3 @@ resource "github_repository_file" "core_resources" {
   overwrite_on_create = true
 }
 
-##### jaeger resources
-resource "github_repository_file" "jaeger_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux]
-  for_each   = fileset("${local.path_tf_repo_flux_core}/jaeger", "*.yaml")
-  repository = data.github_repository.flux-gitops.name
-  branch     = local.brach_gitops_repo
-  file       = "clusters/${local.cluster_name}/core/jaeger/${each.key}"
-  content = templatefile(
-    "${local.path_tf_repo_flux_core}/jaeger/${each.key}",
-    {
-      ## Common variables for manifests
-      AWS_REGION  = var.region
-      ENVIRONMENT = var.environment
-    }
-  )
-  commit_message      = "Managed by Terraform"
-  commit_author       = "From terraform"
-  commit_email        = "gitops@smartcash.com"
-  overwrite_on_create = true
-}

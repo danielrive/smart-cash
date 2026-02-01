@@ -30,3 +30,9 @@ spec:
                 resources:
                   requests:
                     storage: 40Gi
+    grafana:
+      additionalDataSources:
+        - name: Tempo
+          type: tempo
+          access: proxy
+          url: http://grafana-tempo-query-frontend.monitoring.svc.cluster.local:3200

@@ -18,3 +18,7 @@ type UpdateExpenseRequest struct {
 	Category    *string  `json:"category,omitempty"`
 	Tags        []string `json:"tags,omitempty" validate:"omitempty,dive,max=50"`
 }
+
+type UpdateExpenseStatusRequest struct {
+	Status string `json:"status" validate:"required,oneof=pending paid cancelled"`
+}

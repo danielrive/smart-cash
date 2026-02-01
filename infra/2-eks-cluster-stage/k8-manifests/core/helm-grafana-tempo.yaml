@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana-tempo
+  namespace: monitoring
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: tempo-distributed
+      version: 1.60.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-tempo
+        namespace: flux-system
+  values:
+    serviceAccount:
+      create: true
+      name: "sa-grafana-tempo"
+    # 1. Traces config must be at the top level of 'values'
+    traces:
+      otlp:
+        grpc:
+          enabled: true
+        http:
+          enabled: true
+    
+    # 2. Storage config must also be at the top level
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: ${S3_BUCKET_GRAFANA_TEMPO}
+          endpoint: "s3.amazonaws.com"
+          region: ${AWS_REGION}
+          prefix: "tempo"
+          insecure: false
+
+    # 3. Component-specific overrides (Optional)
+    distributor:
+      replicas: 2
+      # The chart automatically handles receivers if 'traces' is enabled above.
+      # No need for a manual 'receivers' block here unless you have custom logic.
+
+    # 4. Global image settings (Correct way to set registry/tag)
+    global:
+      image:
+        registry: docker.io
+        repository: grafana/tempo
+        tag: "2.9.0" # It is safer to specify a version
+    metricsGenerator:
+      # -- Specifies whether a metrics-generator should be deployed
+      enabled: true
+      # -- Kind of deployment [StatefulSet/Deployment]
+      kind: Deployment
+      config:
+        storage:
+          path: /var/tempo/wal
+          remote_write: 
+            - url: http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write

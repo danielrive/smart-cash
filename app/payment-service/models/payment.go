@@ -1,12 +1,25 @@
 package models
 
-type TransactionRequest struct {
-	TransactionId string  `json:"transactionId" dynamodbav:"transactionId"` // primary key
-	ExpenseId     string  `json:"expenseId" dynamodbav:"expenseId"`
-	Date          string  `json:"date" dynamodbav:"date"`
-	Amount        float64 `json:"amount" dynamodbav:"amount"`
-	UserId        string  `json:"userId" dynamodbav:"userId"` // global secondary index
-	Status        string  `json:"status" dynamodbav:"status"`
+import "time"
+
+// PaymentStatus constants
+const (
+	PaymentStatusPending    = "pending"
+	PaymentStatusProcessing = "processing"
+	PaymentStatusCompleted  = "completed"
+	PaymentStatusFailed     = "failed"
+	PaymentStatusCancelled  = "cancelled"
+)
+
+type PaymentRequest struct {
+	PaymentId string    `json:"paymentId" dynamodbav:"paymentId"` // primary key
+	UserId    string    `json:"userId" dynamodbav:"userId"`       // global secondary index
+	ExpenseId string    `json:"expenseId" dynamodbav:"expenseId"`
+	Amount    float64   `json:"amount" dynamodbav:"amount"`
+	Date      time.Time `json:"date" dynamodbav:"date"`
+	Status    string    `json:"status" dynamodbav:"status"`
+	CreatedAt time.Time `json:"createdAt" dynamodbav:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" dynamodbav:"updatedAt"`
 }
 
 type User struct {
@@ -16,24 +29,9 @@ type User struct {
 	Active   bool   `json:"active" dynamodbav:"active"`
 }
 
-type Expense struct {
-	ExpenseId string  `json:"expenseId" dynamodbav:"expenseId"` // primary key
-	Date      string  `json:"date" dynamodbav:"date"`
-	Name      string  `json:"name" dynamodbav:"name"`
-	Amount    float64 `json:"amount" dynamodbav:"amount"`
-	Status    string  `json:"priority" dynamodbav:"priority"`
-	UserId    string  `json:"userId" dynamodbav:"userId"`
-}
-
-type PaymentRequest struct {
-	UserId    string `json:"userId" dynamodbav:"userId"` // global secondary index
-	ExpenseId string `json:"expenseId" dynamodbav:"expenseId"`
-}
-
-type TransactionResponse struct {
-	TransactionId string  `json:"transactionId"`
-	ExpenseId     string  `json:"expenseId"`
-	Date          string  `json:"date"`
-	Amount        float64 `json:"amount"`
-	Status        string  `json:"status"`
+type PaymentResponse struct {
+	PaymentId string    `json:"paymentId"`
+	ExpenseId string    `json:"expenseId"`
+	Date      time.Time `json:"date"`
+	Status    string    `json:"status"`
 }

@@ -17,6 +17,7 @@ type Claims struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Active   bool   `json:"active"`
 	jwt.RegisteredClaims
 }
 
@@ -67,9 +68,20 @@ func AuthMiddleware(jwtSecret []byte) gin.HandlerFunc {
 			return
 		}
 
+		// Check if user is active
+		if !claims.Active {
+			err := fmt.Errorf("user account is inactive")
+			recordAuthError(c, http.StatusForbidden, "user account is inactive", err)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "user account is inactive",
+			})
+			return
+		}
+
 		c.Set("userId", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
+		c.Set("active", claims.Active)
 		c.Next()
 	}
 }

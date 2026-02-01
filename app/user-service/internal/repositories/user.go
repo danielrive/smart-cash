@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"smart-cash/user-service/internal/common"
 	"smart-cash/user-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -28,6 +30,11 @@ type DynamoDBUsersRepository struct {
 	tableUsers string
 	uuid       UUIDHelper
 	logger     *slog.Logger
+}
+
+// loggerWithTrace returns a logger with trace context if available in the context
+func (r *DynamoDBUsersRepository) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, r.logger)
 }
 
 func NewDynamoDBUsersRepository(client *dynamodb.Client, tableUsers string, uuid UUIDHelper, logger *slog.Logger) *DynamoDBUsersRepository {
@@ -69,7 +76,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("dynamodb get item failed",
+		r.loggerWithTrace(ctx).Error("dynamodb get item failed",
 			slog.String("error", err.Error()),
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
@@ -79,7 +86,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 	if len(response.Item) == 0 {
 		utils.AddSpanEvent(ctx, "user not found", attribute.Bool("db.item_found", false))
 
-		r.logger.Debug("user not found in database",
+		r.loggerWithTrace(ctx).Debug("user not found in database",
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
 		)
@@ -91,7 +98,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("error unmarshaling map",
+		r.loggerWithTrace(ctx).Error("error unmarshaling map",
 			slog.String("error", err.Error()),
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
@@ -106,7 +113,7 @@ func (r *DynamoDBUsersRepository) GetUserById(ctx context.Context, id string) (m
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "user retrieved successfully")
 
-	r.logger.Debug("user retrieved from database",
+	r.loggerWithTrace(ctx).Debug("user retrieved from database",
 		slog.String("user_id", id),
 		slog.String("component", "repository"),
 	)
@@ -133,37 +140,78 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 	// Add the generated user ID to the span
 	utils.AddSpanEvent(ctx, "user.id.generated", attribute.String("user.id", u.UserId))
 
-	r.logger.Debug("creating user in database",
+	r.loggerWithTrace(ctx).Debug("creating user in database",
 		slog.String("user_id", u.UserId),
 		slog.String("username", u.Username),
 		slog.String("email", u.Email),
 		slog.String("component", "repository"),
 	)
 
-	item, err := attributevalue.MarshalMap(u)
+	userItem, err := attributevalue.MarshalMap(u)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("error marshaling map",
+		r.loggerWithTrace(ctx).Error("error marshaling map",
 			slog.String("error", err.Error()),
 			slog.String("user_id", u.UserId),
 			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
 	}
-	input := &dynamodb.PutItemInput{
-		TableName:           aws.String(r.tableUsers),
-		Item:                item,
-		ConditionExpression: aws.String("attribute_not_exists(userId)"),
+
+	input := &dynamodb.TransactWriteItemsInput{
+		TransactItems: []types.TransactWriteItem{
+			{
+				// 1. The Actual User Item
+				Put: &types.Put{
+					TableName:           aws.String(r.tableUsers),
+					Item:                userItem,
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+			{
+				// 2. The Username Marker (prevents duplicate usernames)
+				Put: &types.Put{
+					TableName: aws.String(r.tableUsers),
+					Item: map[string]types.AttributeValue{
+						"userId": &types.AttributeValueMemberS{Value: "USERNAME#" + u.Username},
+					},
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+			{
+				// 3. The Email Marker (prevents duplicate emails)
+				Put: &types.Put{
+					TableName: aws.String(r.tableUsers),
+					Item: map[string]types.AttributeValue{
+						"userId": &types.AttributeValueMemberS{Value: "EMAIL#" + u.Email},
+					},
+					ConditionExpression: aws.String("attribute_not_exists(userId)"),
+				},
+			},
+		},
 	}
 
-	// call dynamodb put item
-	_, err = r.client.PutItem(ctx, input)
+	_, err = r.client.TransactWriteItems(ctx, input)
+
+	if err != nil {
+		var tcf *types.TransactionCanceledException
+		if errors.As(err, &tcf) {
+			for _, reason := range tcf.CancellationReasons {
+				if *reason.Code == "ConditionalCheckFailed" {
+					r.loggerWithTrace(ctx).Warn("user already exists (username or email)", slog.String("username", u.Username))
+					// IMPORTANT: Return a specific conflict error so your API returns 409
+					return models.UserResponse{}, common.ErrUserAlreadyExists
+				}
+			}
+		}
+		return models.UserResponse{}, common.ErrUserNotCreated
+	}
 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("dynamodb error put item",
+		r.loggerWithTrace(ctx).Error("dynamodb error put item",
 			slog.String("error", err.Error()),
 			slog.String("user_id", u.UserId),
 			slog.String("username", u.Username),
@@ -179,7 +227,7 @@ func (r *DynamoDBUsersRepository) CreateUser(ctx context.Context, u models.User)
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "user created successfully")
 
-	r.logger.Info("user created in database",
+	r.loggerWithTrace(ctx).Info("user created in database",
 		slog.String("user_id", u.UserId),
 		slog.String("username", u.Username),
 		slog.String("component", "repository"),
@@ -211,7 +259,7 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("error marshaling map",
+		r.loggerWithTrace(ctx).Error("error marshaling map",
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
@@ -228,7 +276,7 @@ func (r *DynamoDBUsersRepository) UpdateUser(ctx context.Context, u models.User)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("dynamodb error put item",
+		r.loggerWithTrace(ctx).Error("dynamodb error put item",
 			"error", err.Error(),
 			"userId", u.UserId,
 		)
@@ -271,7 +319,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("dynamodb error building expression",
+		r.loggerWithTrace(ctx).Error("dynamodb error building expression",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
 			slog.String("value", v),
@@ -280,7 +328,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 		return output, common.ErrInternalError
 	}
 
-	r.logger.Debug("querying user by email or username",
+	r.loggerWithTrace(ctx).Debug("querying user by email or username",
 		slog.String("key", k),
 		slog.String("value", v),
 		slog.String("component", "repository"),
@@ -301,7 +349,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("dynamodb error query item",
+		r.loggerWithTrace(ctx).Error("dynamodb error query item",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
 			slog.String("value", v),
@@ -314,7 +362,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 		utils.AddSpanEvent(ctx, "user not found", attribute.Bool("db.item_found", false))
 		utils.SetSpanStatus(ctx, codes.Ok, "user not found")
 
-		r.logger.Debug("user not found in database",
+		r.loggerWithTrace(ctx).Debug("user not found in database",
 			slog.String("key", k),
 			slog.String("value", v),
 			slog.String("component", "repository"),
@@ -327,7 +375,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 
-		r.logger.Error("error unmarshaling map",
+		r.loggerWithTrace(ctx).Error("error unmarshaling map",
 			slog.String("error", err.Error()),
 			slog.String("key", k),
 			slog.String("value", v),
@@ -343,7 +391,7 @@ func (r *DynamoDBUsersRepository) GetUserByEmailorUsername(ctx context.Context, 
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "user found successfully")
 
-	r.logger.Debug("user found in database",
+	r.loggerWithTrace(ctx).Debug("user found in database",
 		slog.String("user_id", output.UserId),
 		slog.String("key", k),
 		slog.String("component", "repository"),

@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"slices"
 	"smart-cash/expenses-service/internal/common"
+	appconfig "smart-cash/expenses-service/internal/config"
 	"smart-cash/expenses-service/internal/handler"
 	"smart-cash/expenses-service/internal/handler/dto"
 	"smart-cash/expenses-service/internal/repositories"
@@ -15,7 +17,7 @@ import (
 	"smart-cash/utils/logging"
 	"smart-cash/utils/middleware"
 
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -23,125 +25,81 @@ import (
 )
 
 var (
-	otelCollector     string
-	expensesTable     string
-	awsRegion         string
-	jwtSecret         []byte
 	notToLogEndpoints = []string{"/expenses/health", "/expenses/metrics"}
-	logger            *slog.Logger
 )
 
-func init() {
-	// Set ServiceName first for logger initialization
-	common.ServiceName = os.Getenv("SERVICE_NAME")
-	if common.ServiceName == "" {
-		common.ServiceName = "expenses-service" // fallback for logger
-	}
-
-	// Logger config
-	logsConfig := logging.LoadConfig()
-	logger = logging.InitLogger(logsConfig, common.ServiceName)
-
-	common.DomainName = os.Getenv("DOMAIN_NAME")
-	if common.DomainName == "" {
-		common.DomainName = "localhost"
-	}
-
-	expensesTable = os.Getenv("DYNAMODB_EXPENSES_TABLE")
-	if expensesTable == "" {
-		logger.Error("environment variable not found", slog.String("variable", "DYNAMODB_EXPENSES_TABLE"))
+func main() {
+	if err := run(); err != nil {
+		slog.Error("Application failed", "error", err)
 		os.Exit(1)
 	}
-
-	otelCollector = os.Getenv("OTEL_COLLECTOR")
-	if otelCollector == "" {
-		logger.Error("environment variable not found", slog.String("variable", "OTEL_COLLECTOR"))
-		os.Exit(1)
-	}
-
-	awsRegion = os.Getenv("AWS_REGION")
-	if awsRegion == "" {
-		logger.Error("environment variable not found", slog.String("variable", "AWS_REGION"))
-		os.Exit(1)
-	}
-
-	// Re-validate ServiceName (in case it was set via env)
-	common.ServiceName = os.Getenv("SERVICE_NAME")
-	if common.ServiceName == "" {
-		logger.Error("environment variable not found", slog.String("variable", "SERVICE_NAME"))
-		os.Exit(1)
-	}
-
-	jwtSecretStr := os.Getenv("JWT_SECRET")
-	if jwtSecretStr == "" {
-		logger.Warn("JWT_SECRET not set, using default (NOT FOR PRODUCTION!)")
-		jwtSecretStr = "default-secret-change-me"
-	}
-	jwtSecret = []byte(jwtSecretStr)
-
 }
 
-func main() {
-	// Init OTel TracerProvider
-	tp := utils.InitOpenTelemetry(otelCollector, common.ServiceName, logger)
+// run contains the main application logic and returns an error instead of exiting.
+// This makes it testable and allows for better error handling.
+func run() error {
+	cfg, err := appconfig.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
 
+	common.ServiceName = cfg.ServiceName
+	common.DomainName = cfg.DomainName
+
+	tp := utils.InitOpenTelemetry(cfg.OtelCollector, cfg.ServiceName, cfg.Logger)
 	otel.SetTracerProvider(tp)
 
-	// configure the SDK
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(awsRegion),
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
+		awsconfig.WithRegion(cfg.AwsRegion),
 	)
 	if err != nil {
-		logger.Error("unable to load SDK config", slog.String("error", err.Error()))
+		return fmt.Errorf("unable to load AWS SDK config: %w", err)
 	}
-	// define uuid helper
+
+	dynamoClient := dynamodb.NewFromConfig(awsCfg)
 	uuidHelper := utils.NewUUIDHelper()
 
-	dynamoClient := dynamodb.NewFromConfig(cfg)
-	// create a router with gin
 	router := gin.New()
 
 	router.Use(
-		otelgin.Middleware(common.ServiceName, otelgin.WithFilter(filterTraces)),
-		logging.HTTPMiddleware(logger, notToLogEndpoints),
+		otelgin.Middleware(cfg.ServiceName, otelgin.WithFilter(filterTraces)),
+		logging.HTTPMiddleware(cfg.Logger, notToLogEndpoints),
 		gin.Recovery(),
 	)
 
-	// // Initialize expenses repository
-	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, expensesTable, logger)
+	expensesRepo := repositories.NewDynamoDBExpensesRepository(dynamoClient, cfg.ExpensesTable, cfg.Logger)
+	expensesService := service.NewExpensesService(expensesRepo, uuidHelper, cfg.Logger)
+	expensesHandler := handler.NewExpensesHandler(expensesService, cfg.Logger)
 
-	// Initialize expenses service
-	expensesService := service.NewExpensesService(expensesRepo, uuidHelper, logger)
-
-	// Init expenses handler
-	expensesHandler := handler.NewExpensesHandler(expensesService, logger)
-
-	// Public routes
 	router.GET("/expenses/health", expensesHandler.HealthCheck)
 
-	// Protected routes - All expense operations require authentication
 	router.POST("/expenses",
-		middleware.AuthMiddleware(jwtSecret),
-		middleware.ValidateBody[dto.CreateExpenseRequest](), // Validate request body
+		middleware.AuthMiddleware(cfg.JWTSecret),
+		middleware.ValidateBody[dto.CreateExpenseRequest](),
 		expensesHandler.CreateExpense)
 
 	router.GET("/expenses/:expenseId",
-		middleware.AuthMiddleware(jwtSecret),
-		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
+		middleware.AuthMiddleware(cfg.JWTSecret),
+		middleware.ValidatePathParam("expenseId", "uuid"),
 		expensesHandler.GetExpensesById)
 
 	router.GET("/expenses",
-		middleware.AuthMiddleware(jwtSecret),
-		middleware.RequireOneOfQueryParams([]string{"userId", "category"}), // Require at least one query param
+		middleware.AuthMiddleware(cfg.JWTSecret),
+		middleware.RequireOneOfQueryParams([]string{"userId", "category"}),
 		expensesHandler.GetExpensesByQuery)
 
 	router.DELETE("/expenses/:expenseId",
-		middleware.AuthMiddleware(jwtSecret),
-		middleware.ValidatePathParam("expenseId", "uuid"), // Validate expenseId is a valid UUID
+		middleware.AuthMiddleware(cfg.JWTSecret),
+		middleware.ValidatePathParam("expenseId", "uuid"),
 		expensesHandler.DeleteExpense)
 
-	router.Run(":8282")
+	router.PUT("/expenses/:expenseId/status",
+		middleware.AuthMiddleware(cfg.JWTSecret),
+		middleware.ValidatePathParam("expenseId", "uuid"),
+		middleware.ValidateBody[dto.UpdateExpenseStatusRequest](),
+		expensesHandler.UpdateExpenseStatus)
 
+	return router.Run(":8282")
 }
 
 func filterTraces(req *http.Request) bool {

@@ -2,14 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
 	"smart-cash/payment-service/internal/common"
 	"smart-cash/payment-service/internal/repositories"
 	"smart-cash/payment-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 	"time"
 
 	"log/slog"
@@ -29,6 +26,11 @@ type PaymentService struct {
 	uuid              UUIDHelper
 }
 
+// loggerWithTrace returns a logger with trace context if available in the context
+func (s *PaymentService) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, s.logger)
+}
+
 // Create a new Payment service
 func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository, uuid UUIDHelper, logger *slog.Logger) *PaymentService {
 	return &PaymentService{
@@ -38,187 +40,144 @@ func NewPaymentService(paymentRepository *repositories.DynamoDBPaymentRepository
 	}
 }
 
-func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.TransactionRequest, error) {
+func (s *PaymentService) ProcessPayment(ctx context.Context, paymentRequest models.PaymentRequest) (models.PaymentResponse, error) {
 	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCProcessPayment", "service",
 		attribute.String("user.id", paymentRequest.UserId),
 		attribute.String("expense.id", paymentRequest.ExpenseId),
 	)
 	defer endSpan()
 
-	s.logger.Info("processing payment",
+	s.loggerWithTrace(ctx).Info("processing payment",
 		slog.String("user_id", paymentRequest.UserId),
 		slog.String("expense_id", paymentRequest.ExpenseId),
 		slog.String("component", "service"),
 	)
 
-	expense := models.Expense{}
-	expenseBaseURL := fmt.Sprintf("http://expenses/expenses/%s", paymentRequest.ExpenseId)
-
-	// Fetch expense details
-	resp, err := http.Get(expenseBaseURL)
-	if err != nil {
-		s.logger.Error("error calling expense service",
-			slog.String("error", err.Error()),
-			slog.String("url", expenseBaseURL),
-			slog.String("expense_id", paymentRequest.ExpenseId),
-			slog.String("component", "service"),
-		)
-		return models.TransactionRequest{}, common.ErrExpenseNotFound
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		s.logger.Error("error reading response body from expense service",
-			slog.String("error", err.Error()),
-			slog.String("expense_id", paymentRequest.ExpenseId),
-			slog.String("component", "service"),
-		)
-		return models.TransactionRequest{}, common.ErrInternalError
+	// prepare Payment - DynamoDB stream will automatically publish to consumers
+	request := models.PaymentRequest{
+		PaymentId: s.uuid.New(),
+		ExpenseId: paymentRequest.ExpenseId,
+		UserId:    paymentRequest.UserId,
+		Amount:    paymentRequest.Amount, // Assuming Amount is in paymentRequest
+		Date:      time.Now().UTC(),
+		Status:    models.PaymentStatusPending,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
-	err = json.Unmarshal(respBody, &expense)
-	if err != nil {
-		s.logger.Error("error parsing response body from expense service",
-			slog.String("error", err.Error()),
-			slog.String("expense_id", paymentRequest.ExpenseId),
-			slog.String("component", "service"),
-		)
-		return models.TransactionRequest{}, common.ErrInternalError
-	}
-	// Validate if User exist and is not blocked
-	// Validate if user exist
-	if !s.validateUser(expense.UserId) {
-		s.logger.Warn("user not found or not active",
-			slog.String("user_id", expense.UserId),
-			slog.String("expense_id", paymentRequest.ExpenseId),
-			slog.String("component", "service"),
-		)
-		return models.TransactionRequest{}, common.ErrUserNotFound
-	}
-
-	// create transaction to bank
-
-	transaction := models.TransactionRequest{
-		TransactionId: s.uuid.New(),
-		Date:          time.Now().UTC().Format("2006-01-02"),
-		ExpenseId:     expense.ExpenseId,
-		UserId:        expense.UserId,
-		Amount:        expense.Amount,
-		Status:        "pending",
-	}
-
-	err = s.paymentRepository.CreateTransaction(ctx, transaction)
+	// Create Payment in DynamoDB
+	// DynamoDB stream will automatically trigger Lambda which publishes to SQS
+	response, err := s.paymentRepository.CreatePayment(ctx, request)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("error creating transaction",
+		s.loggerWithTrace(ctx).Error("Payment couldn't be created",
 			slog.String("error", err.Error()),
-			slog.String("transaction_id", transaction.TransactionId),
-			slog.String("expense_id", paymentRequest.ExpenseId),
-			slog.String("component", "service"),
+			slog.String("level", "service"),
 		)
-		transaction.Status = "notProcessed"
-		return transaction, common.ErrInternalError
+		return models.PaymentResponse{}, err
 	}
 
-	utils.AddSpanEvent(ctx, "payment processed successfully",
-		attribute.String("transaction.id", transaction.TransactionId),
-		attribute.String("expense.id", paymentRequest.ExpenseId),
-		attribute.String("user.id", expense.UserId),
-		attribute.String("transaction.status", transaction.Status),
+	utils.AddSpanEvent(ctx, "payment created successfully",
+		attribute.String("payment.id", response.PaymentId),
+		attribute.String("status", response.Status),
 	)
 
-	s.logger.Info("payment processed successfully",
-		slog.String("transaction_id", transaction.TransactionId),
-		slog.String("expense_id", paymentRequest.ExpenseId),
-		slog.String("user_id", expense.UserId),
+	s.loggerWithTrace(ctx).Info("payment created successfully",
+		slog.String("payment_id", response.PaymentId),
 		slog.String("component", "service"),
 	)
 
-	return transaction, nil
+	return response, nil
 }
 
-func (s *PaymentService) GetTransaction(ctx context.Context, id string) (models.TransactionRequest, error) {
-	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetTransaction", "service",
-		attribute.String("transaction.id", id),
+func (s *PaymentService) GetPayment(ctx context.Context, id string) (models.PaymentRequest, error) {
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCGetPayment", "service",
+		attribute.String("payment.id", id),
 	)
 	defer endSpan()
 
-	s.logger.Debug("getting transaction",
-		slog.String("transaction_id", id),
+	s.loggerWithTrace(ctx).Debug("getting payment",
+		slog.String("payment_id", id),
 		slog.String("component", "service"),
 	)
 
-	transaction, err := s.paymentRepository.GetTransaction(ctx, id)
+	payment, err := s.paymentRepository.GetPayment(ctx, id)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		s.logger.Error("error getting transaction",
-			slog.String("transaction_id", id),
+		s.loggerWithTrace(ctx).Error("error getting payment",
+			slog.String("payment_id", id),
 			slog.String("error", err.Error()),
 			slog.String("component", "service"),
 		)
-		return models.TransactionRequest{}, err
+		return models.PaymentRequest{}, err
 	}
 
-	utils.AddSpanEvent(ctx, "transaction retrieved successfully",
-		attribute.String("transaction.id", id),
-		attribute.String("transaction.status", transaction.Status),
+	utils.AddSpanEvent(ctx, "payment retrieved successfully",
+		attribute.String("payment.id", id),
+		attribute.String("payment.status", payment.Status),
 	)
 
-	s.logger.Debug("transaction retrieved successfully",
-		slog.String("transaction_id", id),
-		slog.String("status", transaction.Status),
+	s.loggerWithTrace(ctx).Debug("payment retrieved successfully",
+		slog.String("payment_id", id),
+		slog.String("status", payment.Status),
 		slog.String("component", "service"),
 	)
 
-	return transaction, nil
-
+	return payment, nil
 }
 
-func (s *PaymentService) validateUser(userId string) bool {
-	userBaseURL := fmt.Sprintf("http://user/user/%s", userId)
-	user := models.User{}
+// UpdatePaymentStatus updates the status of a payment
+func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, paymentId string, status string) error {
+	ctx, endSpan := utils.StartSpanWithComponent(ctx, common.ServiceName, "SVCUpdatePaymentStatus", "service",
+		attribute.String("payment.id", paymentId),
+		attribute.String("payment.status", status),
+	)
+	defer endSpan()
 
-	// Validate if User exists and is not blocked
-	resp, err := http.Get(userBaseURL)
-	if err != nil {
-		s.logger.Error("error calling user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		s.logger.Error("error reading response body from user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-
-	err = json.Unmarshal(respBody, &user)
-	if err != nil {
-		s.logger.Error("error parsing response body from user service",
-			slog.String("error", err.Error()),
-			slog.String("url", userBaseURL),
-			slog.String("user_id", userId),
-			slog.String("component", "service"),
-		)
-		return false
-	}
-
-	s.logger.Debug("user validated",
-		slog.String("user_id", userId),
-		slog.Bool("active", user.Active),
+	s.loggerWithTrace(ctx).Info("updating payment status",
+		slog.String("payment_id", paymentId),
+		slog.String("status", status),
 		slog.String("component", "service"),
 	)
 
-	return user.Active
+	// Get the payment first to ensure it exists
+	payment, err := s.paymentRepository.GetPayment(ctx, paymentId)
+	if err != nil {
+		utils.RecordSpanError(ctx, err)
+		s.loggerWithTrace(ctx).Error("payment not found for status update",
+			slog.String("payment_id", paymentId),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
+		return common.ErrPaymentNotFound
+	}
+
+	// Update the status
+	payment.Status = status
+	payment.UpdatedAt = time.Now().UTC()
+
+	err = s.paymentRepository.UpdatePayment(ctx, payment)
+	if err != nil {
+		utils.RecordSpanError(ctx, err)
+		s.loggerWithTrace(ctx).Error("failed to update payment status",
+			slog.String("payment_id", paymentId),
+			slog.String("status", status),
+			slog.String("error", err.Error()),
+			slog.String("component", "service"),
+		)
+		return err
+	}
+
+	utils.AddSpanEvent(ctx, "payment status updated successfully",
+		attribute.String("payment.id", paymentId),
+		attribute.String("payment.status", status),
+	)
+
+	s.loggerWithTrace(ctx).Info("payment status updated successfully",
+		slog.String("payment_id", paymentId),
+		slog.String("status", status),
+		slog.String("component", "service"),
+	)
+
+	return nil
 }

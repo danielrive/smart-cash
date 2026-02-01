@@ -5,6 +5,7 @@ import (
 	"smart-cash/bank-service/internal/common"
 	"smart-cash/bank-service/models"
 	"smart-cash/utils"
+	"smart-cash/utils/logging"
 
 	"log/slog"
 
@@ -22,6 +23,11 @@ type DynamoDBBankRepository struct {
 	client    *dynamodb.Client
 	logger    *slog.Logger
 	bankTable string
+}
+
+// loggerWithTrace returns a logger with trace context if available in the context
+func (r *DynamoDBBankRepository) loggerWithTrace(ctx context.Context) *slog.Logger {
+	return logging.LoggerWithTraceContext(ctx, r.logger)
 }
 
 func NewDynamoDBBankRepository(client *dynamodb.Client, bankTable string, logger *slog.Logger) *DynamoDBBankRepository {
@@ -54,7 +60,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 	})
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb couldn't get the item",
+		r.loggerWithTrace(ctx).Error("dynamodb couldn't get the item",
 			"error", err.Error(),
 			"userId", id,
 		)
@@ -63,7 +69,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 	if len(item.Item) == 0 {
 		utils.AddSpanEvent(ctx, "bank user not found", attribute.Bool("db.item_found", false))
 		utils.SetSpanStatus(ctx, codes.Ok, "bank user not found")
-		r.logger.Debug("bank user not found in database",
+		r.loggerWithTrace(ctx).Debug("bank user not found in database",
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
 		)
@@ -74,7 +80,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 	err = attributevalue.UnmarshalMap(item.Item, &output)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("error unmarshaling bank user item",
+		r.loggerWithTrace(ctx).Error("error unmarshaling bank user item",
 			slog.String("error", err.Error()),
 			slog.String("user_id", id),
 			slog.String("component", "repository"),
@@ -90,7 +96,7 @@ func (r *DynamoDBBankRepository) GetUser(ctx context.Context, id string) (models
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "bank user retrieved successfully")
 
-	r.logger.Debug("bank user retrieved from database",
+	r.loggerWithTrace(ctx).Debug("bank user retrieved from database",
 		slog.String("user_id", id),
 		slog.String("component", "repository"),
 	)
@@ -115,7 +121,7 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb update expression couldn't be created",
+		r.loggerWithTrace(ctx).Error("dynamodb update expression couldn't be created",
 			"error", err.Error(),
 			"userId", user.UserId,
 		)
@@ -125,7 +131,7 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 	userId, err := attributevalue.Marshal(user.UserId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("dynamodb udpate key couldn't be created",
+		r.loggerWithTrace(ctx).Error("dynamodb udpate key couldn't be created",
 			"error", err.Error(),
 			"userId", user.UserId,
 		)
@@ -145,7 +151,7 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 	// Update bank item
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
-		r.logger.Error("error updating user savings",
+		r.loggerWithTrace(ctx).Error("error updating user savings",
 			slog.String("error", err.Error()),
 			slog.String("user_id", user.UserId),
 			slog.Float64("new_savings", user.Savings),
@@ -161,7 +167,7 @@ func (r *DynamoDBBankRepository) UpdateSavingsUser(ctx context.Context, user mod
 	)
 	utils.SetSpanStatus(ctx, codes.Ok, "user savings updated successfully")
 
-	r.logger.Info("user savings updated in database",
+	r.loggerWithTrace(ctx).Info("user savings updated in database",
 		slog.String("user_id", user.UserId),
 		slog.Float64("new_savings", user.Savings),
 		slog.String("component", "repository"),

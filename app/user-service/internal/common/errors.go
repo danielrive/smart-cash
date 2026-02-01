@@ -11,4 +11,5 @@ var (
 	ErrInternalError     = errors.New("internal error")
 	ErrUnexpectedError   = errors.New("unexpected error")
 	ErrWrongCredentials  = errors.New("wrong credentials")
+	ErrUserInactive      = errors.New("user account is inactive")
 )

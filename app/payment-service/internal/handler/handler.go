@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"smart-cash/payment-service/internal/common"
+	"smart-cash/payment-service/internal/handler/dto"
 	"smart-cash/payment-service/internal/service"
 	"smart-cash/payment-service/models"
 	"smart-cash/utils"
@@ -30,98 +31,176 @@ func (h *PaymentHandler) ProcessPayment(c *gin.Context) {
 	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerProcessPayment", "handler")
 	defer endSpan()
 
-	paymentRequest := models.PaymentRequest{}
-	// bind the JSON data to the user struct
-	if err := c.ShouldBindJSON(&paymentRequest); err != nil {
-		h.logger.Error("error binding json",
-			"error", err.Error(),
-			"level", "handler",
+	// Get validated body from middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	paymentDTO, ok := validatedBody.(dto.ProcessPaymentRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to ProcessPaymentRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		return
 	}
 
 	h.logger.Info("processing payment",
-		slog.String("user_id", paymentRequest.UserId),
-		slog.String("expense_id", paymentRequest.ExpenseId),
+		slog.String("user_id", c.GetString("userId")),
+		slog.String("expense_id", paymentDTO.ExpenseId),
+		slog.Float64("amount", paymentDTO.Amount),
 		slog.String("component", "handler"),
 	)
 
+	// Convert DTO to model for service layer
+	paymentRequest := models.PaymentRequest{
+		UserId:    c.GetString("userId"),
+		ExpenseId: paymentDTO.ExpenseId,
+		Amount:    paymentDTO.Amount,
+	}
+
 	// init payment
-	transactionResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
+	paymentResult, err := h.paymentService.ProcessPayment(ctx, paymentRequest)
 	if err != nil {
 		h.logger.Error("error processing payment",
-			"error", err.Error(),
-			"level", "handler",
+			slog.String("error", err.Error()),
+			slog.String("component", "handler"),
 		)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 		return
 	}
 
 	h.logger.Info("payment processed successfully",
-		slog.String("transaction_id", transactionResult.TransactionId),
-		slog.String("expense_id", transactionResult.ExpenseId),
-		slog.String("status", transactionResult.Status),
+		slog.String("payment_id", paymentResult.PaymentId),
+		slog.String("expense_id", paymentResult.ExpenseId),
+		slog.String("status", paymentResult.Status),
 		slog.String("component", "handler"),
 	)
 
-	response := models.TransactionResponse{
-		TransactionId: transactionResult.TransactionId,
-		ExpenseId:     transactionResult.ExpenseId,
-		Date:          transactionResult.Date,
-		Amount:        transactionResult.Amount,
-		Status:        transactionResult.Status,
+	response := models.PaymentResponse{
+		PaymentId: paymentResult.PaymentId,
+		ExpenseId: paymentResult.ExpenseId,
+		Date:      paymentResult.Date,
+		Status:    paymentResult.Status,
 	}
 
 	c.JSON(http.StatusCreated, response)
 }
 
-func (h *PaymentHandler) GetTransaction(c *gin.Context) {
-	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetTransaction", "handler")
+func (h *PaymentHandler) GetPayment(c *gin.Context) {
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerGetPayment", "handler")
 	defer endSpan()
 
-	transactionId := c.Param("transactionId")
+	paymentId := c.Param("paymentId")
 
-	h.logger.Info("getting transaction",
-		slog.String("transaction_id", transactionId),
+	h.logger.Info("getting payment",
+		slog.String("payment_id", paymentId),
 		slog.String("component", "handler"),
 	)
 
-	transaction, err := h.paymentService.GetTransaction(ctx, transactionId)
+	payment, err := h.paymentService.GetPayment(ctx, paymentId)
 	if err != nil {
-		if err == common.ErrTransactionNotFound {
-			h.logger.Warn("transaction not found",
-				slog.String("transaction_id", transactionId),
+		if err == common.ErrPaymentNotFound {
+			h.logger.Warn("payment not found",
+				slog.String("payment_id", paymentId),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrTransactionNotFound})
+			c.JSON(http.StatusNotFound, gin.H{"message": common.ErrPaymentNotFound})
 			return
 		} else {
-			h.logger.Error("error getting transaction",
-				slog.String("transaction_id", transactionId),
+			h.logger.Error("error getting payment",
+				slog.String("payment_id", paymentId),
 				slog.String("error", err.Error()),
 				slog.String("component", "handler"),
 			)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
 			return
 		}
 	}
 
-	h.logger.Info("transaction retrieved successfully",
-		slog.String("transaction_id", transactionId),
-		slog.String("status", transaction.Status),
+	h.logger.Info("payment retrieved successfully",
+		slog.String("payment_id", paymentId),
+		slog.String("status", payment.Status),
 		slog.String("component", "handler"),
 	)
 
-	response := models.TransactionResponse{
-		TransactionId: transaction.TransactionId,
-		ExpenseId:     transaction.ExpenseId,
-		Date:          transaction.Date,
-		Amount:        transaction.Amount,
-		Status:        transaction.Status,
+	response := models.PaymentResponse{
+		PaymentId: payment.PaymentId,
+		ExpenseId: payment.ExpenseId,
+		Date:      payment.Date,
+		Status:    payment.Status,
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// Handler for updating payment status
+func (h *PaymentHandler) UpdatePaymentStatus(c *gin.Context) {
+	ctx, endSpan := utils.StartSpanWithComponent(c.Request.Context(), common.ServiceName, "HandlerUpdatePaymentStatus", "handler")
+	defer endSpan()
+
+	paymentId := c.Param("paymentId")
+
+	// Get validated body from validation middleware
+	validatedBody, exists := c.Get("validatedBody")
+	if !exists {
+		h.logger.Error("validatedBody not found in context",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "validation failed"})
+		return
+	}
+
+	// Type assert to our DTO
+	statusRequest, ok := validatedBody.(dto.UpdatePaymentStatusRequest)
+	if !ok {
+		h.logger.Error("failed to cast validatedBody to UpdatePaymentStatusRequest",
+			slog.String("component", "handler"),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	h.logger.Info("updating payment status",
+		slog.String("payment_id", paymentId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	err := h.paymentService.UpdatePaymentStatus(ctx, paymentId, statusRequest.Status)
+	if err != nil {
+		if err == common.ErrPaymentNotFound {
+			h.logger.Warn("payment not found for status update",
+				slog.String("payment_id", paymentId),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusNotFound, gin.H{"error": common.ErrPaymentNotFound.Error()})
+		} else {
+			h.logger.Error("error updating payment status",
+				slog.String("payment_id", paymentId),
+				slog.String("error", err.Error()),
+				slog.String("component", "handler"),
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": common.ErrInternalError.Error()})
+		}
+		return
+	}
+
+	h.logger.Info("payment status updated successfully",
+		slog.String("payment_id", paymentId),
+		slog.String("status", statusRequest.Status),
+		slog.String("component", "handler"),
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"paymentId": paymentId,
+		"status":    statusRequest.Status,
+	})
 }
 
 func (h *PaymentHandler) HealthCheck(c *gin.Context) {

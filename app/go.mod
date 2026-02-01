@@ -8,32 +8,30 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.13.13
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.13
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.31.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.0
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.32.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.22.1
+	github.com/go-resty/resty/v2 v2.13.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/satori/go.uuid v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.56.0
 	go.opentelemetry.io/otel v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0
 	go.opentelemetry.io/otel/sdk v1.31.0
+	go.opentelemetry.io/otel/trace v1.31.0
 	golang.org/x/crypto v0.28.0
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.6 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.1 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.21 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.21 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.21 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.20.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.9.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.20.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6 // indirect
@@ -64,7 +62,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.31.0 // indirect
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	golang.org/x/arch v0.11.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
