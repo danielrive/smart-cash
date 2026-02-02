@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-${SERVICE_NAME}
+spec:
+  template:
+    metadata:
+      labels:
+        istio.io/dataplane-mode: ambient
+    spec:
+      containers:
+      - name: ${SERVICE_NAME}-container
+        env:
+        - name: DYNAMODB_PAYMENT_TABLE
+          value: ${DYNAMODB_TABLE_NAME}
+        - name: SQS_QUEUE_URL
+          value: ${SQS_QUEUE_URL}
+        - name: AWS_REGION
+          value: ${AWS_REGION}
+        - name: OTEL_COLLECTOR
+          value: otel-collector-opentelemetry-collector.monitoring.svc.cluster.local
+        - name: SERVICE_NAME
+          value: ${SERVICE_NAME}
+        - name: EXPENSES_SERVICE_URL
+          value: http://expenses-service.${ENVIRONMENT}.svc.cluster.local:8282
+        - name: BANK_SERVICE_URL
+          value: http://bank-service.${ENVIRONMENT}.svc.cluster.local:8585
+        - name: PAYMENT_SERVICE_URL
+          value: http://payment-service.${ENVIRONMENT}.svc.cluster.local:8989

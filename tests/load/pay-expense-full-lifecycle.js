@@ -90,7 +90,6 @@ export default function () {
     // --- STEP 3: PAY EXPENSE ---
     console.log(`DEBUG: Sending Payment - User: ${userId}, Expense: ${expenseId}`);
     const paymentPayload = JSON.stringify({
-        userId: userId,
         expenseId: expenseId,
         amount: 45.99
     });

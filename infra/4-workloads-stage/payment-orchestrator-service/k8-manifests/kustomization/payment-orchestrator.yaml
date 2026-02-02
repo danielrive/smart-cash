@@ -1,0 +1,19 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ${SERVICE_NAME}-service
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "services/${SERVICE_NAME}-service/overlays/${ENVIRONMENT}"
+  prune: true
+  images:
+  - name: service-image
+    newName: ${ECR_REPO} # {"$imagepolicy": "${ENVIRONMENT}:img-upd-${SERVICE_NAME}:name"}
+    newTag: ${ENVIRONMENT} # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}
+  postBuild:
+    substitute:
+      APP_VERSION: "none" # {"$imagepolicy": "${ENVIRONMENT}:${SERVICE_NAME}:tag"}

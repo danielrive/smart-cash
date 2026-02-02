@@ -19,6 +19,7 @@ on:
           - frontend-service
           - hydradb-service
           - payment-service
+          - payment-orchestrator-service
   push:
     branches:
       - develop
