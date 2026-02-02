@@ -177,6 +177,12 @@ func (us *UserService) Login(ctx context.Context, user string, password string) 
 	}
 
 	// Check if user is active
+	us.loggerWithTrace(ctx).Info("checking if user is active",
+		slog.String("username", user),
+		slog.String("user_id", response.UserId),
+		slog.Bool("active", response.Active),
+		slog.String("component", "service"),
+	)
 	if !response.Active {
 		us.loggerWithTrace(ctx).Warn("login failed - user account is inactive",
 			slog.String("username", user),
