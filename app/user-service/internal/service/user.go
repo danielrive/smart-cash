@@ -79,7 +79,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 	)
 	defer endSpan()
 
-	us.loggerWithTrace(ctx).Debug("getting user by email or username",
+	us.loggerWithTrace(ctx).Info("getting user by email or username",
 		slog.String("key", key),
 		slog.String("value", value),
 		slog.String("component", "service"),
@@ -87,7 +87,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 
 	user, err := us.userRepository.GetUserByEmailorUsername(ctx, key, value)
 	if err != nil {
-		us.loggerWithTrace(ctx).Debug("user not found by email or username",
+		us.loggerWithTrace(ctx).Warn("user not found by email or username",
 			slog.String("key", key),
 			slog.String("value", value),
 			slog.String("component", "service"),
@@ -95,7 +95,7 @@ func (us *UserService) GetUserByEmailorUsername(ctx context.Context, key string,
 		return models.User{}, err
 	}
 
-	us.loggerWithTrace(ctx).Debug("user found by email or username",
+	us.loggerWithTrace(ctx).Info("user found by email or username",
 		slog.String("user_id", user.UserId),
 		slog.String("key", key),
 		slog.String("component", "service"),
