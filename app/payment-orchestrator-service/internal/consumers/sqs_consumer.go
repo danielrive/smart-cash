@@ -67,12 +67,13 @@ func (c *SQSConsumer) Start(ctx context.Context) error {
 			return ctx.Err()
 		}
 
-		// Receive messages in main loop (blocks for up to 20 seconds with long polling)
+		// Receive messages in main loop (blocks for up to 10 seconds with long polling)
 		// This prevents spawning goroutines when there are no messages
 		messages, err := c.receiveMessages(ctx)
 		if err != nil {
 			// If context was cancelled during receive, exit
 			if ctx.Err() != nil {
+				c.logger.Info("SQS consumer stopping due to context cancellation")
 				return ctx.Err()
 			}
 			c.logger.Error("failed to receive messages",

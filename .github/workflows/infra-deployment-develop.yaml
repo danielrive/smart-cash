@@ -17,7 +17,6 @@ on:
           - bank-service
           - expenses-service
           - frontend-service
-          - hydradb-service
           - payment-service
           - payment-orchestrator-service
   push:
