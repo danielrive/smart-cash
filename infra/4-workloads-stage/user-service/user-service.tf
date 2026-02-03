@@ -37,14 +37,14 @@ resource "aws_dynamodb_table" "dynamo_table" {
     name               = "by_email"
     hash_key           = "email"
     projection_type    = "INCLUDE"
-    non_key_attributes = ["userId", "email", "status", "username", "password"]
+    non_key_attributes = ["userId", "email", "active", "username", "password"]
   }
 
   global_secondary_index {
     name               = "by_username"
     hash_key           = "username"
     projection_type    = "INCLUDE"
-    non_key_attributes = ["userId", "email", "status", "username", "password"]
+    non_key_attributes = ["userId", "email", "active", "username", "password"]
   }
   tags = {
     Name = "${local.this_service_name}-table"
