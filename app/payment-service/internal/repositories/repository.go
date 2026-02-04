@@ -53,7 +53,7 @@ func (r *DynamoDBPaymentRepository) CreatePayment(ctx context.Context, payment m
 	defer endSpan()
 
 	r.loggerWithTrace(ctx).Debug("creating payment in database",
-		slog.String("transaction_id", payment.PaymentId),
+		slog.String("payment_id", payment.PaymentId),
 		slog.String("expense_id", payment.ExpenseId),
 		slog.String("component", "repository"),
 	)
@@ -63,7 +63,7 @@ func (r *DynamoDBPaymentRepository) CreatePayment(ctx context.Context, payment m
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("error marshaling payment item",
 			slog.String("error", err.Error()),
-			slog.String("transaction_id", payment.PaymentId),
+			slog.String("payment_id", payment.PaymentId),
 			slog.String("component", "repository"),
 		)
 		return models.PaymentResponse{}, common.ErrPaymentFailed
@@ -78,7 +78,7 @@ func (r *DynamoDBPaymentRepository) CreatePayment(ctx context.Context, payment m
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("dynamodb error putting payment item",
 			slog.String("error", err.Error()),
-			slog.String("transaction_id", payment.PaymentId),
+			slog.String("payment_id", payment.PaymentId),
 			slog.String("component", "repository"),
 		)
 		return models.PaymentResponse{}, common.ErrPaymentFailed
@@ -91,7 +91,7 @@ func (r *DynamoDBPaymentRepository) CreatePayment(ctx context.Context, payment m
 	utils.SetSpanStatus(ctx, codes.Ok, "payment created successfully")
 
 	r.loggerWithTrace(ctx).Info("payment created in database",
-		slog.String("transaction_id", payment.PaymentId),
+		slog.String("payment_id", payment.PaymentId),
 		slog.String("component", "repository"),
 	)
 
@@ -116,14 +116,14 @@ func (r *DynamoDBPaymentRepository) GetPayment(ctx context.Context, id string) (
 	item, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(r.paymentTable),
 		Key: map[string]types.AttributeValue{
-			"transactionId": &types.AttributeValueMemberS{Value: id},
+			"paymentId": &types.AttributeValueMemberS{Value: id},
 		},
 	})
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("dynamodb couldn't get the item",
 			"error", err.Error(),
-			"transactionId", id,
+			"paymentId", id,
 		)
 		return output, common.ErrInternalError
 	}
@@ -131,7 +131,7 @@ func (r *DynamoDBPaymentRepository) GetPayment(ctx context.Context, id string) (
 		utils.AddSpanEvent(ctx, "payment not found", attribute.Bool("db.item_found", false))
 		utils.SetSpanStatus(ctx, codes.Ok, "payment not found")
 		r.loggerWithTrace(ctx).Debug("payment not found in database",
-			slog.String("transaction_id", id),
+			slog.String("payment_id", id),
 			slog.String("component", "repository"),
 		)
 		return output, common.ErrPaymentNotFound
@@ -143,7 +143,7 @@ func (r *DynamoDBPaymentRepository) GetPayment(ctx context.Context, id string) (
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("error unmarshaling payment item",
 			slog.String("error", err.Error()),
-			slog.String("transaction_id", id),
+			slog.String("payment_id", id),
 			slog.String("component", "repository"),
 		)
 		return output, common.ErrInternalError
@@ -157,7 +157,7 @@ func (r *DynamoDBPaymentRepository) GetPayment(ctx context.Context, id string) (
 	utils.SetSpanStatus(ctx, codes.Ok, "payment retrieved successfully")
 
 	r.loggerWithTrace(ctx).Debug("payment retrieved from database",
-		slog.String("transaction_id", id),
+		slog.String("payment_id", id),
 		slog.String("component", "repository"),
 	)
 
@@ -182,24 +182,24 @@ func (r *DynamoDBPaymentRepository) UpdatePayment(ctx context.Context, payment m
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("dynamodb update expression couldn't be created",
 			"error", err.Error(),
-			"transactionId", payment.PaymentId,
+			"paymentId", payment.PaymentId,
 		)
 		return common.ErrInternalError
 	}
 	// Define the key of the item to update
-	transactionId, err := attributevalue.Marshal(payment.PaymentId)
+	paymentId, err := attributevalue.Marshal(payment.PaymentId)
 	if err != nil {
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("dynamodb udpate key couldn't be created",
 			"error", err.Error(),
-			"transactionId", payment.PaymentId,
+			"paymentId", payment.PaymentId,
 		)
 		return common.ErrInternalError
 	}
 
 	inputUpdate := &dynamodb.UpdateItemInput{
 		TableName:                 aws.String(r.paymentTable),
-		Key:                       map[string]types.AttributeValue{"transactionId": transactionId},
+		Key:                       map[string]types.AttributeValue{"paymentId": paymentId},
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
@@ -212,7 +212,7 @@ func (r *DynamoDBPaymentRepository) UpdatePayment(ctx context.Context, payment m
 		utils.RecordSpanError(ctx, err)
 		r.loggerWithTrace(ctx).Error("saving could't be updated",
 			"error", err.Error(),
-			"transactionId", payment.PaymentId,
+			"paymentId", payment.PaymentId,
 		)
 		return common.ErrInternalError
 	}

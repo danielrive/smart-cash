@@ -85,6 +85,7 @@ func (c *SQSConsumer) Start(ctx context.Context) error {
 
 		// If no messages, loop again (no goroutine spawned)
 		if len(messages) == 0 {
+			c.logger.Info("no messages received, looping again")
 			continue
 		}
 
