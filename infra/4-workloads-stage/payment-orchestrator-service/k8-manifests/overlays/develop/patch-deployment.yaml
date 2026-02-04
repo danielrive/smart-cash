@@ -22,8 +22,8 @@ spec:
         - name: SERVICE_NAME
           value: ${SERVICE_NAME}
         - name: EXPENSES_SERVICE_URL
-          value: http://expenses.${ENVIRONMENT}.svc.cluster.local:8282
+          value: http://expenses.${ENVIRONMENT}.svc.cluster.local:80
         - name: BANK_SERVICE_URL
-          value: http://bank.${ENVIRONMENT}.svc.cluster.local:8585
+          value: http://bank.${ENVIRONMENT}.svc.cluster.local:80
         - name: PAYMENT_SERVICE_URL
-          value: http://payment.${ENVIRONMENT}.svc.cluster.local:8989
+          value: http://payment.${ENVIRONMENT}.svc.cluster.local:80
