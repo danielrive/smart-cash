@@ -63,9 +63,9 @@ func run() error {
 	}()
 
 	// Initialize HTTP clients
-	expensesClient := clients.NewExpensesClient(cfg.ExpensesServiceURL, cfg.Logger)
-	bankClient := clients.NewBankClient(cfg.BankServiceURL, cfg.Logger)
-	paymentClient := clients.NewPaymentClient(cfg.PaymentServiceURL, cfg.Logger)
+	expensesClient := clients.NewExpensesClient(cfg.ExpensesServiceURL, cfg.Logger, cfg.JWTSecret, cfg.ServiceName)
+	bankClient := clients.NewBankClient(cfg.BankServiceURL, cfg.Logger, cfg.JWTSecret, cfg.ServiceName)
+	paymentClient := clients.NewPaymentClient(cfg.PaymentServiceURL, cfg.Logger, cfg.JWTSecret, cfg.ServiceName)
 
 	// Initialize orchestrator service
 	orchestratorService := service.NewOrchestratorService(

@@ -17,6 +17,7 @@ type Config struct {
 	PaymentServiceURL  string
 	OtelCollector      string
 	AwsRegion          string
+	JWTSecret          []byte
 	Logger             *slog.Logger
 }
 
@@ -26,6 +27,11 @@ func LoadConfig() (*Config, error) {
 	// Initialize logger first so we can use it
 	logCfg := logging.LoadConfig()
 	logger := logging.InitLogger(logCfg, serviceName)
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is required")
+	}
 
 	cfg := &Config{
 		ServiceName:        serviceName,
@@ -37,6 +43,7 @@ func LoadConfig() (*Config, error) {
 		PaymentServiceURL:  getEnv("PAYMENT_SERVICE_URL", "http://payment.develop.svc.cluster.local:80"),
 		OtelCollector:      os.Getenv("OTEL_COLLECTOR"),
 		AwsRegion:          os.Getenv("AWS_REGION"),
+		JWTSecret:          []byte(jwtSecret),
 		Logger:             logger,
 	}
 

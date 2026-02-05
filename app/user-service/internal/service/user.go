@@ -236,6 +236,7 @@ func (us *UserService) generateJWT(userID, username, email string, active bool) 
 		Active:   active,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 

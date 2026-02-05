@@ -9,14 +9,17 @@ import (
 
 	"smart-cash/payment-orchestrator-service/models"
 	"smart-cash/utils/logging"
+	"smart-cash/utils/middleware"
 
 	"github.com/go-resty/resty/v2"
 )
 
 type ExpensesClient struct {
-	client  *resty.Client
-	baseURL string
-	logger  *slog.Logger
+	client      *resty.Client
+	baseURL     string
+	logger      *slog.Logger
+	jwtSecret   []byte
+	serviceName string
 }
 
 // loggerWithTrace returns a logger with trace context if available in the context
@@ -24,7 +27,7 @@ func (c *ExpensesClient) loggerWithTrace(ctx context.Context) *slog.Logger {
 	return logging.LoggerWithTraceContext(ctx, c.logger)
 }
 
-func NewExpensesClient(baseURL string, logger *slog.Logger) *ExpensesClient {
+func NewExpensesClient(baseURL string, logger *slog.Logger, jwtSecret []byte, serviceName string) *ExpensesClient {
 	client := resty.New().
 		SetTimeout(10 * time.Second).
 		SetRetryCount(3).
@@ -32,9 +35,11 @@ func NewExpensesClient(baseURL string, logger *slog.Logger) *ExpensesClient {
 		SetRetryMaxWaitTime(5 * time.Second)
 
 	return &ExpensesClient{
-		client:  client,
-		baseURL: baseURL,
-		logger:  logger,
+		client:      client,
+		baseURL:     baseURL,
+		logger:      logger,
+		jwtSecret:   jwtSecret,
+		serviceName: serviceName,
 	}
 }
 
@@ -47,9 +52,20 @@ func (c *ExpensesClient) UpdateExpenseStatus(ctx context.Context, expenseId stri
 		Status: status,
 	}
 
+	// Generate service JWT token for authentication
+	token, err := middleware.GenerateServiceJWT(c.serviceName, c.jwtSecret)
+	if err != nil {
+		c.loggerWithTrace(ctx).Error("failed to generate service JWT token",
+			"error", err,
+			"expense_id", expenseId,
+		)
+		return fmt.Errorf("failed to generate service JWT token: %w", err)
+	}
+
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
+		SetAuthToken(token).
 		SetBody(req).
 		Put(url)
 
@@ -71,7 +87,7 @@ func (c *ExpensesClient) UpdateExpenseStatus(ctx context.Context, expenseId stri
 		return fmt.Errorf("expenses service error: status %d", resp.StatusCode())
 	}
 
-	c.logger.Debug("expense status updated successfully",
+	c.loggerWithTrace(ctx).Debug("expense status updated successfully",
 		"expense_id", expenseId,
 		"status", status,
 	)

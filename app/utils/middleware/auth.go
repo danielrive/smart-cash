@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -14,10 +15,12 @@ import (
 )
 
 type Claims struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Active   bool   `json:"active"`
+	UserID      string `json:"user_id,omitempty"`      // For user tokens
+	Username    string `json:"username,omitempty"`     // For user tokens
+	Email       string `json:"email,omitempty"`        // For user tokens
+	Active      bool   `json:"active,omitempty"`       // For user tokens
+	Type        string `json:"type,omitempty"`         // "user" or "service"
+	ServiceName string `json:"service_name,omitempty"` // For service tokens
 	jwt.RegisteredClaims
 }
 
@@ -68,20 +71,36 @@ func AuthMiddleware(jwtSecret []byte) gin.HandlerFunc {
 			return
 		}
 
-		// Check if user is active
-		if !claims.Active {
-			err := fmt.Errorf("user account is inactive")
-			recordAuthError(c, http.StatusForbidden, "user account is inactive", err)
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "user account is inactive",
-			})
-			return
+		// Handle service tokens vs user tokens
+		if claims.Type == "service" {
+			// Service token: skip Active check (services are always active)
+			if claims.ServiceName == "" {
+				err := fmt.Errorf("service token missing service name")
+				recordAuthError(c, http.StatusUnauthorized, "invalid service token", err)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "invalid service token: missing service name",
+				})
+				return
+			}
+			c.Set("serviceName", claims.ServiceName)
+			c.Set("type", "service")
+		} else {
+			// User token: check if user is active
+			if !claims.Active {
+				err := fmt.Errorf("user account is inactive")
+				recordAuthError(c, http.StatusForbidden, "user account is inactive", err)
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+					"error": "user account is inactive",
+				})
+				return
+			}
+			c.Set("userId", claims.UserID)
+			c.Set("username", claims.Username)
+			c.Set("email", claims.Email)
+			c.Set("active", claims.Active)
+			c.Set("type", "user")
 		}
 
-		c.Set("userId", claims.UserID)
-		c.Set("username", claims.Username)
-		c.Set("email", claims.Email)
-		c.Set("active", claims.Active)
 		c.Next()
 	}
 }
@@ -140,4 +159,26 @@ func OptionalAuthMiddleware(jwtSecret []byte) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// GenerateServiceJWT generates a JWT token for service-to-service authentication
+// This allows services to authenticate with other services without requiring user credentials
+func GenerateServiceJWT(serviceName string, jwtSecret []byte) (string, error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &Claims{
+		Type:        "service",
+		ServiceName: serviceName,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign service JWT token: %w", err)
+	}
+
+	return tokenString, nil
 }

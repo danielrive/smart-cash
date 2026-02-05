@@ -10,14 +10,17 @@ import (
 
 	"smart-cash/payment-orchestrator-service/models"
 	"smart-cash/utils/logging"
+	"smart-cash/utils/middleware"
 
 	"github.com/go-resty/resty/v2"
 )
 
 type BankClient struct {
-	client  *resty.Client
-	baseURL string
-	logger  *slog.Logger
+	client      *resty.Client
+	baseURL     string
+	logger      *slog.Logger
+	jwtSecret   []byte
+	serviceName string
 }
 
 // loggerWithTrace returns a logger with trace context if available in the context
@@ -25,7 +28,7 @@ func (c *BankClient) loggerWithTrace(ctx context.Context) *slog.Logger {
 	return logging.LoggerWithTraceContext(ctx, c.logger)
 }
 
-func NewBankClient(baseURL string, logger *slog.Logger) *BankClient {
+func NewBankClient(baseURL string, logger *slog.Logger, jwtSecret []byte, serviceName string) *BankClient {
 	client := resty.New().
 		SetTimeout(10 * time.Second).
 		SetRetryCount(3).
@@ -33,9 +36,11 @@ func NewBankClient(baseURL string, logger *slog.Logger) *BankClient {
 		SetRetryMaxWaitTime(5 * time.Second)
 
 	return &BankClient{
-		client:  client,
-		baseURL: baseURL,
-		logger:  logger,
+		client:      client,
+		baseURL:     baseURL,
+		logger:      logger,
+		jwtSecret:   jwtSecret,
+		serviceName: serviceName,
 	}
 }
 
@@ -54,9 +59,20 @@ func (c *BankClient) ProcessTransaction(ctx context.Context, req models.ProcessT
 		"date":          "", // Will be set by bank service if needed
 	}
 
+	// Generate service JWT token for authentication
+	token, err := middleware.GenerateServiceJWT(c.serviceName, c.jwtSecret)
+	if err != nil {
+		c.loggerWithTrace(ctx).Error("failed to generate service JWT token",
+			"error", err,
+			"transaction_id", req.TransactionId,
+		)
+		return fmt.Errorf("failed to generate service JWT token: %w", err)
+	}
+
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
+		SetAuthToken(token).
 		SetBody(bankReq).
 		Post(url)
 
@@ -89,7 +105,7 @@ func (c *BankClient) ProcessTransaction(ctx context.Context, req models.ProcessT
 		}
 	}
 
-	c.logger.Debug("bank transaction processed successfully",
+	c.loggerWithTrace(ctx).Debug("bank transaction processed successfully",
 		"transaction_id", req.TransactionId,
 		"user_id", req.UserId,
 		"amount", req.Amount,
