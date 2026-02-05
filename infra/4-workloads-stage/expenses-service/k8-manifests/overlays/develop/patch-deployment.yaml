@@ -18,4 +18,8 @@ spec:
           value: ${SERVICE_NAME}
         - name: SQS_QUEUE_NAME
           value: ${SQS_QUEUE_NAME}
-          
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret

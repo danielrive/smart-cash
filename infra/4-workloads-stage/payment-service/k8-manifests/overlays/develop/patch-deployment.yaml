@@ -19,4 +19,8 @@ spec:
           value: otel-collector-opentelemetry-collector.monitoring.svc.cluster.local
         - name: SERVICE_NAME
           value: ${SERVICE_NAME}
-          
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret

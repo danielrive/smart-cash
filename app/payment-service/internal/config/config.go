@@ -46,8 +46,7 @@ func LoadConfig() (*Config, error) {
 
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		logger.Warn("JWT_SECRET not set, using default")
-		secret = "default-secret"
+		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
 	cfg.JWTSecret = []byte(secret)
 
