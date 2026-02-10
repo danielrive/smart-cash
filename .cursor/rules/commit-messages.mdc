@@ -1,0 +1,12 @@
+---
+description: Commit message format for git commits
+alwaysApply: true
+---
+
+# Commit Message Rules
+
+When creating or suggesting git commit messages:
+
+- **Keep it short**: One-line summary, no long descriptions
+- **Be concise**: Simple but clear (e.g., "Add user login validation", "Fix payment service timeout")
+- **Avoid**: Multi-line descriptions, excessive detail, or prose-style messages

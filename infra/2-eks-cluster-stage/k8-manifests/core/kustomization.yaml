@@ -7,6 +7,7 @@ resources:
 - ebs-storage-class.yaml
 - helm-prometheus.yaml
 - helm-cert-manager.yaml
+- helm-secrets-store-csi-driver.yaml
 - helm-fluent-bit.yaml
 - helm-otel-collector.yaml
 - helm-istio.yaml
