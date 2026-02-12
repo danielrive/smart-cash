@@ -50,12 +50,12 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
-        resources:
-          requests:
-            memory: "10Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
-            cpu: "1m"
-          limits:
-            memory: "10Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+        #resources:
+        #  requests:
+        #    memory: "10Mi"   ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
+        #    cpu: "1m"
+        #  limits:
+        #    memory: "10Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
         - containerPort: ${SERVICE_PORT}
         volumeMounts:
