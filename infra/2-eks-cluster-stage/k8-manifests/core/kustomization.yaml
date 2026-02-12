@@ -8,6 +8,7 @@ resources:
 - helm-prometheus.yaml
 - helm-cert-manager.yaml
 - helm-secrets-store-csi-driver.yaml
+- helm-secrets-provider-aws.yaml
 - helm-fluent-bit.yaml
 - helm-otel-collector.yaml
 - helm-istio.yaml
