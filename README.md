@@ -2,6 +2,28 @@
 iiiiii
 This is a personal project to test some tools that I want to learn in a hands-on manner.
 
+## Quick Start: Running Workflows
+
+To run GitHub workflows easily:
+
+```bash
+# View all available workflows and options
+./run-workflow.sh --help
+
+# Deploy infrastructure
+./run-workflow.sh infra-develop --stage 1-base-stage
+
+# Deploy a microservice
+./run-workflow.sh service-develop --service user-service
+
+# View recent workflow runs
+make list-runs
+```
+
+📖 **For detailed workflow documentation, see [WORKFLOWS.md](WORKFLOWS.md)**
+
+## Blog Posts
+
 Here are some blog posts created along this project
 
 - [AWS Infrastructure - Terraform and GitHub Actions](https://dev.to/aws-builders/smartcash-project-infrastructure-terraform-and-github-actions-2bo3)
