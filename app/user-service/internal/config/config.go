@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"smart-cash/utils/logging"
+	"smart-cash/utils/secrets"
 )
 
 type Config struct {
@@ -44,11 +45,12 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("AWS_REGION variable is required")
 	}
 
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		return nil, fmt.Errorf("JWT_SECRET is required")
+	// Read JWT secret from mounted file (Secrets Store CSI Driver)
+	secret, err := secrets.ReadJWTSecret()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read JWT secret: %w", err)
 	}
-	cfg.JWTSecret = []byte(secret)
+	cfg.JWTSecret = secret
 
 	return cfg, nil
 }

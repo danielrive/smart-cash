@@ -36,6 +36,13 @@ spec:
         runAsNonRoot: true
         runAsUser: 10003
         runAsGroup: 30001
+      volumes:
+      - name: jwt-secret
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: jwt-secret
       containers:
       - name: ${SERVICE_NAME}-container
         image: service-image
@@ -51,6 +58,10 @@ spec:
             memory: "10Mi"  ###### VALIDATE THESE WERE RANDOM NUMBERS TO TEST
         ports:
         - containerPort: ${SERVICE_PORT}
+        volumeMounts:
+        - name: jwt-secret
+          mountPath: /mnt/secrets-store
+          readOnly: true
         livenessProbe:
           httpGet:
             port: ${SERVICE_PORT}  

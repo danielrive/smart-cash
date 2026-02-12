@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"smart-cash/utils/logging"
+	"smart-cash/utils/secrets"
 )
 
 type Config struct {
@@ -28,9 +29,10 @@ func LoadConfig() (*Config, error) {
 	logCfg := logging.LoadConfig()
 	logger := logging.InitLogger(logCfg, serviceName)
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		return nil, fmt.Errorf("JWT_SECRET is required")
+	// Read JWT secret from mounted file (Secrets Store CSI Driver)
+	jwtSecret, err := secrets.ReadJWTSecret()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read JWT secret: %w", err)
 	}
 
 	cfg := &Config{
@@ -43,7 +45,7 @@ func LoadConfig() (*Config, error) {
 		PaymentServiceURL:  getEnv("PAYMENT_SERVICE_URL", "http://payment.develop.svc.cluster.local:80"),
 		OtelCollector:      os.Getenv("OTEL_COLLECTOR"),
 		AwsRegion:          os.Getenv("AWS_REGION"),
-		JWTSecret:          []byte(jwtSecret),
+		JWTSecret:          jwtSecret,
 		Logger:             logger,
 	}
 

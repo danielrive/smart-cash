@@ -27,8 +27,3 @@ spec:
           value: http://bank.${ENVIRONMENT}.svc.cluster.local:80
         - name: PAYMENT_SERVICE_URL
           value: http://payment.${ENVIRONMENT}.svc.cluster.local:80
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: jwt-secret
-              key: secret
