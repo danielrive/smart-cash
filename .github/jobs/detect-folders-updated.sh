@@ -1,65 +1,88 @@
-#/bin/bash
+#!/bin/bash
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
 
 #### Inputs
-# 1 commit before
-# 2 current commit
-# 3 workflow (infra or app)
+# 1: commit before (required)
+# 2: current commit (required)
+# 3: scope - 'infra', 'app', or 'all' (optional, defaults to 'all')
 
-## Validate if the workflow is running manually 
-CHANGED_FOLDERS=""
+# Validate and set input parameters
+COMMIT_BEFORE="${1:?Error: Missing required parameter - commit before}"
+COMMIT_CURRENT="${2:?Error: Missing required parameter - current commit}"
+SCOPE="${3:-all}"
+
+echo "============================================"
 echo "Detecting folders updated automatically"
-GIT_FOLDERS_UPDATED="$(git diff --name-only $1 $2 )"
+echo "  Commit range: $COMMIT_BEFORE...$COMMIT_CURRENT"
+echo "  Scope: $SCOPE"
+echo "============================================"
 
-add_folder() {
-    echo "--> adding the folder $root_folder"
-    CHANGED_FOLDERS="$CHANGED_FOLDERS $root_folder"
-    echo "--> updating the the variable"
-    echo $CHANGED_FOLDERS 
-}
+# Validate scope parameter
+if [[ ! "$SCOPE" =~ ^(infra|app|all)$ ]]; then
+    echo "Error: Invalid scope '$SCOPE'. Must be 'infra', 'app', or 'all'"
+    exit 1
+fi
 
+# Get changed files with error handling
+if ! GIT_FOLDERS_UPDATED="$(git diff --name-only "$COMMIT_BEFORE" "$COMMIT_CURRENT" 2>&1)"; then
+    echo "Error: git diff failed"
+    echo "$GIT_FOLDERS_UPDATED"
+    exit 1
+fi
+
+# Check if there are any changes
+if [[ -z "$GIT_FOLDERS_UPDATED" ]]; then
+    echo "No files changed between commits"
+    echo "FOLDERS_UPDATED={\"folders\":[]}" >> "$GITHUB_OUTPUT"
+    exit 0
+fi
+
+# Use associative array for automatic deduplication
+declare -A CHANGED_FOLDERS_MAP
+
+# Process each changed file
 for file in $GIT_FOLDERS_UPDATED; do
     folder_name=$(dirname "$file")
-    echo "-----> checking the folder $folder_name"
-    if [[ "$folder_name" == *"app"* && "$folder_name" == *"-service"* ]] ; then
-            echo "Code update for service"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
-            echo $root_folder
-            add_folder        
-    elif [[ "$folder_name" == *"4-workloads-stage"* && "$folder_name" == *"-service"* ]] ; then
-            echo "Infra update for infra service"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $3}')
-            echo $root_folder
-            add_folder   
-    elif [[ "$folder_name" == *"-stage"*  ]] ; then
-            echo "Infra update for service"
-            root_folder=$(echo "$folder_name" | awk -F'/' '{print $2}')
-            echo $root_folder
-            add_folder 
+    echo "Checking: $folder_name"
+
+    # Check for app services (e.g., app/user-service/*)
+    if [[ ("$SCOPE" == "app" || "$SCOPE" == "all") && "$folder_name" =~ ^app/[^/]*-service(/|$) ]]; then
+        root_folder=$(echo "$folder_name" | cut -d'/' -f2)
+        echo "  ✓ App service detected: $root_folder"
+        CHANGED_FOLDERS_MAP["$root_folder"]=1
+
+    # Check for infra workload services (e.g., infra/4-workloads-stage/user-service/*)
+    elif [[ ("$SCOPE" == "infra" || "$SCOPE" == "all") && "$folder_name" =~ ^infra/4-workloads-stage/[^/]*-service(/|$) ]]; then
+        root_folder=$(echo "$folder_name" | cut -d'/' -f3)
+        echo "  ✓ Infra workload service detected: $root_folder"
+        CHANGED_FOLDERS_MAP["$root_folder"]=1
+
+    # Check for infra stages (e.g., infra/1-base-stage/*, infra/2-eks-cluster-stage/*)
+    elif [[ ("$SCOPE" == "infra" || "$SCOPE" == "all") && "$folder_name" =~ ^infra/[0-9]+-[^/]*-stage(/|$) ]]; then
+        root_folder=$(echo "$folder_name" | cut -d'/' -f2)
+        echo "  ✓ Infra stage detected: $root_folder"
+        CHANGED_FOLDERS_MAP["$root_folder"]=1
     else
-       echo "----> ignoring the folder $folder_name"
+        echo "  ✗ Ignored (out of scope): $folder_name"
     fi
 done
 
-CHANGED_FOLDERS=$(echo "$CHANGED_FOLDERS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+# Convert associative array keys to sorted JSON array
+if [[ ${#CHANGED_FOLDERS_MAP[@]} -eq 0 ]]; then
+    echo ""
+    echo "No relevant folders detected for scope: $SCOPE"
+    FOLDERS_MODIFIED_JSON='{"folders":[]}'
+else
+    echo ""
+    echo "Detected folders:"
+    printf '  - %s\n' "${!CHANGED_FOLDERS_MAP[@]}" | sort
 
-# Create an array for the folders changed to then move to json  
-            
-read -ra FOLDERS_UPDATED_ARRAY <<< $CHANGED_FOLDERS
+    # Convert to JSON using jq for proper escaping
+    FOLDERS_MODIFIED_JSON=$(printf '%s\n' "${!CHANGED_FOLDERS_MAP[@]}" | sort | jq -R . | jq -s -c '{folders: .}')
+fi
 
-# Convert array to JSON structure, this is necessary to export the values as a GH job output
-
-FOLDERS_MODIFIED_JSON="{\"folders\":["
-            
-for item in "${FOLDERS_UPDATED_ARRAY[@]}"; do
-   FOLDERS_MODIFIED_JSON+="\"$item\","
-done
-
-FOLDERS_MODIFIED_JSON="${FOLDERS_MODIFIED_JSON%,}"  # Remove the trailing comma
-            
-FOLDERS_MODIFIED_JSON+="]}"
-
-echo $FOLDERS_MODIFIED_JSON
-
-echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> $GITHUB_OUTPUT
+echo ""
+echo "Final output: $FOLDERS_MODIFIED_JSON"
+echo "FOLDERS_UPDATED=$FOLDERS_MODIFIED_JSON" >> "$GITHUB_OUTPUT"
 
 

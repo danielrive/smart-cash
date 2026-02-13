@@ -178,6 +178,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Username:  userDTO.Username,
 		Email:     userDTO.Email,
 		Password:  userDTO.Password,
+		Active:    true,
 	}
 
 	// create the user
