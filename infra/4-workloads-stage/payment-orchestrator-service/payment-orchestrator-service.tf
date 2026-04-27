@@ -83,6 +83,13 @@ resource "aws_eks_pod_identity_association" "association" {
   role_arn        = aws_iam_role.iam_sa_role.arn
 }
 
+module "jwt_secret_access" {
+  source      = "../../modules/pod-sa-jwt-secret-access"
+  environment = var.environment
+  iam_role_id = aws_iam_role.iam_sa_role.id
+  name_suffix = local.this_service_name
+}
+
 #############################
 ##### ECR Repo
 
@@ -130,7 +137,7 @@ resource "github_repository_file" "base_manifests" {
     {
       SERVICE_NAME               = local.this_service_name
       SERVICE_PORT               = local.this_service_port
-      SERVICE_PATH_HEALTH_CHECKS  = "/${local.this_service_name}/health"
+      SERVICE_PATH_HEALTH_CHECKS = "/${local.this_service_name}/health"
       TIER                       = local.tier
     }
   )
@@ -150,11 +157,11 @@ resource "github_repository_file" "overlays_svc_patch" {
   content = templatefile(
     "${local.path_tf_repo_services}/overlays/${var.environment}/patch-deployment.yaml",
     {
-      SERVICE_NAME         = local.this_service_name
-      DYNAMODB_TABLE_NAME  = data.aws_dynamodb_table.payment_table.name
-      SQS_QUEUE_URL        = data.aws_sqs_queue.payment_service_queue.url
-      AWS_REGION           = var.region
-      ENVIRONMENT          = var.environment
+      SERVICE_NAME        = local.this_service_name
+      DYNAMODB_TABLE_NAME = data.aws_dynamodb_table.payment_table.name
+      SQS_QUEUE_URL       = data.aws_sqs_queue.payment_service_queue.url
+      AWS_REGION          = var.region
+      ENVIRONMENT         = var.environment
     }
   )
   commit_message      = "Managed by Terraform"

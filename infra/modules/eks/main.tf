@@ -173,7 +173,7 @@ resource "aws_iam_openid_connect_provider" "kube_cluster_oidc_provider" {
 #####  EKS worker node role ####
 
 resource "aws_iam_role" "worker_nodes" {
-  name = "role-${local.eks_node_group_name}"
+  name       = "role-${local.eks_node_group_name}"
   depends_on = [aws_eks_cluster.kube_cluster]
   assume_role_policy = jsonencode({
     Statement = [{
@@ -244,7 +244,7 @@ resource "aws_eks_node_group" "worker-node-group" {
   cluster_name    = var.cluster_name
   node_group_name = local.eks_node_group_name
   node_role_arn   = aws_iam_role.worker_nodes.arn
-  version =   var.cluster_version
+  version         = var.cluster_version
   subnet_ids      = var.subnet_ids
   ami_type        = var.AMI_for_worker_nodes
   update_config {
@@ -269,7 +269,7 @@ resource "aws_eks_node_group" "worker-node-group" {
 
 ## Install EBS add-on
 resource "aws_eks_addon" "pod_identity" {
-  depends_on = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
+  depends_on                  = [aws_eks_cluster.kube_cluster, aws_eks_node_group.worker-node-group]
   cluster_name                = aws_eks_cluster.kube_cluster.name
   addon_name                  = "eks-pod-identity-agent"
   addon_version               = var.pod_identity_version
@@ -317,9 +317,9 @@ resource "aws_eks_addon" "vpc-cni" {
     aws_iam_role.vpc_cni_role,
     aws_iam_role_policy_attachment.cni_policy
   ]
-  cluster_name                = aws_eks_cluster.kube_cluster.name
-  addon_name                  = "vpc-cni"
-  addon_version               = var.vpc_cni_version
+  cluster_name  = aws_eks_cluster.kube_cluster.name
+  addon_name    = "vpc-cni"
+  addon_version = var.vpc_cni_version
   pod_identity_association {
     role_arn        = aws_iam_role.vpc_cni_role.arn
     service_account = "aws-node"
@@ -368,9 +368,9 @@ resource "aws_eks_addon" "ebs_csi" {
     aws_eks_node_group.worker-node-group,
     aws_eks_addon.pod_identity
   ]
-  cluster_name                = aws_eks_cluster.kube_cluster.name
-  addon_name                  = "aws-ebs-csi-driver"
-  addon_version               = var.ebs_csi_version
+  cluster_name  = aws_eks_cluster.kube_cluster.name
+  addon_name    = "aws-ebs-csi-driver"
+  addon_version = var.ebs_csi_version
   pod_identity_association {
     role_arn        = aws_iam_role.ebs_csi_role.arn
     service_account = "ebs-csi-controller-sa"

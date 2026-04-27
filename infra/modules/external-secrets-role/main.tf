@@ -28,8 +28,8 @@ EOF
 #### Role Policy for Secrets Manager Access
 
 resource "aws_iam_policy" "external_secrets" {
-  name   = "policy-external-secrets-${var.cluster_name}-${var.region}"
-  path   = "/"
+  name = "policy-external-secrets-${var.cluster_name}-${var.region}"
+  path = "/"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

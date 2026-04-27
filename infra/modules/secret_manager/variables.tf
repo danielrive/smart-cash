@@ -24,3 +24,9 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "create_bootstrap_secret_version" {
+  description = "If true, create initial random secret version once (safe for greenfield). Leave false if the secret already has a value you set manually — avoids TF adding a new version on apply."
+  type        = bool
+  default     = false
+}

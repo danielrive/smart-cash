@@ -9,12 +9,14 @@ locals {
 ### AWS Secrets Manager - JWT Secret
 
 module "jwt_secret" {
-  source      = "../modules/secret_manager"
-  environment = var.environment
+  source       = "../modules/secret_manager"
+  environment  = var.environment
   project_name = var.project_name
   secret_name  = "smart-cash/jwt-secret/${var.environment}"
   description  = "JWT secret for service-to-service authentication in ${var.environment} environment"
 }
+# Workload pods use their own EKS Pod Identity role for CSI (usePodIdentity). Grant access to the
+# secret with module pod-sa-jwt-secret-access in 4-workloads-stage, not only the kube-system CSI role.
 
 ### IAM Role for Secrets Store CSI Driver AWS Provider
 
@@ -60,11 +62,11 @@ resource "github_repository_file" "common_resources" {
     "${local.path_tf_repo_flux_common}/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION     = var.region
-      ENVIRONMENT    = var.environment
-      PROJECT        = var.project_name
-      DOMAIN_NAME    = local.domain_name
-      CLUSTER_NAME   = local.cluster_name
+      AWS_REGION      = var.region
+      ENVIRONMENT     = var.environment
+      PROJECT         = var.project_name
+      DOMAIN_NAME     = local.domain_name
+      CLUSTER_NAME    = local.cluster_name
       JWT_SECRET_NAME = module.jwt_secret.secret_name
 
     }

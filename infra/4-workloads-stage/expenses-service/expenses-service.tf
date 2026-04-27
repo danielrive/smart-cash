@@ -129,7 +129,7 @@ resource "aws_iam_policy" "dynamodb_iam_policy" {
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl" 
+          "sqs:GetQueueUrl"
         ]
         Effect = "Allow"
         Resource = [
@@ -150,6 +150,13 @@ resource "aws_eks_pod_identity_association" "association" {
   namespace       = var.environment
   service_account = "sa-${local.this_service_name}-service"
   role_arn        = aws_iam_role.iam_sa_role.arn
+}
+
+module "jwt_secret_access" {
+  source      = "../../modules/pod-sa-jwt-secret-access"
+  environment = var.environment
+  iam_role_id = aws_iam_role.iam_sa_role.id
+  name_suffix = local.this_service_name
 }
 
 #############################
@@ -179,7 +186,7 @@ resource "github_repository_file" "kustomization" {
     {
       ENVIRONMENT  = var.environment
       SERVICE_NAME = local.this_service_name
-      ECR_REPO                   = module.ecr_registry.repo_url
+      ECR_REPO     = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"

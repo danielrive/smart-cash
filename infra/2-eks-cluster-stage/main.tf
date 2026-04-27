@@ -11,7 +11,7 @@ locals {
 ### S3 Bucket for Grafana Tempo
 
 resource "aws_s3_bucket" "grafana_tempo" {
-  bucket = "${var.environment}-${var.project_name}-grafana-tempo-bucket"
+  bucket        = "${var.environment}-${var.project_name}-grafana-tempo-bucket"
   force_destroy = true
   tags = {
     Name        = "${local.cluster_name}-grafana-tempo-bucket"
@@ -96,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "att_policy_role1" {
 }
 
 resource "aws_eks_pod_identity_association" "association" {
-  depends_on = [ module.eks_cluster ]
+  depends_on      = [module.eks_cluster]
   cluster_name    = local.cluster_name
   namespace       = "monitoring"
   service_account = "sa-grafana-tempo"
@@ -253,7 +253,7 @@ resource "github_repository_file" "sources" {
 
 ##### Core resources
 resource "github_repository_file" "core_resources" {
-  depends_on = [module.eks_cluster, null_resource.bootstrap-flux,github_repository_file.kustomizations]
+  depends_on = [module.eks_cluster, null_resource.bootstrap-flux, github_repository_file.kustomizations]
   for_each   = fileset(local.path_tf_repo_flux_core, "*.yaml")
   repository = data.github_repository.flux-gitops.name
   branch     = local.brach_gitops_repo
@@ -262,12 +262,12 @@ resource "github_repository_file" "core_resources" {
     "${local.path_tf_repo_flux_core}/${each.key}",
     {
       ## Common variables for manifests
-      AWS_REGION            = var.region
-      ENVIRONMENT           = var.environment
-      CLUSTER_NAME          = local.cluster_name
-      PROJECT               = var.project_name
-      ARN_CERT_MANAGER_ROLE = module.cert_manager.role_arn
-      ACCOUNT_NUMBER        = data.aws_caller_identity.id_account.id
+      AWS_REGION              = var.region
+      ENVIRONMENT             = var.environment
+      CLUSTER_NAME            = local.cluster_name
+      PROJECT                 = var.project_name
+      ARN_CERT_MANAGER_ROLE   = module.cert_manager.role_arn
+      ACCOUNT_NUMBER          = data.aws_caller_identity.id_account.id
       S3_BUCKET_GRAFANA_TEMPO = aws_s3_bucket.grafana_tempo.bucket
     }
   )

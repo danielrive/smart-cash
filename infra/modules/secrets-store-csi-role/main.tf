@@ -28,8 +28,8 @@ EOF
 #### Role Policy for Secrets Manager Access
 
 resource "aws_iam_policy" "secrets_store_csi" {
-  name   = "policy-secrets-store-csi-${var.cluster_name}-${var.region}"
-  path   = "/"
+  name = "policy-secrets-store-csi-${var.cluster_name}-${var.region}"
+  path = "/"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

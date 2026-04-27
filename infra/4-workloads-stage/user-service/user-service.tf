@@ -119,6 +119,13 @@ resource "aws_eks_pod_identity_association" "association" {
   role_arn        = aws_iam_role.iam_sa_role.arn
 }
 
+module "jwt_secret_access" {
+  source      = "../../modules/pod-sa-jwt-secret-access"
+  environment = var.environment
+  iam_role_id = aws_iam_role.iam_sa_role.id
+  name_suffix = local.this_service_name
+}
+
 #######################
 ####  ECR Repo
 
@@ -146,7 +153,7 @@ resource "github_repository_file" "kustomization" {
     {
       ENVIRONMENT  = var.environment
       SERVICE_NAME = local.this_service_name
-      ECR_REPO                   = module.ecr_registry.repo_url
+      ECR_REPO     = module.ecr_registry.repo_url
     }
   )
   commit_message      = "Managed by Terraform"
@@ -251,7 +258,7 @@ resource "github_repository_file" "image_updates" {
       ECR_REPO        = module.ecr_registry.repo_url
       ENVIRONMENT     = var.environment
       PATH_DEPLOYMENT = "clusters/${local.cluster_name}/bootstrap/${local.this_service_name}-kustomize.yaml"
-      
+
     }
   )
   commit_message      = "Managed by Terraform"
